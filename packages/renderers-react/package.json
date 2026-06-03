@@ -14,7 +14,9 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["dist"],
+  "sideEffects": false,
   "publishConfig": { "access": "public" },
+  "engines": { "node": ">=20" },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -24,13 +26,12 @@
     "lint": "biome check src"
   },
   "peerDependencies": {
+    "@retrofit-ui/core": "workspace:*",
     "react": ">=18",
     "react-dom": ">=18"
   },
-  "dependencies": {
-    "@retrofit-ui/core": "workspace:*"
-  },
   "devDependencies": {
+    "@retrofit-ui/core": "workspace:*",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^18",
     "@types/react-dom": "^18",

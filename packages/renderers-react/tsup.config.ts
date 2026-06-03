@@ -7,5 +7,6 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   jsx: 'react-jsx',
-  external: ['react', 'react-dom'],
+  treeshake: true,
+  external: ['react', 'react-dom', '@retrofit-ui/core'],
 })

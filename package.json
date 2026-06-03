@@ -1,0 +1,20 @@
+{
+  "name": "retrofit-ui",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r run dev",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "lint": "biome check packages",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.0",
+    "@changesets/cli": "^2.29.8",
+    "typescript": "^5.9.3"
+  }
+}

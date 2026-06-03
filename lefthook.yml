@@ -4,11 +4,6 @@ pre-commit:
       run: pnpm lint
 
 pre-push:
-  parallel: true
   commands:
-    typecheck:
-      run: pnpm typecheck
-    test:
-      run: pnpm test
-    build:
-      run: pnpm build
+    ci:
+      run: act -j ci

@@ -12,7 +12,7 @@
     "dev": "pnpm -r run dev",
     "test": "pnpm -r run test",
     "typecheck": "pnpm -r run typecheck",
-    "lint": "biome check packages",
+    "lint": "biome check .",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",

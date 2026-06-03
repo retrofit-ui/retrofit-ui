@@ -15,11 +15,13 @@
     "lint": "biome check packages",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
     "@changesets/cli": "^2.29.8",
+    "lefthook": "^1.11.13",
     "typescript": "^5.9.3"
   }
 }

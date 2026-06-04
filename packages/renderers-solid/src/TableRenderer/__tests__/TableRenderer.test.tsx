@@ -1,5 +1,5 @@
 import type { Table } from '@retrofit-ui/core';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '@solidjs/testing-library';
 import { describe, expect, it } from 'vitest';
 import { TableRenderer } from '../TableRenderer';
 
@@ -31,24 +31,24 @@ const table: Table = {
 
 describe('TableRenderer', () => {
   it('renders column headers', () => {
-    render(<TableRenderer table={table} />);
+    render(() => <TableRenderer table={table} />);
     expect(screen.getByText('ID')).toBeDefined();
     expect(screen.getByText('Name')).toBeDefined();
   });
 
   it('renders row data', () => {
-    render(<TableRenderer table={table} />);
+    render(() => <TableRenderer table={table} />);
     expect(screen.getByText('Alice')).toBeDefined();
     expect(screen.getByText('Bob')).toBeDefined();
   });
 
   it('renders the table title', () => {
-    render(<TableRenderer table={table} />);
+    render(() => <TableRenderer table={table} />);
     expect(screen.getByText('Users')).toBeDefined();
   });
 
   it('shows empty state when data is empty', () => {
-    render(<TableRenderer table={{ ...table, data: [] }} />);
+    render(() => <TableRenderer table={{ ...table, data: [] }} />);
     expect(screen.getByText('No data.')).toBeDefined();
   });
 });

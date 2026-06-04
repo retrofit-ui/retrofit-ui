@@ -12,9 +12,9 @@ The primary renderer is **SolidJS**. React is supported as a secondary renderer.
 
 ```
 retrofit-ui/
-├── definitions/            # @retrofit-ui/core — Zod schemas for all UI types
-│   └── src/types/          # table.ts, form.ts, view.ts, actions.ts, etc.
 ├── packages/
+│   ├── core/               # @retrofit-ui/core — Zod schemas for all UI types
+│   │   └── src/types/      # table.ts, form.ts, view.ts, actions.ts, etc.
 │   ├── server/             # BFF server (Express + Next.js adapters)
 │   ├── renderers-solid/    # SolidJS renderer implementations (primary)
 │   ├── client-solid/       # SolidJS client primitives (primary)
@@ -25,8 +25,6 @@ retrofit-ui/
 ├── pnpm-workspace.yaml
 └── package.json
 ```
-
-> Note: `definitions/` is the actual `@retrofit-ui/core` package — the folder name differs from the published package name.
 
 ## Package manager
 
@@ -72,7 +70,7 @@ When adding a renderer, implement the interface and export a `defaultRenderers` 
 - Do not add React-specific features ahead of their Solid equivalents.
 - Keep the React API surface mirrored to the Solid API surface wherever possible.
 
-## Schema authoring (definitions/)
+## Schema authoring (packages/core)
 
 - All types are Zod schemas. Export both the schema (`FooSchema`) and the inferred type (`Foo`).
 - `src/types/index.ts` re-exports everything — add new types there.

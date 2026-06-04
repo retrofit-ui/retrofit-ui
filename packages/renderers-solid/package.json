@@ -1,10 +1,11 @@
 {
-  "name": "@retrofit-ui/renderers-react",
+  "name": "@retrofit-ui/renderers-solid",
   "version": "0.0.1",
-  "description": "React renderer implementations for retrofit-ui",
+  "description": "SolidJS renderer implementations for retrofit-ui",
   "type": "module",
   "exports": {
     ".": {
+      "solid": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
@@ -14,7 +15,8 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "sideEffects": false,
   "publishConfig": {
@@ -33,19 +35,16 @@
   },
   "peerDependencies": {
     "@retrofit-ui/core": "workspace:*",
-    "react": ">=18",
-    "react-dom": ">=18"
+    "solid-js": ">=1.8"
   },
   "devDependencies": {
     "@retrofit-ui/core": "workspace:*",
-    "@testing-library/react": "^16.0.0",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@solidjs/testing-library": "^0.8.0",
     "jsdom": "^25.0.0",
-    "react": "^18",
-    "react-dom": "^18",
+    "solid-js": "^1.9.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
+    "vite-plugin-solid": "^2.11.0",
     "vitest": "^4.0.18"
   }
 }

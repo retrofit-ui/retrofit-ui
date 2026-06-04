@@ -6,7 +6,10 @@ export default defineConfig({
   dts: true,
   clean: true,
   sourcemap: true,
-  jsx: 'react-jsx',
   treeshake: true,
-  external: ['react', 'react-dom', '@retrofit-ui/core'],
+  external: ['solid-js', '@retrofit-ui/core'],
+  esbuildOptions(options) {
+    options.jsx = 'automatic';
+    options.jsxImportSource = 'solid-js';
+  },
 });

@@ -1,0 +1,66 @@
+{
+  "name": "@retrofit-ui/server",
+  "version": "0.0.1",
+  "description": "Config-driven BFF server for retrofit-ui",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./adapters/express": {
+      "types": "./dist/adapters/express.d.ts",
+      "import": "./dist/adapters/express.js",
+      "require": "./dist/adapters/express.cjs"
+    },
+    "./adapters/nextjs": {
+      "types": "./dist/adapters/nextjs.d.ts",
+      "import": "./dist/adapters/nextjs.js",
+      "require": "./dist/adapters/nextjs.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "retrofit-server": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src"
+  },
+  "peerDependencies": {
+    "@retrofit-ui/core": "workspace:*",
+    "zod": "^4.0.0",
+    "express": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@retrofit-ui/core": "workspace:*",
+    "@types/express": "^4",
+    "@types/node": "^20",
+    "express": "^4",
+    "zod": "^4.3.6",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

@@ -5,13 +5,26 @@ import { FormRenderer } from '../FormRenderer';
 
 const form: Form = {
   fields: [
-    { name: 'name', label: 'Name', type: 'text', required: true },
-    { name: 'email', label: 'Email', type: 'email', required: true },
+    {
+      name: 'name',
+      label: 'Name',
+      type: 'text',
+      required: true,
+      readOnly: false,
+    },
+    {
+      name: 'email',
+      label: 'Email',
+      type: 'email',
+      required: true,
+      readOnly: false,
+    },
     {
       name: 'role',
       label: 'Role',
       type: 'select',
       required: false,
+      readOnly: false,
       options: [
         { label: 'Admin', value: 'admin' },
         { label: 'User', value: 'user' },

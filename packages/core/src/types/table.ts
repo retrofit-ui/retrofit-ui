@@ -32,6 +32,8 @@ export const TableMetadataSchema = z.object({
     .optional(),
   pageSize: z.number().int().positive().default(25),
   totalRows: z.number().int().nonnegative().optional(),
+  rowLink: z.string().optional(),
+  createUrl: z.string().optional(),
 });
 export type TableMetadata = z.infer<typeof TableMetadataSchema>;
 

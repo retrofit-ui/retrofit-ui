@@ -34,12 +34,19 @@ export const FieldSchema = z.object({
   label: z.string().min(1),
   type: FieldTypeSchema,
   required: z.boolean().default(false),
+  readOnly: z.boolean().default(false),
   validation: FieldValidationSchema.optional(),
   placeholder: z.string().optional(),
   helpText: z.string().optional(),
   options: z.array(FieldOptionSchema).optional(),
 });
 export type Field = z.infer<typeof FieldSchema>;
+
+export const ActionSchema = z.object({
+  method: z.string(),
+  url: z.string(),
+});
+export type Action = z.infer<typeof ActionSchema>;
 
 export const FormMetadataSchema = z.object({
   title: z.string().optional(),
@@ -48,6 +55,9 @@ export const FormMetadataSchema = z.object({
   layout: z
     .enum(['single-column', 'two-column', 'auto'])
     .default('single-column'),
+  submitAction: ActionSchema.optional(),
+  deleteAction: ActionSchema.optional(),
+  newEntityUrl: z.string().optional(),
 });
 export type FormMetadata = z.infer<typeof FormMetadataSchema>;
 

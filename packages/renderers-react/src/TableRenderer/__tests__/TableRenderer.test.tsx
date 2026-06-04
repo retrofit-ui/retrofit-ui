@@ -5,14 +5,28 @@ import { TableRenderer } from '../TableRenderer';
 
 const table: Table = {
   columns: [
-    { key: 'id', label: 'ID', type: 'number' },
-    { key: 'name', label: 'Name', type: 'string' },
+    {
+      key: 'id',
+      label: 'ID',
+      type: 'number',
+      sortable: false,
+      filterable: false,
+      alignment: 'left',
+    },
+    {
+      key: 'name',
+      label: 'Name',
+      type: 'string',
+      sortable: false,
+      filterable: false,
+      alignment: 'left',
+    },
   ],
   data: [
     { id: 1, name: 'Alice' },
     { id: 2, name: 'Bob' },
   ],
-  metadata: { title: 'Users' },
+  metadata: { title: 'Users', pageSize: 25 },
 };
 
 describe('TableRenderer', () => {

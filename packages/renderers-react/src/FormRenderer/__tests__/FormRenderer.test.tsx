@@ -11,13 +11,18 @@ const form: Form = {
       name: 'role',
       label: 'Role',
       type: 'select',
+      required: false,
       options: [
         { label: 'Admin', value: 'admin' },
         { label: 'User', value: 'user' },
       ],
     },
   ],
-  metadata: { title: 'Registration', submitLabel: 'Register' },
+  metadata: {
+    title: 'Registration',
+    submitLabel: 'Register',
+    layout: 'single-column',
+  },
 };
 
 describe('FormRenderer', () => {

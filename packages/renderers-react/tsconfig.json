@@ -4,7 +4,9 @@
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "outDir": "dist",
-    "rootDir": "src"
+    "paths": {
+      "@retrofit-ui/core": ["../core/src/index.ts"]
+    }
   },
   "include": ["src"]
 }

@@ -86,6 +86,7 @@ function FormEditor(props: FormEditorProps) {
   function validate(): boolean {
     const errs: Record<string, string> = {};
     for (const field of props.form.fields) {
+      if (field.readOnly) continue;
       const val = values()[field.name];
       if (field.required && (val === undefined || val === '' || val === null)) {
         errs[field.name] = `${field.label} is required`;

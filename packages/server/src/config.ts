@@ -1,5 +1,5 @@
-import type { RetrofitConfig } from './types'
+import type { RetrofitConfig } from './types';
 
 export function defineConfig(config: RetrofitConfig): RetrofitConfig {
-  return config
+  return config;
 }

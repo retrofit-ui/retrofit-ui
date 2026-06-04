@@ -26,9 +26,15 @@
   "bin": {
     "retrofit-server": "./dist/cli.js"
   },
-  "files": ["dist"],
-  "publishConfig": { "access": "public" },
-  "engines": { "node": ">=20" },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -43,7 +49,9 @@
     "express": ">=4"
   },
   "peerDependenciesMeta": {
-    "express": { "optional": true }
+    "express": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@retrofit-ui/core": "workspace:*",

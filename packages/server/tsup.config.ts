@@ -1,9 +1,9 @@
-import { defineConfig } from 'tsup'
+import { defineConfig } from 'tsup';
 
 const sharedNodeConfig = {
   platform: 'node' as const,
   sourcemap: true,
-}
+};
 
 export default defineConfig([
   {
@@ -33,4 +33,4 @@ export default defineConfig([
     banner: { js: '#!/usr/bin/env node' },
     external: ['express', 'zod', '@retrofit-ui/core'],
   },
-])
+]);

@@ -7,9 +7,6 @@ type NextRequest = {
   url: string;
   json: () => Promise<unknown>;
 };
-type NextResponse = {
-  json: (body: unknown, init?: { status?: number }) => unknown;
-};
 
 export function createNextjsHandler(config: RetrofitConfig) {
   const registry = new FormRegistry(config);

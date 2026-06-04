@@ -1,0 +1,22 @@
+{
+  "name": "@retrofit-ui-examples/expenses",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@retrofit-ui/schema-builder-zod": "workspace:*",
+    "@retrofit-ui/server": "workspace:*",
+    "express": "^4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "^4",
+    "@types/node": "^20",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3"
+  }
+}

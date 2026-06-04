@@ -4,7 +4,7 @@ export class FormRegistry {
   private readonly forms: Map<string, FormConfig>;
 
   constructor(config: RetrofitConfig) {
-    this.forms = new Map(Object.entries(config.forms));
+    this.forms = new Map(Object.entries(config.forms ?? {}));
   }
 
   get(id: string): FormConfig | undefined {

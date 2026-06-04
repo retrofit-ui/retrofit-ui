@@ -86,6 +86,7 @@ function FormEditor(props: FormEditorProps) {
   function validate(): boolean {
     const errs: Record<string, string> = {};
     for (const field of props.form.fields) {
+      if (field.readOnly) continue;
       const val = values()[field.name];
       if (field.required && (val === undefined || val === '' || val === null)) {
         errs[field.name] = `${field.label} is required`;
@@ -168,7 +169,7 @@ function FormEditor(props: FormEditorProps) {
                   placeholder={field.placeholder}
                   disabled={field.readOnly}
                   value={String(values()[field.name] ?? '')}
-                  onChange={(e) => setValue(field.name, e.currentTarget.value)}
+                  onInput={(e) => setValue(field.name, e.currentTarget.value)}
                   style={{ width: '100%' }}
                 />
               </Show>
@@ -214,7 +215,7 @@ function FormEditor(props: FormEditorProps) {
                   placeholder={field.placeholder}
                   disabled={field.readOnly}
                   value={String(values()[field.name] ?? '')}
-                  onChange={(e) => setValue(field.name, e.currentTarget.value)}
+                  onInput={(e) => setValue(field.name, e.currentTarget.value)}
                   style={{ width: '100%' }}
                 />
               </Show>

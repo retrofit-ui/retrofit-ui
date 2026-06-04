@@ -45,16 +45,21 @@
   },
   "peerDependencies": {
     "@retrofit-ui/core": "workspace:*",
+    "@retrofit-ui/schema-builder-zod": "workspace:*",
     "zod": "^4.0.0",
     "express": ">=4"
   },
   "peerDependenciesMeta": {
     "express": {
       "optional": true
+    },
+    "@retrofit-ui/schema-builder-zod": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@retrofit-ui/core": "workspace:*",
+    "@retrofit-ui/schema-builder-zod": "workspace:*",
     "@types/express": "^4",
     "@types/node": "^20",
     "express": "^4",

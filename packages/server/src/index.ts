@@ -1,4 +1,4 @@
-export { defineConfig } from './config';
+export { defineConfig, defineRetrofitConfig } from './config';
 export { FormRegistry } from './registry';
 export { zodToJsonSchema } from './schema-utils';
-export type { FormConfig, RetrofitConfig } from './types';
+export type { FormConfig, ResourceConfig, RetrofitConfig } from './types';

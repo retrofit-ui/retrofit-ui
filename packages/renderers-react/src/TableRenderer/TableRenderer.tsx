@@ -1,41 +1,50 @@
-import type { Table } from '@retrofit-ui/core'
-import { useState } from 'react'
+import type { Table } from '@retrofit-ui/core';
+import { useState } from 'react';
 
 interface Props {
-  table: Table
+  table: Table;
 }
 
 export function TableRenderer({ table }: Props) {
-  const { columns, data, metadata } = table
+  const { columns, data, metadata } = table;
   const [sortKey, setSortKey] = useState<string | null>(
     metadata?.defaultSort?.key ?? null,
-  )
+  );
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>(
     metadata?.defaultSort?.direction ?? 'asc',
-  )
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({})
+  );
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
   const filteredData = data.filter((row) =>
-    Object.entries(filterValues).every(([key, val]) =>
-      val === '' || String(row[key] ?? '').toLowerCase().includes(val.toLowerCase()),
+    Object.entries(filterValues).every(
+      ([key, val]) =>
+        val === '' ||
+        String(row[key] ?? '')
+          .toLowerCase()
+          .includes(val.toLowerCase()),
     ),
-  )
+  );
 
   const sortedData = sortKey
     ? [...filteredData].sort((a, b) => {
-        const av = a[sortKey]
-        const bv = b[sortKey]
-        const cmp = String(av ?? '') < String(bv ?? '') ? -1 : String(av ?? '') > String(bv ?? '') ? 1 : 0
-        return sortDir === 'asc' ? cmp : -cmp
+        const av = a[sortKey];
+        const bv = b[sortKey];
+        const cmp =
+          String(av ?? '') < String(bv ?? '')
+            ? -1
+            : String(av ?? '') > String(bv ?? '')
+              ? 1
+              : 0;
+        return sortDir === 'asc' ? cmp : -cmp;
       })
-    : filteredData
+    : filteredData;
 
   function handleSort(key: string) {
     if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
-      setSortKey(key)
-      setSortDir('asc')
+      setSortKey(key);
+      setSortDir('asc');
     }
   }
 
@@ -52,7 +61,10 @@ export function TableRenderer({ table }: Props) {
                 placeholder={`Filter ${col.label}`}
                 value={filterValues[col.key] ?? ''}
                 onChange={(e) =>
-                  setFilterValues((prev) => ({ ...prev, [col.key]: e.target.value }))
+                  setFilterValues((prev) => ({
+                    ...prev,
+                    [col.key]: e.target.value,
+                  }))
                 }
               />
             ))}
@@ -67,11 +79,16 @@ export function TableRenderer({ table }: Props) {
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  style={{ textAlign: col.alignment, cursor: col.sortable ? 'pointer' : undefined }}
+                  style={{
+                    textAlign: col.alignment,
+                    cursor: col.sortable ? 'pointer' : undefined,
+                  }}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
                 >
                   {col.label}
-                  {col.sortable && sortKey === col.key && (sortDir === 'asc' ? ' ▲' : ' ▼')}
+                  {col.sortable &&
+                    sortKey === col.key &&
+                    (sortDir === 'asc' ? ' ▲' : ' ▼')}
                 </th>
               ))}
             </tr>
@@ -91,5 +108,5 @@ export function TableRenderer({ table }: Props) {
         </table>
       )}
     </div>
-  )
+  );
 }

@@ -1,2 +1,2 @@
-export { TableRenderer } from './TableRenderer'
-export { TableRendererConfig } from './TableRenderer.config'
+export { TableRenderer } from './TableRenderer';
+export { TableRendererConfig } from './TableRenderer.config';

@@ -18,8 +18,8 @@ describe('FormRegistry', () => {
     const registry = new FormRegistry(config);
     const list = registry.list();
     expect(list).toHaveLength(1);
-    expect(list[0]!.id).toBe('contact');
-    expect(list[0]!.renderer).toBe('form');
+    expect(list[0]?.id).toBe('contact');
+    expect(list[0]?.renderer).toBe('form');
   });
 
   it('retrieves a form by id', () => {

@@ -20,6 +20,7 @@ export default defineConfig([
     entry: {
       'adapters/express': 'src/adapters/express.ts',
       'adapters/nextjs': 'src/adapters/nextjs.ts',
+      'adapters/ui-shell': 'src/adapters/ui-shell.ts',
     },
     format: ['esm', 'cjs'],
     dts: true,

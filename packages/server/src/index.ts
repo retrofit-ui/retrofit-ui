@@ -1,3 +1,4 @@
+export { serveUiShell } from './adapters/ui-shell';
 export { defineConfig, defineRetrofitConfig } from './config';
 export { FormRegistry } from './registry';
 export { zodToJsonSchema } from './schema-utils';

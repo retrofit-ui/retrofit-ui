@@ -18,6 +18,11 @@
       "types": "./dist/adapters/nextjs.d.ts",
       "import": "./dist/adapters/nextjs.js",
       "require": "./dist/adapters/nextjs.cjs"
+    },
+    "./ui": {
+      "types": "./dist/adapters/ui-shell.d.ts",
+      "import": "./dist/adapters/ui-shell.js",
+      "require": "./dist/adapters/ui-shell.cjs"
     }
   },
   "main": "./dist/index.cjs",

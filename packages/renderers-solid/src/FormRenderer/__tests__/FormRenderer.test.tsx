@@ -39,18 +39,6 @@ const form: Form = {
 };
 
 describe('FormRenderer', () => {
-  it('renders all field labels', () => {
-    render(() => <FormRenderer form={form} />);
-    expect(screen.getByText(/Name/)).toBeDefined();
-    expect(screen.getByText(/Email/)).toBeDefined();
-    expect(screen.getByText(/Role/)).toBeDefined();
-  });
-
-  it('renders the submit button with custom label', () => {
-    render(() => <FormRenderer form={form} />);
-    expect(screen.getByRole('button', { name: 'Register' })).toBeDefined();
-  });
-
   it('shows validation errors for empty required fields', async () => {
     render(() => <FormRenderer form={form} />);
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
@@ -69,5 +57,76 @@ describe('FormRenderer', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
     await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+  });
+});
+
+describe('FormRenderer – validation', () => {
+  it('shows min length error when value is too short', async () => {
+    const f: Form = {
+      fields: [
+        {
+          name: 'title',
+          label: 'Title',
+          type: 'text',
+          required: false,
+          readOnly: false,
+          validation: { min: 5 },
+        },
+      ],
+      metadata: { submitLabel: 'Save', layout: 'single-column' },
+    };
+    render(() => <FormRenderer form={f} />);
+    fireEvent.change(screen.getByLabelText(/Title/), {
+      target: { value: 'ab' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Minimum length is 5');
+  });
+
+  it('shows max length error when value is too long', async () => {
+    const f: Form = {
+      fields: [
+        {
+          name: 'code',
+          label: 'Code',
+          type: 'text',
+          required: false,
+          readOnly: false,
+          validation: { max: 3 },
+        },
+      ],
+      metadata: { submitLabel: 'Save', layout: 'single-column' },
+    };
+    render(() => <FormRenderer form={f} />);
+    fireEvent.change(screen.getByLabelText(/Code/), {
+      target: { value: 'abcde' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Maximum length is 3');
+  });
+
+  it('shows pattern error when value does not match', async () => {
+    const f: Form = {
+      fields: [
+        {
+          name: 'zip',
+          label: 'Zip',
+          type: 'text',
+          required: false,
+          readOnly: false,
+          validation: { pattern: '^\\d+$' },
+        },
+      ],
+      metadata: { submitLabel: 'Save', layout: 'single-column' },
+    };
+    render(() => <FormRenderer form={f} />);
+    fireEvent.change(screen.getByLabelText(/Zip/), {
+      target: { value: 'abc' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Invalid format');
   });
 });

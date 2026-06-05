@@ -1,7 +1,57 @@
+# dependencies
 node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# build output
 dist/
-.DS_Store
 *.tsbuildinfo
+
+# environment
 .env
 .env.local
-.pnpm-store/
+.env.development.local
+.env.test.local
+.env.production.local
+
+# test & coverage artifacts
+coverage/
+*.lcov
+.nyc_output
+test-results/
+playwright-report/
+blob-report/
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# misc node
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+*.icloud
+
+# tooling
+.claude/

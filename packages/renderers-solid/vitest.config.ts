@@ -6,5 +6,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      all: true,
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+    },
   },
 });

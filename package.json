@@ -16,11 +16,12 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install || true"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
     "@changesets/cli": "^2.29.8",
+    "@vitest/coverage-v8": "^4.1.8",
     "lefthook": "^1.11.13",
     "typescript": "^5.9.3"
   }

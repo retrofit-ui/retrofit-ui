@@ -121,6 +121,17 @@ gh run list --branch <branch>  # workflow runs
 
 The rule: if work is traceable to a GitHub issue, reference it. If no issue exists, create one.
 
+## Code quality
+
+After generating or modifying any code, always run and fix lint before considering the task done:
+
+```bash
+pnpm lint        # check
+pnpm lint --write  # auto-fix what Biome can
+```
+
+Fix any remaining errors manually. Do not leave the repo in a state where `pnpm lint` exits non-zero.
+
 ## What to avoid
 
 - Do not add React as a dependency of any non-React package.

@@ -5,3 +5,5 @@ dist/
 .env
 .env.local
 .pnpm-store/
+test-results/
+playwright-report/

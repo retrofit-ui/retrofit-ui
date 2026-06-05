@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/server.ts",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@retrofit-ui/schema-builder-zod": "workspace:*",
@@ -17,6 +18,7 @@
     "@types/express": "^4",
     "@types/node": "^20",
     "tsx": "^4.19.4",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@playwright/test": "^1.49.0"
   }
 }

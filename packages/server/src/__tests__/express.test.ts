@@ -70,7 +70,7 @@ describe('GET /api/forms', () => {
   it('returns the list of registered forms', async () => {
     const res = await fetch(`${baseUrl}/api/forms`);
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data).toHaveLength(1);
     expect(data[0].id).toBe('contact');
     expect(data[0].renderer).toBe('form');
@@ -81,7 +81,7 @@ describe('GET /api/forms/:id/schema', () => {
   it('returns the JSON schema for a known form', async () => {
     const res = await fetch(`${baseUrl}/api/forms/contact/schema`);
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.type).toBe('object');
     expect(data.properties.name).toBeDefined();
   });
@@ -89,7 +89,7 @@ describe('GET /api/forms/:id/schema', () => {
   it('returns 404 for an unknown form id', async () => {
     const res = await fetch(`${baseUrl}/api/forms/missing/schema`);
     expect(res.status).toBe(404);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.error).toBe('Form not found');
   });
 });
@@ -103,7 +103,7 @@ describe('POST /api/forms/:id/submit', () => {
       body: JSON.stringify({ name: 'Alice', age: 30 }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.ok).toBe(true);
     expect(onSubmit).toHaveBeenCalledOnce();
   });
@@ -115,7 +115,7 @@ describe('POST /api/forms/:id/submit', () => {
       body: JSON.stringify({ name: 123 }),
     });
     expect(res.status).toBe(422);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.errors).toBeDefined();
   });
 
@@ -143,7 +143,7 @@ describe('resource routes – items', () => {
   it('GET /api/ui/items returns a table spec', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items`);
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.columns).toBeDefined();
     expect(data.data).toBeDefined();
   });
@@ -157,27 +157,27 @@ describe('resource routes – items', () => {
   it('GET /api/ui/items/new returns a form spec', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/new`);
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.fields).toBeDefined();
   });
 
   it('GET /api/ui/items/:id returns spec and entity for existing item', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.spec).toBeDefined();
     expect(data.entity).toEqual({ id: 1, name: 'Foo' });
   });
 
   it('GET /api/ui/items/:id spec includes delete action when delete handler is configured', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.spec.metadata?.deleteAction).toBeDefined();
   });
 
   it('GET /api/ui/items/:id uses updateSchema for mutability when configured', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     const idField = data.spec.fields.find(
       (f: { name: string }) => f.name === 'id',
     );
@@ -202,7 +202,7 @@ describe('resource routes – items', () => {
       body: JSON.stringify({ id: 2, name: 'Bar' }),
     });
     expect(res.status).toBe(201);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.ok).toBe(true);
   });
 
@@ -232,7 +232,7 @@ describe('resource routes – items', () => {
       body: JSON.stringify({ name: 'Updated' }),
     });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.ok).toBe(true);
   });
 
@@ -258,7 +258,7 @@ describe('resource routes – items', () => {
   it('DELETE /api/ui/items/:id returns ok', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`, { method: 'DELETE' });
     expect(res.status).toBe(200);
-    const data = await res.json();
+    const data = (await res.json()) as any;
     expect(data.ok).toBe(true);
   });
 

@@ -9,119 +9,54 @@
  */
 
 import {
-  formFromSchema,
-  tableFromSchema,
-} from '@retrofit-ui/schema-builder-zod';
-import express from 'express';
+  createRetrofitApp,
+  resource,
+} from '@retrofit-ui/server-solid-shoelace';
 import { CreateExpenseSchema, ExpenseSchema } from './schemas';
 import { store } from './store';
 
-const app = express();
-app.use(express.json());
-
-// ── Field override definitions ───────────────────────────────────────────────
-// Centralised here so the new and edit forms share identical validation rules.
-const expenseFieldOverrides = {
-  amount: { validation: { min: 0.01, max: 10000 } },
-  date: {
-    placeholder: 'YYYY-MM-DD',
-    helpText: 'YYYY-MM-DD',
-    validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+const app = createRetrofitApp({
+  theme: {
+    cssVariables: {
+      '--sl-color-primary-50': '#fff7ed',
+      '--sl-color-primary-100': '#ffedd5',
+      '--sl-color-primary-200': '#fed7aa',
+      '--sl-color-primary-300': '#fdba74',
+      '--sl-color-primary-400': '#fb923c',
+      '--sl-color-primary-500': '#f97316',
+      '--sl-color-primary-600': '#ea580c',
+      '--sl-color-primary-700': '#c2410c',
+      '--sl-color-primary-800': '#9a3412',
+      '--sl-color-primary-900': '#7c2d12',
+      '--sl-color-primary-950': '#431407',
+    },
+    extraCss: `.retrofit-thead { background-color: #7c2d12; }
+.retrofit-th { color: #fff7ed; border-bottom-color: #9a3412; }`,
   },
-  notes: { type: 'textarea' as const },
-  description: { validation: { min: 3 } },
-};
-
-// ── List ─────────────────────────────────────────────────────────────────────
-app.get('/api/ui/expenses', (_req, res) => {
-  const table = tableFromSchema(
-    ExpenseSchema,
-    store.all() as Record<string, unknown>[],
-  )
-    .withTitle('Expenses')
-    .withRowLink('/api/ui/expenses/{id}')
-    .withCreateUrl('/api/ui/expenses/new')
-    .withColumnOverrides({
-      amount: { sortable: true },
-      category: { filterable: true },
-      status: { filterable: true },
-    })
-    .build();
-  res.json(table);
+  resources: {
+    expenses: resource(ExpenseSchema)
+      .updateSchema(CreateExpenseSchema)
+      .columnOverride('amount', { sortable: true })
+      .columnOverride('category', { filterable: true })
+      .columnOverride('status', { filterable: true })
+      .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
+      .fieldOverride('date', {
+        placeholder: 'YYYY-MM-DD',
+        helpText: 'YYYY-MM-DD',
+        validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+      })
+      .fieldOverride('notes', { type: 'textarea' })
+      .fieldOverride('description', { validation: { min: 3 } })
+      .list(() => store.all())
+      .find((id) => store.find(id))
+      .create((data) => store.create(data))
+      .update((id, data) => store.update(id, data))
+      .delete((id) => store.delete(id))
+      .build(),
+  },
 });
 
-// ── New / Create form ────────────────────────────────────────────────────────
-app.get('/api/ui/expenses/new', (_req, res) => {
-  const form = formFromSchema(ExpenseSchema)
-    .withMutability(CreateExpenseSchema)
-    .withTitle('Submit Expense')
-    .withSubmit({ method: 'POST', url: '/api/ui/expenses' })
-    .withFieldOverrides(expenseFieldOverrides)
-    .build();
-  res.json(form);
-});
-
-// ── Detail / Edit form ───────────────────────────────────────────────────────
-app.get('/api/ui/expenses/:id', (req, res) => {
-  const id = req.params.id ?? '';
-  const entity = store.find(id);
-  if (!entity) {
-    res.status(404).json({ error: 'Not found' });
-    return;
-  }
-  const form = formFromSchema(ExpenseSchema)
-    .withMutability(CreateExpenseSchema)
-    .withTitle('Edit Expense')
-    .withSubmit({ method: 'PUT', url: `/api/ui/expenses/${id}` })
-    .withDelete({ method: 'DELETE', url: `/api/ui/expenses/${id}` })
-    .withFieldOverrides(expenseFieldOverrides)
-    .build();
-  res.json({ spec: form, entity });
-});
-
-// ── POST — create ─────────────────────────────────────────────────────────────
-app.post('/api/ui/expenses', (req, res) => {
-  const result = CreateExpenseSchema.safeParse(req.body);
-  if (!result.success) {
-    res.status(422).json({ errors: result.error.flatten() });
-    return;
-  }
-  const expense = store.create(result.data);
-  res.status(201).json(expense);
-});
-
-// ── PUT — update ──────────────────────────────────────────────────────────────
-app.put('/api/ui/expenses/:id', (req, res) => {
-  const id = req.params.id ?? '';
-  const result = CreateExpenseSchema.safeParse(req.body);
-  if (!result.success) {
-    res.status(422).json({ errors: result.error.flatten() });
-    return;
-  }
-  const updated = store.update(id, result.data);
-  if (!updated) {
-    res.status(404).json({ error: 'Not found' });
-    return;
-  }
-  res.json(updated);
-});
-
-// ── DELETE ────────────────────────────────────────────────────────────────────
-app.delete('/api/ui/expenses/:id', (req, res) => {
-  const id = req.params.id ?? '';
-  const deleted = store.delete(id);
-  if (!deleted) {
-    res.status(404).json({ error: 'Not found' });
-    return;
-  }
-  res.status(204).send();
-});
-
-// ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {
-  console.log(`Expenses API running at http://localhost:${PORT}`);
-  console.log(`  GET  http://localhost:${PORT}/api/ui/expenses`);
-  console.log(`  GET  http://localhost:${PORT}/api/ui/expenses/new`);
-  console.log(`  GET  http://localhost:${PORT}/api/ui/expenses/1`);
+  console.log(`Expenses server running at http://localhost:${PORT}`);
 });

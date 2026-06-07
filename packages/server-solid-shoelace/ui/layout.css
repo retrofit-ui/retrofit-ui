@@ -1,0 +1,101 @@
+/* Layout-only styles for the ui-shell. Form and component styles come from Shoelace. */
+
+.retrofit-view {
+  padding: var(--sl-spacing-large);
+  font-family: var(--sl-font-sans);
+  color: var(--sl-color-neutral-900);
+}
+
+.retrofit-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sl-spacing-large);
+}
+
+.retrofit-page-title {
+  font-size: var(--sl-font-size-2x-large);
+  font-weight: var(--sl-font-weight-bold);
+  margin: 0 0 var(--sl-spacing-large);
+  color: var(--sl-color-neutral-900);
+}
+
+.retrofit-back-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: var(--sl-spacing-medium);
+  cursor: pointer;
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-neutral-500);
+  font-family: inherit;
+}
+
+.retrofit-back-btn:hover {
+  color: var(--sl-color-neutral-900);
+}
+
+.retrofit-form-actions {
+  display: flex;
+  gap: var(--sl-spacing-small);
+  margin-top: var(--sl-spacing-small);
+}
+
+.retrofit-error-message {
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-danger-600);
+  margin: var(--sl-spacing-small) 0 0;
+}
+
+.retrofit-muted {
+  color: var(--sl-color-neutral-500);
+  font-size: var(--sl-font-size-small);
+}
+
+/* Table — Shoelace has no table component so we style it with its tokens */
+.retrofit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sl-font-sans);
+}
+
+.retrofit-thead {
+  background-color: var(--sl-color-neutral-50);
+}
+
+.retrofit-th {
+  padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+  font-size: var(--sl-font-size-small);
+  font-weight: var(--sl-font-weight-semibold);
+  text-align: left;
+  color: var(--sl-color-neutral-600);
+  border-bottom: 2px solid var(--sl-color-neutral-200);
+  white-space: nowrap;
+}
+
+.retrofit-tr {
+  border-bottom: 1px solid var(--sl-color-neutral-100);
+}
+
+.retrofit-tr:last-child {
+  border-bottom: none;
+}
+
+.retrofit-tr--clickable {
+  cursor: pointer;
+}
+
+.retrofit-tr--clickable:hover {
+  background-color: var(--sl-color-neutral-50);
+}
+
+.retrofit-td {
+  padding: var(--sl-spacing-small) var(--sl-spacing-medium);
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-neutral-900);
+}
+
+.retrofit-empty {
+  color: var(--sl-color-neutral-500);
+  font-size: var(--sl-font-size-small);
+}

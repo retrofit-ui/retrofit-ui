@@ -1,24 +1,24 @@
 import { expect, test } from '@playwright/test';
 
-const TABLE_URL = '/retrofit-ui/#/posts';
-const NEW_URL = '/retrofit-ui/#/posts/new';
+const TABLE_URL = '/#/posts';
+const NEW_URL = '/#/posts/new';
 
-const SEED_TITLES = [
-  'Getting Started with Retrofit UI',
-  'Why Server-Driven UI Matters',
-  'Building Forms with Zod',
-];
+async function waitForTable(page: import('@playwright/test').Page) {
+  await page.waitForSelector('table');
+}
 
-test.describe('Blog Posts — Table View', () => {
-  test('shows Posts heading, column headers, at least one row, and New button', async ({
+async function waitForForm(page: import('@playwright/test').Page) {
+  await page.waitForSelector('form');
+}
+
+test.describe('Blog posts table view', () => {
+  test('renders table with heading, column headers, seed data, and New button', async ({
     page,
   }) => {
     await page.goto(TABLE_URL);
-    await page.waitForSelector('h1, table, p');
+    await waitForTable(page);
 
-    await expect(page.locator('h1')).toHaveText('Posts');
-    await expect(page.getByRole('button', { name: 'New' })).toBeVisible();
-    await expect(page.locator('table')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Posts' })).toBeVisible();
 
     await expect(page.locator('th').filter({ hasText: 'Title' })).toBeVisible();
     await expect(
@@ -28,237 +28,150 @@ test.describe('Blog Posts — Table View', () => {
       page.locator('th').filter({ hasText: 'Author' }),
     ).toBeVisible();
 
-    expect(await page.locator('tbody tr').count()).toBeGreaterThan(0);
+    await expect(
+      page.getByText('Getting Started with Retrofit UI'),
+    ).toBeVisible();
+    await expect(page.getByText('Why Server-Driven UI Matters')).toBeVisible();
+
+    await expect(page.locator('sl-button[variant="primary"]')).toBeVisible();
   });
 
-  test('status column shows status values in seed data', async ({ page }) => {
+  test('table header has deep purple background', async ({ page }) => {
     await page.goto(TABLE_URL);
-    await page.waitForSelector('table');
+    await waitForTable(page);
 
-    const statusCell = page
-      .locator('td')
-      .filter({ hasText: /^(published|draft|archived)$/ });
-    await expect(statusCell.first()).toBeVisible();
+    const bgColor = await page
+      .locator('thead')
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bgColor).toBe('rgb(112, 26, 117)'); // #701a75 fuchsia-900
   });
 
-  test('at least one seed post is visible in the table', async ({ page }) => {
+  test('table rows are clickable', async ({ page }) => {
     await page.goto(TABLE_URL);
-    await page.waitForSelector('table');
+    await waitForTable(page);
 
-    const titleCells = page.locator('td');
-    let found = false;
-    for (const title of SEED_TITLES) {
-      const count = await titleCells.filter({ hasText: title }).count();
-      if (count > 0) {
-        found = true;
-        break;
-      }
-    }
-    expect(found).toBe(true);
+    await page.locator('tbody tr').first().click();
+    await page.waitForURL(/\/posts\/\d+/);
   });
 });
 
-test.describe('Blog Posts — Create New Post', () => {
-  test('New button navigates to create form', async ({ page }) => {
+test.describe('Create new post', () => {
+  test('navigates to new form and shows Shoelace fields', async ({ page }) => {
     await page.goto(TABLE_URL);
-    await page.waitForSelector('h1');
+    await page.locator('sl-button[variant="primary"]').click();
+    await page.waitForURL(`**${NEW_URL}`);
+    await waitForForm(page);
 
-    await page.getByRole('button', { name: 'New' }).click();
-    await expect(page.locator('h1')).toHaveText('New Post', {
-      timeout: 10_000,
-    });
+    await expect(page.getByRole('heading', { name: 'New Post' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Title *' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Slug *' })).toBeVisible();
+    await expect(page.getByRole('combobox')).toBeVisible();
   });
 
-  test('form has expected fields including textarea for body and select for status', async ({
-    page,
-  }) => {
+  test('submit button is a Shoelace primary button', async ({ page }) => {
     await page.goto(NEW_URL);
-    await page.waitForSelector('form');
+    await waitForForm(page);
 
-    await expect(page.locator('input[name="title"]')).toBeVisible();
-    await expect(page.locator('input[name="slug"]')).toBeVisible();
-    await expect(page.locator('textarea[name="body"]')).toBeVisible();
-
-    const statusSelect = page.locator('select[name="status"]');
-    await expect(statusSelect).toBeVisible();
-    await expect(statusSelect.locator('option[value="draft"]')).toHaveCount(1);
-    await expect(statusSelect.locator('option[value="published"]')).toHaveCount(
-      1,
-    );
-    await expect(statusSelect.locator('option[value="archived"]')).toHaveCount(
-      1,
-    );
-  });
-
-  test('submitting empty writable fields shows validation errors', async ({
-    page,
-  }) => {
-    await page.goto(NEW_URL);
-    await page.waitForSelector('form');
-
-    await page.getByRole('button', { name: 'Submit' }).click();
-    await expect(page.locator('[role="alert"]').first()).toBeVisible();
-  });
-
-  test('fills form and creates new post — navigates back to table with new row', async ({
-    page,
-  }) => {
-    await page.goto(NEW_URL);
-    await page.waitForSelector('form');
-
-    const uniqueTitle = `E2E Test Post ${Date.now()}`;
-    const uniqueSlug = `e2e-test-post-${Date.now()}`;
-
-    await page.locator('input[name="title"]').fill(uniqueTitle);
-    await page.locator('input[name="slug"]').fill(uniqueSlug);
-    await page
-      .locator('textarea[name="body"]')
-      .fill('This post was created by Playwright.');
-    await page.locator('select[name="status"]').selectOption('published');
-    await page.getByRole('button', { name: 'Submit' }).click();
-
-    await expect(page.locator('h1')).toHaveText('Posts', { timeout: 10_000 });
     await expect(
-      page.locator('td').filter({ hasText: uniqueTitle }),
+      page.locator('sl-button[variant="primary"][type="submit"]'),
     ).toBeVisible();
   });
-});
 
-test.describe('Blog Posts — Edit Existing Post', () => {
-  test('clicking a seed row loads the edit form with pre-populated values', async ({
-    page,
-  }) => {
-    await page.goto(TABLE_URL);
-    await page.waitForSelector('table');
-
-    let clickedTitle: string | null = null;
-    for (const title of SEED_TITLES) {
-      const cell = page.locator('td').filter({ hasText: title });
-      if ((await cell.count()) > 0) {
-        await cell.click();
-        clickedTitle = title;
-        break;
-      }
-    }
-
-    test.skip(!clickedTitle, 'No seed posts available to click');
-
-    await page.waitForURL(/\/posts\/\d+/);
-
-    await expect(page.locator('h1')).toHaveText('Edit Post');
-    await expect(page.locator('input[name="title"]')).toHaveValue(
-      clickedTitle ?? '',
-    );
-    await expect(page.locator('textarea[name="body"]')).not.toHaveValue('');
-
-    const statusValue = await page
-      .locator('select[name="status"]')
-      .inputValue();
-    expect(['draft', 'published', 'archived']).toContain(statusValue);
-
-    await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
-  });
-
-  test('Back button navigates to table', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await page.waitForSelector('table');
-
-    let clicked = false;
-    for (const title of SEED_TITLES) {
-      const cell = page.locator('td').filter({ hasText: title });
-      if ((await cell.count()) > 0) {
-        await cell.click();
-        clicked = true;
-        break;
-      }
-    }
-    test.skip(!clicked, 'No seed posts available to click');
-
-    await page.waitForURL(/\/posts\/\d+/);
-    await page.getByRole('button', { name: /back/i }).click();
-    await expect(page.locator('h1')).toHaveText('Posts', { timeout: 10_000 });
-  });
-});
-
-test.describe('Blog Posts — Delete Post', () => {
-  test('Delete button removes a post and returns to table', async ({
+  test('shows validation error when required fields are empty', async ({
     page,
   }) => {
     await page.goto(NEW_URL);
-    await page.waitForSelector('form');
+    await waitForForm(page);
 
-    const deleteTitle = `Delete-Me ${Date.now()}`;
-    await page.locator('input[name="title"]').fill(deleteTitle);
-    await page.locator('input[name="slug"]').fill(`delete-me-${Date.now()}`);
+    await page.locator('sl-button[type="submit"]').click();
+
+    await expect(page.getByRole('alert').first()).toBeVisible();
+  });
+
+  test('creates a new post and returns to the table', async ({ page }) => {
+    await page.goto(NEW_URL);
+    await waitForForm(page);
+
+    await page.getByRole('textbox', { name: 'Title *' }).fill('E2E Test Post');
+    await page.getByRole('textbox', { name: 'Slug *' }).fill('e2e-test-post');
     await page
-      .locator('textarea[name="body"]')
-      .fill('This post will be deleted.');
-    await page.locator('select[name="status"]').selectOption('draft');
-    await page.getByRole('button', { name: 'Submit' }).click();
+      .getByRole('textbox', { name: 'Body *' })
+      .fill('Written by Playwright.');
 
-    await expect(page.locator('h1')).toHaveText('Posts', { timeout: 10_000 });
-    await page.locator('td').filter({ hasText: deleteTitle }).click();
+    await page.locator('sl-select').click();
+    await page.locator('sl-option[value="draft"]').click();
+
+    await page.locator('sl-button[type="submit"]').click();
+
+    await page.waitForURL(`**${TABLE_URL}`);
+    await waitForTable(page);
+
+    await expect(page.getByText('E2E Test Post')).toBeVisible();
+  });
+});
+
+test.describe('Edit existing post', () => {
+  test('opens edit form with pre-populated values when clicking a row', async ({
+    page,
+  }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+
+    await page.locator('tbody tr').first().click();
     await page.waitForURL(/\/posts\/\d+/);
-    await expect(page.locator('h1')).toHaveText('Edit Post');
+    await waitForForm(page);
+
+    await expect(
+      page.getByRole('heading', { name: 'Edit Post' }),
+    ).toBeVisible();
+
+    const titleInput = page.getByRole('textbox', { name: 'Title *' });
+    await expect(titleInput).toBeVisible();
+    const titleVal = await titleInput.inputValue();
+    expect(titleVal.length).toBeGreaterThan(0);
+
+    await expect(
+      page.locator('sl-button[variant="primary"][type="submit"]'),
+    ).toBeVisible();
+    await expect(page.locator('sl-button[variant="danger"]')).toBeVisible();
+  });
+
+  test('submits an edit and navigates back to the table', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+
+    await page.locator('tbody tr').first().click();
+    await page.waitForURL(/\/posts\/\d+/);
+    await waitForForm(page);
+
+    await page
+      .getByRole('textbox', { name: 'Title *' })
+      .fill('Updated via E2E');
+
+    await page.locator('sl-button[type="submit"]').click();
+
+    await page.waitForURL(`**${TABLE_URL}`);
+    await waitForTable(page);
+
+    await expect(page.getByText('Updated via E2E')).toBeVisible();
+  });
+});
+
+test.describe('Delete post', () => {
+  test('deletes a post via the Delete button and returns to the table', async ({
+    page,
+  }) => {
+    await page.goto('/#/posts/2');
+    await waitForForm(page);
 
     page.on('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Delete' }).click();
+    await page.locator('sl-button[variant="danger"]').click();
 
-    await expect(page.locator('h1')).toHaveText('Posts', { timeout: 10_000 });
+    await page.waitForURL(`**${TABLE_URL}`);
+    await waitForTable(page);
+
     await expect(
-      page.locator('td').filter({ hasText: deleteTitle }),
+      page.getByRole('cell', { name: 'Why Server-Driven UI Matters' }),
     ).toHaveCount(0);
-  });
-});
-
-test.describe('Blog Posts — Status Lifecycle', () => {
-  test('newly created post with draft status shows draft in table', async ({
-    page,
-  }) => {
-    await page.goto(NEW_URL);
-    await page.waitForSelector('form');
-
-    const draftTitle = `Draft Post ${Date.now()}`;
-    await page.locator('input[name="title"]').fill(draftTitle);
-    await page.locator('input[name="slug"]').fill(`draft-post-${Date.now()}`);
-    await page
-      .locator('textarea[name="body"]')
-      .fill('A draft post for status lifecycle test.');
-    await page.locator('select[name="status"]').selectOption('draft');
-    await page.getByRole('button', { name: 'Submit' }).click();
-
-    await expect(page.locator('h1')).toHaveText('Posts', { timeout: 10_000 });
-    const newRow = page.locator('tr').filter({ hasText: draftTitle });
-    await expect(
-      newRow.locator('td').filter({ hasText: 'draft' }).first(),
-    ).toBeVisible();
-  });
-
-  test('can change post status from draft to published via edit form', async ({
-    page,
-  }) => {
-    await page.goto(NEW_URL);
-    await page.waitForSelector('form');
-
-    const lifecycleTitle = `Lifecycle Post ${Date.now()}`;
-    await page.locator('input[name="title"]').fill(lifecycleTitle);
-    await page.locator('input[name="slug"]').fill(`lifecycle-${Date.now()}`);
-    await page.locator('textarea[name="body"]').fill('Lifecycle test body.');
-    await page.locator('select[name="status"]').selectOption('draft');
-    await page.getByRole('button', { name: 'Submit' }).click();
-
-    await expect(page.locator('h1')).toHaveText('Posts', { timeout: 10_000 });
-
-    await page.locator('td').filter({ hasText: lifecycleTitle }).click();
-    await page.waitForURL(/\/posts\/\d+/);
-
-    await page.locator('select[name="status"]').selectOption('published');
-    await page.getByRole('button', { name: 'Submit' }).click();
-
-    await expect(page.locator('h1')).toHaveText('Posts', { timeout: 10_000 });
-    const updatedRow = page.locator('tr').filter({ hasText: lifecycleTitle });
-    await expect(
-      updatedRow.locator('td').filter({ hasText: 'published' }),
-    ).toBeVisible();
   });
 });

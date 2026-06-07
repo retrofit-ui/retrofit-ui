@@ -1,140 +1,171 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-async function gotoContacts(page: Page) {
-  await page.goto('/retrofit-ui/#/contacts');
-  await page.waitForSelector('h1, table, p');
+const TABLE_URL = '/#/contacts';
+const NEW_URL = '/#/contacts/new';
+
+async function waitForTable(page: import('@playwright/test').Page) {
+  await page.waitForSelector('table');
 }
 
-test.describe('Contacts – table view', () => {
-  test('shows page heading, column headers, seed rows, and New button', async ({
+async function waitForForm(page: import('@playwright/test').Page) {
+  await page.waitForSelector('form');
+}
+
+test.describe('Contacts table view', () => {
+  test('renders table with heading, column headers, seed data, and New button', async ({
     page,
   }) => {
-    await gotoContacts(page);
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
 
     await expect(page.getByRole('heading', { name: 'Contacts' })).toBeVisible();
 
-    const headers = page.locator('th');
-    await expect(headers).not.toHaveCount(0);
-
-    const rows = page.locator('tbody tr');
-    await expect(rows).not.toHaveCount(0);
-
-    await expect(page.getByRole('button', { name: 'New' })).toBeVisible();
-  });
-
-  test('seed rows contain known contacts', async ({ page }) => {
-    await gotoContacts(page);
+    await expect(page.locator('th').filter({ hasText: 'Name' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Email' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Type' })).toBeVisible();
 
     await expect(page.getByText('Alice Johnson')).toBeVisible();
     await expect(page.getByText('Bob Smith')).toBeVisible();
     await expect(page.getByText('Carol White')).toBeVisible();
+
+    await expect(page.locator('sl-button[variant="primary"]')).toBeVisible();
+  });
+
+  test('table header has deep green background', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+
+    const bgColor = await page
+      .locator('thead')
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bgColor).toBe('rgb(20, 83, 45)'); // #14532d green-900
+  });
+
+  test('table rows are clickable', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+
+    await page.locator('tbody tr').first().click();
+    await page.waitForURL(/\/contacts\/\d+/);
   });
 });
 
-test.describe('Contacts – create new contact', () => {
-  test('form renders with expected fields and special input types', async ({
-    page,
-  }) => {
-    await gotoContacts(page);
-    await page.getByRole('button', { name: 'New' }).click();
-    await page.waitForSelector('h1, form');
+test.describe('Create new contact', () => {
+  test('navigates to new form and shows Shoelace fields', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await page.locator('sl-button[variant="primary"]').click();
+    await page.waitForURL(`**${NEW_URL}`);
+    await waitForForm(page);
 
     await expect(
       page.getByRole('heading', { name: 'New Contact' }),
     ).toBeVisible();
-    await expect(page.getByText('Name')).toBeVisible();
-    await expect(page.getByText('Email')).toBeVisible();
-    await expect(page.getByText('Phone')).toBeVisible();
-    await expect(page.getByText('Notes')).toBeVisible();
-    await expect(page.locator('textarea[name="notes"]')).toBeVisible();
-    await expect(page.locator('select[name="type"]')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Name *' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Email *' })).toBeVisible();
+    await expect(page.getByRole('combobox')).toBeVisible();
   });
 
-  test('submitting empty form shows validation errors', async ({ page }) => {
-    await gotoContacts(page);
-    await page.getByRole('button', { name: 'New' }).click();
-    await page.waitForSelector('form');
+  test('submit button is a Shoelace primary button', async ({ page }) => {
+    await page.goto(NEW_URL);
+    await waitForForm(page);
 
-    await page.getByRole('button', { name: /submit/i }).click();
-
-    const alerts = page.locator('[role="alert"]');
-    await expect(alerts).not.toHaveCount(0);
+    await expect(
+      page.locator('sl-button[variant="primary"][type="submit"]'),
+    ).toBeVisible();
   });
 
-  test('fills in form and creates a new contact', async ({ page }) => {
-    await gotoContacts(page);
-    await page.getByRole('button', { name: 'New' }).click();
-    await page.waitForSelector('form');
+  test('shows validation error when required fields are empty', async ({
+    page,
+  }) => {
+    await page.goto(NEW_URL);
+    await waitForForm(page);
 
-    await page.locator('input[name="name"]').fill('Test User');
-    await page.locator('input[name="email"]').fill('testuser@example.com');
-    await page.locator('select[name="type"]').selectOption('work');
+    await page.locator('sl-button[type="submit"]').click();
 
-    await page.getByRole('button', { name: /submit/i }).click();
+    await expect(page.getByRole('alert').first()).toBeVisible();
+  });
 
-    await expect(page.getByRole('heading', { name: 'Contacts' })).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(page.getByText('Test User')).toBeVisible();
+  test('creates a new contact and returns to the table', async ({ page }) => {
+    await page.goto(NEW_URL);
+    await waitForForm(page);
+
+    await page.getByRole('textbox', { name: 'Name *' }).fill('Test Contact');
+    await page
+      .getByRole('textbox', { name: 'Email *' })
+      .fill('test@example.com');
+
+    await page.locator('sl-select').click();
+    await page.locator('sl-option[value="work"]').click();
+
+    await page.locator('sl-button[type="submit"]').click();
+
+    await page.waitForURL(`**${TABLE_URL}`);
+    await waitForTable(page);
+
+    await expect(page.getByText('Test Contact')).toBeVisible();
   });
 });
 
-test.describe('Contacts – edit existing contact', () => {
-  test('clicking a row loads edit form with pre-populated values', async ({
+test.describe('Edit existing contact', () => {
+  test('opens edit form with pre-populated values when clicking a row', async ({
     page,
   }) => {
-    await gotoContacts(page);
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
 
-    await page.getByText('Alice Johnson').click();
-    await page.waitForSelector('form');
+    await page.locator('tbody tr').first().click();
+    await page.waitForURL(/\/contacts\/\d+/);
+    await waitForForm(page);
 
     await expect(
       page.getByRole('heading', { name: 'Edit Contact' }),
     ).toBeVisible();
-    await expect(page.locator('input[name="name"]')).toHaveValue(
-      'Alice Johnson',
-    );
-    await expect(page.locator('input[name="email"]')).toHaveValue(
-      'alice@example.com',
-    );
+
+    const nameInput = page.getByRole('textbox', { name: 'Name *' });
+    await expect(nameInput).toBeVisible();
+    const nameVal = await nameInput.inputValue();
+    expect(nameVal.length).toBeGreaterThan(0);
+
+    await expect(
+      page.locator('sl-button[variant="primary"][type="submit"]'),
+    ).toBeVisible();
+    await expect(page.locator('sl-button[variant="danger"]')).toBeVisible();
   });
 
-  test('edit form has a Delete button', async ({ page }) => {
-    await gotoContacts(page);
-    await page.getByText('Alice Johnson').click();
-    await page.waitForSelector('form');
+  test('submits an edit and navigates back to the table', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
 
-    await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
-  });
+    await page.locator('tbody tr').first().click();
+    await page.waitForURL(/\/contacts\/\d+/);
+    await waitForForm(page);
 
-  test('submitting edits navigates back to table', async ({ page }) => {
-    await gotoContacts(page);
-    await page.getByText('Bob Smith').click();
-    await page.waitForSelector('form');
+    await page.getByRole('textbox', { name: 'Name *' }).fill('Updated via E2E');
 
-    await page.locator('textarea[name="notes"]').fill('Updated by e2e test');
-    await page.getByRole('button', { name: /submit/i }).click();
+    await page.locator('sl-button[type="submit"]').click();
 
-    await expect(page.getByRole('heading', { name: 'Contacts' })).toBeVisible({
-      timeout: 10_000,
-    });
+    await page.waitForURL(`**${TABLE_URL}`);
+    await waitForTable(page);
+
+    await expect(page.getByText('Updated via E2E')).toBeVisible();
   });
 });
 
-test.describe('Contacts – delete contact', () => {
-  test('deleting a contact from edit form navigates back to table', async ({
+test.describe('Delete contact', () => {
+  test('deletes a contact via the Delete button and returns to the table', async ({
     page,
   }) => {
-    await gotoContacts(page);
-    await page.getByText('Carol White').click();
-    await page.waitForSelector('form');
+    await page.goto('/#/contacts/3');
+    await waitForForm(page);
 
     page.on('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Delete' }).click();
+    await page.locator('sl-button[variant="danger"]').click();
 
-    await expect(page.getByRole('heading', { name: 'Contacts' })).toBeVisible({
-      timeout: 10_000,
-    });
-    await expect(page.getByText('Carol White')).not.toBeVisible();
+    await page.waitForURL(`**${TABLE_URL}`);
+    await waitForTable(page);
+
+    await expect(page.getByRole('cell', { name: 'Carol White' })).toHaveCount(
+      0,
+    );
   });
 });

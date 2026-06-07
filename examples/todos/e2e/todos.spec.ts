@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test';
 
-const TABLE_URL = '/retrofit-ui/#/todos';
-const NEW_URL = '/retrofit-ui/#/todos/new';
+const TABLE_URL = '/#/todos';
+const NEW_URL = '/#/todos/new';
 
-async function waitForContent(page: import('@playwright/test').Page) {
-  await page.waitForFunction(() => {
-    const p = document.querySelector('p');
-    return p?.textContent !== 'Loading...';
-  });
+async function waitForTable(page: import('@playwright/test').Page) {
+  await page.waitForSelector('table');
+}
+
+async function waitForForm(page: import('@playwright/test').Page) {
+  await page.waitForSelector('form');
 }
 
 test.describe('Todos table view', () => {
@@ -15,7 +16,7 @@ test.describe('Todos table view', () => {
     page,
   }) => {
     await page.goto(TABLE_URL);
-    await waitForContent(page);
+    await waitForTable(page);
 
     await expect(page.getByRole('heading', { name: 'Todos' })).toBeVisible();
 
@@ -30,37 +31,88 @@ test.describe('Todos table view', () => {
     await expect(page.getByText('Walk the dog')).toBeVisible();
     await expect(page.getByText('Write tests')).toBeVisible();
 
-    await expect(page.getByRole('button', { name: 'New' })).toBeVisible();
+    await expect(page.locator('sl-button[variant="primary"]')).toBeVisible();
+  });
+
+  test('New button is a Shoelace primary button', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+
+    const newButton = page.locator('sl-button[variant="primary"]');
+    await expect(newButton).toBeVisible();
+    await expect(newButton).toContainText('New');
+  });
+
+  test('table header has deep purple background', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+
+    const bgColor = await page
+      .locator('thead')
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bgColor).toBe('rgb(76, 29, 149)'); // #4c1d95 violet-900
+  });
+
+  test('table rows are clickable', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+
+    await page.locator('tbody tr').first().click();
+    await page.waitForURL(/\/todos\/\d+/);
   });
 });
 
 test.describe('Create new todo', () => {
-  test('navigates to new form and shows correct fields', async ({ page }) => {
+  test('navigates to new form and shows Shoelace form fields', async ({
+    page,
+  }) => {
     await page.goto(TABLE_URL);
-    await page.waitForSelector('button:text("New")');
-
-    await page.getByRole('button', { name: 'New' }).click();
+    await page.locator('sl-button[variant="primary"]').click();
     await page.waitForURL(`**${NEW_URL}`);
-    await waitForContent(page);
+    await waitForForm(page);
 
     await expect(page.getByRole('heading', { name: 'New Todo' })).toBeVisible();
-    await expect(page.locator('input#title')).toBeVisible();
-    await expect(page.locator('input#done[type="checkbox"]')).toBeVisible();
-    await expect(page.locator('select#priority')).toBeVisible();
-    await expect(page.locator('label[for="title"]')).toContainText(' *');
+    await expect(page.getByRole('textbox', { name: 'Title *' })).toBeVisible();
+    await expect(page.getByRole('checkbox')).toBeVisible();
+    await expect(page.getByRole('combobox')).toBeVisible();
+  });
+
+  test('submit button is a Shoelace primary button', async ({ page }) => {
+    await page.goto(NEW_URL);
+    await waitForForm(page);
+
+    await expect(
+      page.locator('sl-button[variant="primary"][type="submit"]'),
+    ).toBeVisible();
   });
 
   test('shows validation error when required fields are empty', async ({
     page,
   }) => {
     await page.goto(NEW_URL);
-    await waitForContent(page);
-    await page.waitForSelector('form');
+    await waitForForm(page);
 
-    await page.locator('input#title').fill('');
-    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.locator('sl-button[type="submit"]').click();
 
     await expect(page.getByRole('alert').first()).toBeVisible();
+  });
+
+  test('creates a new todo and returns to the table', async ({ page }) => {
+    await page.goto(NEW_URL);
+    await waitForForm(page);
+
+    await page.getByRole('textbox', { name: 'Title *' }).fill('Test new todo');
+
+    // sl-select: click to open, then pick the option
+    await page.locator('sl-select').click();
+    await page.locator('sl-option[value="high"]').click();
+
+    await page.locator('sl-button[type="submit"]').click();
+
+    await page.waitForURL(`**${TABLE_URL}`);
+    await waitForTable(page);
+
+    await expect(page.getByText('Test new todo')).toBeVisible();
   });
 });
 
@@ -69,37 +121,42 @@ test.describe('Edit existing todo', () => {
     page,
   }) => {
     await page.goto(TABLE_URL);
-    await waitForContent(page);
+    await waitForTable(page);
 
     await page.locator('tbody tr').first().click();
     await page.waitForURL(/\/todos\/\d+/);
-    await waitForContent(page);
+    await waitForForm(page);
 
     await expect(
       page.getByRole('heading', { name: 'Edit Todo' }),
     ).toBeVisible();
-    await expect(page.locator('input#id')).toBeDisabled();
 
-    const titleVal = await page.locator('input#title').inputValue();
+    const titleInput = page.getByRole('textbox', { name: 'Title *' });
+    await expect(titleInput).toBeVisible();
+    const titleVal = await titleInput.inputValue();
     expect(titleVal.length).toBeGreaterThan(0);
 
-    await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Delete' })).toBeVisible();
+    await expect(
+      page.locator('sl-button[variant="primary"][type="submit"]'),
+    ).toBeVisible();
+    await expect(page.locator('sl-button[variant="danger"]')).toBeVisible();
   });
 
   test('submits an edit and navigates back to the table', async ({ page }) => {
     await page.goto(TABLE_URL);
-    await waitForContent(page);
+    await waitForTable(page);
 
     await page.locator('tbody tr').first().click();
     await page.waitForURL(/\/todos\/\d+/);
-    await waitForContent(page);
+    await waitForForm(page);
 
-    await page.locator('input#title').fill('Updated via E2E');
-    await page.getByRole('button', { name: 'Submit' }).click();
+    const titleInput = page.getByRole('textbox', { name: 'Title *' });
+    await titleInput.fill('Updated via E2E');
+
+    await page.locator('sl-button[type="submit"]').click();
 
     await page.waitForURL(`**${TABLE_URL}`);
-    await waitForContent(page);
+    await waitForTable(page);
 
     await expect(page.getByText('Updated via E2E')).toBeVisible();
   });
@@ -109,15 +166,14 @@ test.describe('Delete todo', () => {
   test('deletes a todo via the Delete button and returns to the table', async ({
     page,
   }) => {
-    await page.goto('/retrofit-ui/#/todos/2');
-    await waitForContent(page);
-    await page.waitForSelector('form');
+    await page.goto('/#/todos/2');
+    await waitForForm(page);
 
     page.on('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Delete' }).click();
+    await page.locator('sl-button[variant="danger"]').click();
 
     await page.waitForURL(`**${TABLE_URL}`);
-    await waitForContent(page);
+    await waitForTable(page);
 
     await expect(page.getByRole('cell', { name: 'Walk the dog' })).toHaveCount(
       0,

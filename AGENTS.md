@@ -13,15 +13,10 @@ The primary renderer is **SolidJS**. React is supported as a secondary renderer.
 ```
 retrofit-ui/
 ├── packages/
-│   ├── core/               # @retrofit-ui/core — Zod schemas for all UI types
-│   │   └── src/types/      # table.ts, form.ts, view.ts, actions.ts, etc.
-│   ├── server/             # BFF server (Express + Next.js adapters)
-│   ├── renderers-solid/    # SolidJS renderer implementations (primary)
-│   ├── client-solid/       # SolidJS client primitives (primary)
-│   ├── renderers-react/    # React renderer implementations
-│   └── client-react/       # React client hooks and components
+│   ├── core/                      # @retrofit-ui/core — type definitions for all UI specs
+│   ├── schema-builder-zod/        # @retrofit-ui/schema-builder-zod — Zod schema → UI spec builders
+│   └── server-solid-shoelace/     # @retrofit-ui/server-solid-shoelace — Express adapter + SolidJS/Shoelace SPA
 ├── examples/
-├── docs/
 ├── pnpm-workspace.yaml
 └── package.json
 ```

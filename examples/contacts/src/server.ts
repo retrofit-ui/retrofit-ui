@@ -1,105 +1,48 @@
 import {
-  formFromSchema,
-  tableFromSchema,
-} from '@retrofit-ui/schema-builder-zod';
-import express from 'express';
+  createRetrofitApp,
+  resource,
+} from '@retrofit-ui/server-solid-shoelace';
 import { ContactSchema, UpdateContactSchema } from './schemas';
 import { store } from './store';
 
-const app = express();
-app.use(express.json());
-
-app.get('/api/ui/contacts', (_req, res) => {
-  const table = tableFromSchema(ContactSchema, store.all())
-    .withTitle('Contacts')
-    .withRowLink('/api/ui/contacts/{id}')
-    .withCreateUrl('/api/ui/contacts/new')
-    .withColumnOverrides({
-      name: { sortable: true },
-      email: { filterable: true },
-    })
-    .build();
-  res.json(table);
-});
-
-app.get('/api/ui/contacts/new', (_req, res) => {
-  const form = formFromSchema(ContactSchema)
-    .withMutability(UpdateContactSchema)
-    .withTitle('New Contact')
-    .withSubmit({ method: 'POST', url: '/api/ui/contacts' })
-    .withFieldOverrides({
-      notes: { type: 'textarea' },
-      phone: {
+const app = createRetrofitApp({
+  theme: {
+    cssVariables: {
+      '--sl-color-primary-50': '#f0fdf4',
+      '--sl-color-primary-100': '#dcfce7',
+      '--sl-color-primary-200': '#bbf7d0',
+      '--sl-color-primary-300': '#86efac',
+      '--sl-color-primary-400': '#4ade80',
+      '--sl-color-primary-500': '#22c55e',
+      '--sl-color-primary-600': '#16a34a',
+      '--sl-color-primary-700': '#15803d',
+      '--sl-color-primary-800': '#166534',
+      '--sl-color-primary-900': '#14532d',
+      '--sl-color-primary-950': '#052e16',
+    },
+    extraCss: `.retrofit-thead { background-color: #14532d; }
+.retrofit-th { color: #f0fdf4; border-bottom-color: #166534; }`,
+  },
+  resources: {
+    contacts: resource(ContactSchema)
+      .updateSchema(UpdateContactSchema)
+      .columnOverride('name', { sortable: true })
+      .columnOverride('email', { filterable: true })
+      .fieldOverride('notes', { type: 'textarea' })
+      .fieldOverride('phone', {
         placeholder: '+1 555 000 0000',
         validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
-      },
-    })
-    .build();
-  res.json(form);
-});
-
-app.get('/api/ui/contacts/:id', (req, res) => {
-  const id = req.params.id ?? '';
-  const entity = store.find(id);
-  if (!entity) {
-    res.status(404).json({ error: 'Not found' });
-    return;
-  }
-  const form = formFromSchema(ContactSchema)
-    .withMutability(UpdateContactSchema)
-    .withTitle('Edit Contact')
-    .withSubmit({ method: 'PUT', url: `/api/ui/contacts/${id}` })
-    .withDelete({ method: 'DELETE', url: `/api/ui/contacts/${id}` })
-    .withFieldOverrides({
-      notes: { type: 'textarea' },
-      phone: {
-        placeholder: '+1 555 000 0000',
-        validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
-      },
-    })
-    .build();
-  res.json({ spec: form, entity });
-});
-
-app.post('/api/ui/contacts', (req, res) => {
-  const result = UpdateContactSchema.safeParse(req.body);
-  if (!result.success) {
-    res.status(422).json({ errors: result.error.flatten() });
-    return;
-  }
-  const contact = store.create(result.data);
-  res.status(201).json(contact);
-});
-
-app.put('/api/ui/contacts/:id', (req, res) => {
-  const id = req.params.id ?? '';
-  const result = UpdateContactSchema.safeParse(req.body);
-  if (!result.success) {
-    res.status(422).json({ errors: result.error.flatten() });
-    return;
-  }
-  const updated = store.update(id, result.data);
-  if (!updated) {
-    res.status(404).json({ error: 'Not found' });
-    return;
-  }
-  res.json(updated);
-});
-
-app.delete('/api/ui/contacts/:id', (req, res) => {
-  const id = req.params.id ?? '';
-  const deleted = store.delete(id);
-  if (!deleted) {
-    res.status(404).json({ error: 'Not found' });
-    return;
-  }
-  res.status(204).send();
+      })
+      .list(() => store.all())
+      .find((id) => store.find(id))
+      .create((data) => store.create(data))
+      .update((id, data) => store.update(id, data))
+      .delete((id) => store.delete(id))
+      .build(),
+  },
 });
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {
-  console.log(`Contacts API running at http://localhost:${PORT}`);
-  console.log(`  GET  http://localhost:${PORT}/api/ui/contacts`);
-  console.log(`  GET  http://localhost:${PORT}/api/ui/contacts/new`);
-  console.log(`  GET  http://localhost:${PORT}/api/ui/contacts/1`);
+  console.log(`Contacts server running at http://localhost:${PORT}`);
 });

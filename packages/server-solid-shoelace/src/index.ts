@@ -1,25 +1,14 @@
 export type {
   EndpointDirective,
   FormSpec,
-  ResourceSpec,
+  MarkdownViewSpec,
+  RowAction,
   TableSpec,
 } from '@retrofit-ui/core';
-export {
-  createExpressRouter,
-  createRetrofitApp,
-  retrofitUi,
-} from './adapters/express';
+export { retrofitUi } from './adapters/express';
 export { serveUiShell } from './adapters/ui-shell';
-export { defineConfig, defineRetrofitConfig } from './config';
-export { FormRegistry } from './registry';
-export { ResourceBuilder, resource } from './resource-builder';
-export { zodToJsonSchema } from './schema-utils';
-export type {
-  FormConfig,
-  ResourceConfig,
-  RetrofitConfig,
-  RetrofitTheme,
-} from './types';
+export { FormSpecBuilder, formSpec } from './form-builder';
+export type { RetrofitTheme } from './types';
 export { TableView, TableViewBuilder } from './view-builder';
 export {
   TableFormWorkflowBundle,

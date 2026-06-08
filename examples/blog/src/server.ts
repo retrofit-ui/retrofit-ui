@@ -4,8 +4,10 @@
 // with no frontend changes required. This is the server-driven UI principle.
 
 import {
+  formSpec,
+  type MarkdownViewSpec,
   retrofitUi,
-  TableFormWorkflowBundle,
+  TableView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
 import { PostSchema, UpdatePostSchema } from './schemas';
@@ -58,30 +60,54 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-TableFormWorkflowBundle.schema(PostSchema)
-  .updateSchema(UpdatePostSchema)
-  .table((t) =>
-    t
-      .columnOverride('title', { sortable: true, filterable: true })
-      .columnOverride('status', { filterable: true }),
-  )
-  .form((f) =>
-    f
-      .fieldOverride('body', { type: 'textarea' })
-      .fieldOverride('slug', {
-        helpText: 'lowercase, hyphens only',
-        validation: { pattern: '^[a-z0-9-]+$' },
-      })
-      .fieldOverride('tags', { helpText: 'comma-separated' })
-      .fieldOverride('title', { validation: { max: 200 } }),
-  )
-  .list({ method: 'GET', url: '/posts' })
-  .find({ method: 'GET', url: '/posts/{id}' })
-  .create({ method: 'POST', url: '/posts' })
-  .update({ method: 'PUT', url: '/posts/{id}' })
-  .delete({ method: 'DELETE', url: '/posts/{id}' })
-  .build()
-  .register(app, retrofit, '/api/ui/posts');
+// Table view — click row to edit, Preview button to render
+app.get('/api/ui/posts', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.schema(PostSchema)
+        .columnOverride('title', { sortable: true })
+        .columnOverride('status', { filterable: true })
+        .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
+        .find({ method: 'GET', url: '/posts/{id}' })
+        .list({ method: 'GET', url: '/posts' })
+        .create({ method: 'POST', url: '/posts' })
+        .build(),
+    ),
+  );
+});
+
+// Form view — handles new (/api/ui/posts/new) and edit (/api/ui/posts/:id)
+// Express ':id' matches 'new' too, so one handler covers both
+app.get('/api/ui/posts/:id', (_req, res) => {
+  res.json(
+    retrofit(
+      formSpec(PostSchema, UpdatePostSchema)
+        .fieldOverride('body', { type: 'markdown' })
+        .fieldOverride('slug', {
+          helpText: 'lowercase, hyphens only',
+          validation: { pattern: '^[a-z0-9-]+$' },
+        })
+        .fieldOverride('tags', { helpText: 'comma-separated' })
+        .fieldOverride('title', { validation: { max: 200 } })
+        .find({ method: 'GET', url: '/posts/{id}' })
+        .create({ method: 'POST', url: '/posts' })
+        .update({ method: 'PUT', url: '/posts/{id}' })
+        .delete({ method: 'DELETE', url: '/posts/{id}' })
+        .build(),
+    ),
+  );
+});
+
+// Markdown render spec — 3 path segments, won't conflict with /:id above
+app.get('/api/ui/posts/:id/render', (_req, res) => {
+  res.json(
+    retrofit({
+      entityEndpoint: { method: 'GET', url: '/posts/{id}' },
+      field: 'body',
+      metadata: { title: 'Preview' },
+    } satisfies MarkdownViewSpec),
+  );
+});
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

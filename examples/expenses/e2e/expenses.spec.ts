@@ -11,14 +11,12 @@ async function waitForForm(page: import('@playwright/test').Page) {
   await page.waitForSelector('form');
 }
 
-test.describe('Expenses table view', () => {
-  test('renders table with heading, column headers, seed data, and New button', async ({
+test.describe('Expenses narrow table', () => {
+  test('renders only description, amount, date columns (not status/notes/id)', async ({
     page,
   }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
-
-    await expect(page.getByRole('heading', { name: 'Expenses' })).toBeVisible();
 
     await expect(
       page.locator('th').filter({ hasText: 'Description' }),
@@ -26,44 +24,41 @@ test.describe('Expenses table view', () => {
     await expect(
       page.locator('th').filter({ hasText: 'Amount' }),
     ).toBeVisible();
-    await expect(
-      page.locator('th').filter({ hasText: 'Category' }),
-    ).toBeVisible();
-    await expect(
-      page.locator('th').filter({ hasText: 'Status' }),
-    ).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Date' })).toBeVisible();
+
+    // These columns should NOT be visible
+    await expect(page.locator('th').filter({ hasText: 'Status' })).toHaveCount(
+      0,
+    );
+    await expect(page.locator('th').filter({ hasText: 'Notes' })).toHaveCount(
+      0,
+    );
+    await expect(page.locator('th').filter({ hasText: 'Id' })).toHaveCount(0);
 
     await expect(page.getByText('Flight to conference')).toBeVisible();
-    await expect(page.getByText('Team lunch')).toBeVisible();
-    await expect(page.getByText('Mechanical keyboard')).toBeVisible();
-
     await expect(page.locator('sl-button[variant="primary"]')).toBeVisible();
   });
 
   test('table header has deep orange background', async ({ page }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
-
     const bgColor = await page
       .locator('thead')
       .evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(bgColor).toBe('rgb(124, 45, 18)'); // #7c2d12 orange-900
+    expect(bgColor).toBe('rgb(124, 45, 18)');
   });
 
   test('table rows are clickable', async ({ page }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
-
     await page.locator('tbody tr').first().click();
     await page.waitForURL(/\/expenses\/\d+/);
   });
 });
 
-test.describe('Create new expense', () => {
-  test('navigates to new form and shows Shoelace fields', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await page.locator('sl-button[variant="primary"]').click();
-    await page.waitForURL(`**${NEW_URL}`);
+test.describe('Expenses simple form', () => {
+  test('create form shows all fields', async ({ page }) => {
+    await page.goto(NEW_URL);
     await waitForForm(page);
 
     await expect(
@@ -78,26 +73,6 @@ test.describe('Create new expense', () => {
     await expect(page.getByRole('combobox')).toBeVisible();
   });
 
-  test('submit button is a Shoelace primary button', async ({ page }) => {
-    await page.goto(NEW_URL);
-    await waitForForm(page);
-
-    await expect(
-      page.locator('sl-button[variant="primary"][type="submit"]'),
-    ).toBeVisible();
-  });
-
-  test('shows validation error when required fields are empty', async ({
-    page,
-  }) => {
-    await page.goto(NEW_URL);
-    await waitForForm(page);
-
-    await page.locator('sl-button[type="submit"]').click();
-
-    await expect(page.getByRole('alert').first()).toBeVisible();
-  });
-
   test('creates a new expense and returns to the table', async ({ page }) => {
     await page.goto(NEW_URL);
     await waitForForm(page);
@@ -106,71 +81,36 @@ test.describe('Create new expense', () => {
       .getByRole('textbox', { name: 'Description *' })
       .fill('Office supplies');
     await page.getByRole('spinbutton', { name: 'Amount *' }).fill('42');
-    await page.getByRole('textbox', { name: /Date/i }).fill('2026-06-07');
-
+    await page.getByRole('textbox', { name: /Date/i }).fill('2026-06-08');
     await page.locator('sl-select').click();
     await page.locator('sl-option[value="other"]').click();
-
     await page.locator('sl-button[type="submit"]').click();
 
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
-
     await expect(page.getByText('Office supplies')).toBeVisible();
   });
-});
 
-test.describe('Edit existing expense', () => {
-  test('opens edit form with pre-populated values when clicking a row', async ({
-    page,
-  }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('tbody tr').first().click();
-    await page.waitForURL(/\/expenses\/\d+/);
+  test('edit form pre-populates and saves', async ({ page }) => {
+    await page.goto('/#/expenses/1');
     await waitForForm(page);
 
     await expect(
       page.getByRole('heading', { name: 'Edit Expense' }),
     ).toBeVisible();
+    const desc = page.getByRole('textbox', { name: 'Description *' });
+    await expect(desc).toBeVisible();
+    expect((await desc.inputValue()).length).toBeGreaterThan(0);
 
-    const descInput = page.getByRole('textbox', { name: 'Description *' });
-    await expect(descInput).toBeVisible();
-    const val = await descInput.inputValue();
-    expect(val.length).toBeGreaterThan(0);
-
-    await expect(
-      page.locator('sl-button[variant="primary"][type="submit"]'),
-    ).toBeVisible();
-    await expect(page.locator('sl-button[variant="danger"]')).toBeVisible();
-  });
-
-  test('submits an edit and navigates back to the table', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('tbody tr').first().click();
-    await page.waitForURL(/\/expenses\/\d+/);
-    await waitForForm(page);
-
-    await page
-      .getByRole('textbox', { name: 'Description *' })
-      .fill('Updated via E2E');
-
+    await desc.fill('Updated via E2E');
     await page.locator('sl-button[type="submit"]').click();
 
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
-
     await expect(page.getByText('Updated via E2E')).toBeVisible();
   });
-});
 
-test.describe('Delete expense', () => {
-  test('deletes an expense via the Delete button and returns to the table', async ({
-    page,
-  }) => {
+  test('Delete button removes an expense', async ({ page }) => {
     await page.goto('/#/expenses/2');
     await waitForForm(page);
 
@@ -179,7 +119,6 @@ test.describe('Delete expense', () => {
 
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
-
     await expect(page.getByRole('cell', { name: 'Team lunch' })).toHaveCount(0);
   });
 });

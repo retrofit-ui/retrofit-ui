@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FieldOptionSchema } from './form';
 
 export const ColumnTypeSchema = z.enum([
   'string',
@@ -16,8 +17,10 @@ export const ColumnSchema = z.object({
   type: ColumnTypeSchema,
   sortable: z.boolean().default(false),
   filterable: z.boolean().default(false),
+  editable: z.boolean().default(false),
   width: z.string().optional(),
   alignment: z.enum(['left', 'center', 'right']).default('left'),
+  options: z.array(FieldOptionSchema).optional(),
 });
 export type Column = z.infer<typeof ColumnSchema>;
 

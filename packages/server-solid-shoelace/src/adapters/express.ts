@@ -209,10 +209,10 @@ export function createRetrofitApp(config: RetrofitConfig): express.Express {
 export function retrofitUi(
   app: express.Express,
   config: { theme?: RetrofitTheme; apiBase?: string } = {},
-): (spec: ResourceSpec) => ResourceSpec {
+): <T>(spec: T) => T {
   app.get('/retrofit.json', (_req: Request, res: Response) => {
     res.json({ apiBase: config.apiBase ?? '/api/ui', theme: config.theme });
   });
   app.use(serveUiShell(config.theme));
-  return (spec) => spec;
+  return <T>(spec: T): T => spec;
 }

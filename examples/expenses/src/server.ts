@@ -8,7 +8,10 @@
  * client-side deploy needed.
  */
 
-import { retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
+import {
+  retrofitUi,
+  TableFormWorkflowBundle,
+} from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
 import { CreateExpenseSchema, ExpenseSchema } from './schemas';
 import { store } from './store';
@@ -47,31 +50,32 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-app.get('/api/ui/expenses', (_req, res) => {
-  res.json(
-    retrofit(
-      TableView.schema(ExpenseSchema)
-        .updateSchema(CreateExpenseSchema)
-        .columnOverride('amount', { sortable: true })
-        .columnOverride('category', { filterable: true })
-        .columnOverride('status', { filterable: true })
-        .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
-        .fieldOverride('date', {
-          placeholder: 'YYYY-MM-DD',
-          helpText: 'YYYY-MM-DD',
-          validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-        })
-        .fieldOverride('notes', { type: 'textarea' })
-        .fieldOverride('description', { validation: { min: 3 } })
-        .list({ method: 'GET', url: '/expenses' })
-        .find({ method: 'GET', url: '/expenses/{id}' })
-        .create({ method: 'POST', url: '/expenses' })
-        .update({ method: 'PUT', url: '/expenses/{id}' })
-        .delete({ method: 'DELETE', url: '/expenses/{id}' })
-        .build(),
-    ),
-  );
-});
+TableFormWorkflowBundle.schema(ExpenseSchema)
+  .updateSchema(CreateExpenseSchema)
+  .table((t) =>
+    t
+      .columnOverride('amount', { sortable: true })
+      .columnOverride('category', { filterable: true })
+      .columnOverride('status', { filterable: true }),
+  )
+  .form((f) =>
+    f
+      .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
+      .fieldOverride('date', {
+        placeholder: 'YYYY-MM-DD',
+        helpText: 'YYYY-MM-DD',
+        validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+      })
+      .fieldOverride('notes', { type: 'textarea' })
+      .fieldOverride('description', { validation: { min: 3 } }),
+  )
+  .list({ method: 'GET', url: '/expenses' })
+  .find({ method: 'GET', url: '/expenses/{id}' })
+  .create({ method: 'POST', url: '/expenses' })
+  .update({ method: 'PUT', url: '/expenses/{id}' })
+  .delete({ method: 'DELETE', url: '/expenses/{id}' })
+  .build()
+  .register(app, retrofit, '/api/ui/expenses');
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

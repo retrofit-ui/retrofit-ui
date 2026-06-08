@@ -1,4 +1,7 @@
-import { retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
+import {
+  retrofitUi,
+  TableFormWorkflowBundle,
+} from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
 import { CreateTodoSchema, TodoSchema } from './schemas';
 import { store } from './store';
@@ -37,20 +40,15 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-app.get('/api/ui/todos', (_req, res) => {
-  res.json(
-    retrofit(
-      TableView.schema(TodoSchema)
-        .updateSchema(CreateTodoSchema)
-        .list({ method: 'GET', url: '/todos' })
-        .find({ method: 'GET', url: '/todos/{id}' })
-        .create({ method: 'POST', url: '/todos' })
-        .update({ method: 'PUT', url: '/todos/{id}' })
-        .delete({ method: 'DELETE', url: '/todos/{id}' })
-        .build(),
-    ),
-  );
-});
+TableFormWorkflowBundle.schema(TodoSchema)
+  .updateSchema(CreateTodoSchema)
+  .list({ method: 'GET', url: '/todos' })
+  .find({ method: 'GET', url: '/todos/{id}' })
+  .create({ method: 'POST', url: '/todos' })
+  .update({ method: 'PUT', url: '/todos/{id}' })
+  .delete({ method: 'DELETE', url: '/todos/{id}' })
+  .build()
+  .register(app, retrofit, '/api/ui/todos');
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

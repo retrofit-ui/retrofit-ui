@@ -8,7 +8,20 @@ setBasePath(
   'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/',
 );
 
-const root = document.getElementById('root');
-if (root) {
-  render(() => <App />, root);
+async function init() {
+  let apiBase = '/api/ui';
+  try {
+    const cfg = (await fetch('/retrofit.json').then((r) => r.json())) as {
+      apiBase?: string;
+    };
+    apiBase = cfg.apiBase ?? '/api/ui';
+  } catch {
+    // fall back to same-origin default
+  }
+  const root = document.getElementById('root');
+  if (root) {
+    render(() => <App apiBase={apiBase} />, root);
+  }
 }
+
+init();

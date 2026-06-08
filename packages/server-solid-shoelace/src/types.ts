@@ -31,4 +31,7 @@ export interface RetrofitConfig {
   resources?: Record<string, ResourceConfig>;
   customRenderers?: unknown[];
   theme?: RetrofitTheme;
+  /** Full base path for resource API calls. Default: '/api/ui'.
+   *  E.g. 'http://java-server:8080/api/ui' for cross-origin deployments. */
+  apiBase?: string;
 }

@@ -5,39 +5,52 @@ import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
-import type { Form } from '@retrofit-ui/core';
+import type { ResourceSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
-import { createResource, createSignal, For, Show } from 'solid-js';
+import { createResource, createSignal, For, Show, useContext } from 'solid-js';
+import { ApiBaseContext } from './App';
 
-interface FormWithEntity {
-  spec: Form;
+interface FormViewData {
+  spec: ResourceSpec;
   entity: Record<string, unknown>;
 }
 
-async function fetchForm(
+async function fetchFormView(
   resource: string,
   id: string | undefined,
-): Promise<FormWithEntity> {
-  if (id === undefined || id === 'new') {
-    const res = await fetch(`/api/ui/${resource}/new`);
-    if (!res.ok) throw new Error(`Failed to fetch form for ${resource}`);
-    const form = (await res.json()) as Form;
-    return { spec: form, entity: {} };
+  apiBase: string,
+): Promise<FormViewData> {
+  const res = await fetch(`${apiBase}/${resource}`);
+  if (!res.ok) throw new Error(`Failed to fetch spec for ${resource}`);
+  const spec = (await res.json()) as ResourceSpec;
+
+  if (!id || id === 'new') {
+    return { spec, entity: {} };
   }
-  const res = await fetch(`/api/ui/${resource}/${id}`);
-  if (!res.ok) throw new Error(`Failed to fetch form for ${resource}/${id}`);
-  return res.json() as Promise<FormWithEntity>;
+
+  const findEndpoint = spec.endpoints?.find;
+  if (!findEndpoint) {
+    return { spec, entity: {} };
+  }
+
+  const entityUrl = findEndpoint.url.replace('{id}', id);
+  const entityRes = await fetch(entityUrl);
+  if (!entityRes.ok)
+    throw new Error(`Failed to fetch entity from ${entityUrl}`);
+  const entity = (await entityRes.json()) as Record<string, unknown>;
+  return { spec, entity };
 }
 
 export function FormView() {
   const params = useParams<{ resource: string; id?: string }>();
   const navigate = useNavigate();
+  const apiBase = useContext(ApiBaseContext);
 
   const isNew = () => !params.id || params.id === 'new';
 
   const [data] = createResource(
     () => ({ resource: params.resource, id: params.id }),
-    ({ resource, id }) => fetchForm(resource, id),
+    ({ resource, id }) => fetchFormView(resource, id, apiBase),
   );
 
   return (
@@ -51,7 +64,7 @@ export function FormView() {
       <Show when={data()}>
         {(d) => (
           <FormEditor
-            form={d().spec}
+            spec={d().spec}
             entity={d().entity}
             resource={params.resource}
             id={isNew() ? undefined : params.id}
@@ -64,17 +77,49 @@ export function FormView() {
 }
 
 interface FormEditorProps {
-  form: Form;
+  spec: ResourceSpec;
   entity: Record<string, unknown>;
   resource: string;
   id: string | undefined;
   onDone: () => void;
 }
 
+function singularize(name: string): string {
+  const s = name.endsWith('s') ? name.slice(0, -1) : name;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function FormEditor(props: FormEditorProps) {
+  const submitAction = () => {
+    if (props.id) {
+      const ep = props.spec.endpoints?.update;
+      if (!ep) return undefined;
+      return { method: ep.method, url: ep.url.replace('{id}', props.id) };
+    }
+    return props.spec.endpoints?.create;
+  };
+
+  const deleteAction = () => {
+    if (!props.id) return undefined;
+    const ep = props.spec.endpoints?.delete;
+    if (!ep) return undefined;
+    return { method: ep.method, url: ep.url.replace('{id}', props.id) };
+  };
+
+  const submitLabel = () => (props.id ? 'Save' : 'Create');
+
+  const title = () => {
+    const base = props.spec.metadata?.title ?? singularize(props.resource);
+    return props.id ? `Edit ${base}` : `New ${base}`;
+  };
+
+  // On create forms, hide readOnly fields (server-managed; can't be set during creation)
+  const visibleFields = () =>
+    props.id ? props.spec.fields : props.spec.fields.filter((f) => !f.readOnly);
+
   const initialValues = () =>
     Object.fromEntries(
-      props.form.fields.map((f) => {
+      visibleFields().map((f) => {
         const existing = props.entity[f.name];
         if (existing !== undefined) return [f.name, existing];
         if (f.type === 'checkbox') return [f.name, false];
@@ -97,7 +142,7 @@ function FormEditor(props: FormEditorProps) {
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
-    for (const field of props.form.fields) {
+    for (const field of visibleFields()) {
       if (field.readOnly) continue;
       const val = values()[field.name];
       if (field.required && (val === undefined || val === '' || val === null)) {
@@ -111,7 +156,7 @@ function FormEditor(props: FormEditorProps) {
   async function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!validate()) return;
-    const action = props.form.metadata?.submitAction;
+    const action = submitAction();
     if (!action) return;
     setSubmitting(true);
     setSubmitError(undefined);
@@ -138,7 +183,7 @@ function FormEditor(props: FormEditorProps) {
   }
 
   async function handleDelete() {
-    const action = props.form.metadata?.deleteAction;
+    const action = deleteAction();
     if (!action) return;
     if (!confirm('Delete this item?')) return;
     try {
@@ -158,9 +203,7 @@ function FormEditor(props: FormEditorProps) {
       <button type="button" onClick={props.onDone} class="retrofit-back-btn">
         &larr; Back
       </button>
-      <Show when={props.form.metadata?.title}>
-        <h1 class="retrofit-page-title">{props.form.metadata?.title}</h1>
-      </Show>
+      <h1 class="retrofit-page-title">{title()}</h1>
       <form
         onSubmit={handleSubmit}
         style={{
@@ -169,7 +212,7 @@ function FormEditor(props: FormEditorProps) {
           gap: 'var(--sl-spacing-medium)',
         }}
       >
-        <For each={props.form.fields}>
+        <For each={visibleFields()}>
           {(field) => {
             const fieldLabel = () => field.label + (field.required ? ' *' : '');
             const err = () => errors()[field.name];
@@ -281,9 +324,9 @@ function FormEditor(props: FormEditorProps) {
         </Show>
         <div class="retrofit-form-actions">
           <sl-button type="submit" variant="primary" disabled={submitting()}>
-            {props.form.metadata?.submitLabel ?? 'Submit'}
+            {submitLabel()}
           </sl-button>
-          <Show when={props.form.metadata?.deleteAction}>
+          <Show when={deleteAction()}>
             <sl-button type="button" variant="danger" on:click={handleDelete}>
               Delete
             </sl-button>

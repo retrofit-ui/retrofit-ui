@@ -37,7 +37,11 @@ export function serveUiShell(theme?: RetrofitTheme): express.RequestHandler {
 
   return (req: Request, res: Response, next) => {
     staticMiddleware(req, res, () => {
-      // Fall back to index.html for SPA routing
+      // SPA uses hash routing — only serve index.html for GET /
+      if (req.method !== 'GET' || req.path !== '/') {
+        next();
+        return;
+      }
       if (!fs.existsSync(indexPath)) {
         next();
         return;

@@ -1,58 +1,75 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 
-import type { Table } from '@retrofit-ui/core';
+import type { ResourceSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
-import { createResource, For, Show } from 'solid-js';
+import { createResource, For, Show, useContext } from 'solid-js';
+import { ApiBaseContext } from './App';
 
-async function fetchTable(resource: string): Promise<Table> {
-  const res = await fetch(`/api/ui/${resource}`);
-  if (!res.ok) throw new Error(`Failed to fetch table for ${resource}`);
-  return res.json() as Promise<Table>;
+interface TableViewData {
+  spec: ResourceSpec;
+  data: unknown[];
 }
 
-function extractId(
-  rowLink: string,
-  row: Record<string, unknown>,
-): string | undefined {
-  const match = rowLink.match(/\{(\w+)\}/);
-  if (!match) return undefined;
-  const fieldName = match[1];
-  if (!fieldName) return undefined;
-  const val = row[fieldName];
-  return val != null ? String(val) : undefined;
+async function fetchTableView(
+  resource: string,
+  apiBase: string,
+): Promise<TableViewData> {
+  const res = await fetch(`${apiBase}/${resource}`);
+  if (!res.ok) throw new Error(`Failed to fetch spec for ${resource}`);
+  const spec = (await res.json()) as ResourceSpec;
+
+  let data: unknown[] = [];
+  if (spec.endpoints?.list) {
+    const dataRes = await fetch(spec.endpoints.list.url);
+    if (dataRes.ok) {
+      data = (await dataRes.json()) as unknown[];
+    }
+  }
+
+  return { spec, data };
+}
+
+function extractIdField(findUrl: string): string {
+  const match = findUrl.match(/\{(\w+)\}/);
+  return match?.[1] ?? 'id';
 }
 
 export function TableView() {
   const params = useParams<{ resource: string }>();
   const navigate = useNavigate();
+  const apiBase = useContext(ApiBaseContext);
 
-  const [table] = createResource(() => params.resource, fetchTable);
+  const [view] = createResource(
+    () => params.resource,
+    (resource) => fetchTableView(resource, apiBase),
+  );
 
   function rowClick(row: Record<string, unknown>) {
-    const t = table();
-    if (!t?.metadata?.rowLink) return;
-    const id = extractId(t.metadata.rowLink, row);
-    if (id) {
-      navigate(`/${params.resource}/${id}`);
+    const v = view();
+    if (!v?.spec.endpoints?.find) return;
+    const idField = extractIdField(v.spec.endpoints.find.url);
+    const id = row[idField];
+    if (id != null) {
+      navigate(`/${params.resource}/${String(id)}`);
     }
   }
 
   return (
     <div class="retrofit-view">
-      <Show when={table.loading}>
+      <Show when={view.loading}>
         <p class="retrofit-muted">Loading...</p>
       </Show>
-      <Show when={table.error}>
-        <p class="retrofit-error-message">Error: {String(table.error)}</p>
+      <Show when={view.error}>
+        <p class="retrofit-error-message">Error: {String(view.error)}</p>
       </Show>
-      <Show when={table()}>
-        {(t) => (
+      <Show when={view()}>
+        {(v) => (
           <div>
             <div class="retrofit-page-header">
               <h1 class="retrofit-page-title">
-                {t().metadata?.title ?? params.resource}
+                {v().spec.metadata?.title ?? params.resource}
               </h1>
-              <Show when={t().metadata?.createUrl}>
+              <Show when={v().spec.endpoints?.create}>
                 <sl-button
                   variant="primary"
                   on:click={() => navigate(`/${params.resource}/new`)}
@@ -62,13 +79,13 @@ export function TableView() {
               </Show>
             </div>
             <Show
-              when={t().data.length > 0}
+              when={v().data.length > 0}
               fallback={<p class="retrofit-empty">No data.</p>}
             >
               <table class="retrofit-table">
                 <thead class="retrofit-thead">
                   <tr>
-                    <For each={t().columns}>
+                    <For each={v().spec.columns}>
                       {(col) => (
                         <th
                           class="retrofit-th"
@@ -81,13 +98,13 @@ export function TableView() {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={t().data}>
+                  <For each={v().data}>
                     {(row) => (
                       <tr
-                        class={`retrofit-tr${t().metadata?.rowLink ? ' retrofit-tr--clickable' : ''}`}
+                        class={`retrofit-tr${v().spec.endpoints?.find ? ' retrofit-tr--clickable' : ''}`}
                         onClick={() => rowClick(row as Record<string, unknown>)}
                       >
-                        <For each={t().columns}>
+                        <For each={v().spec.columns}>
                           {(col) => (
                             <td
                               class="retrofit-td"

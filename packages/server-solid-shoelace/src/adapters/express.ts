@@ -1,3 +1,4 @@
+import type { ResourceSpec } from '@retrofit-ui/core';
 import {
   formFromSchema,
   tableFromSchema,
@@ -5,7 +6,7 @@ import {
 import express, { type Request, type Response, type Router } from 'express';
 import { FormRegistry } from '../registry';
 import { zodToJsonSchema } from '../schema-utils';
-import type { ResourceConfig, RetrofitConfig } from '../types';
+import type { ResourceConfig, RetrofitConfig, RetrofitTheme } from '../types';
 import { serveUiShell } from './ui-shell';
 
 export function createExpressRouter(config: RetrofitConfig): Router {
@@ -44,8 +45,12 @@ export function createExpressRouter(config: RetrofitConfig): Router {
     }
   });
 
+  router.get('/retrofit.json', (_req: Request, res: Response) => {
+    res.json({ apiBase: config.apiBase ?? '/api/ui' });
+  });
+
   if (config.resources) {
-    addResourceRoutes(router, config.resources);
+    addResourceRoutes(router, config.resources, config.apiBase ?? '/api/ui');
   }
 
   return router;
@@ -54,6 +59,7 @@ export function createExpressRouter(config: RetrofitConfig): Router {
 function addResourceRoutes(
   router: Router,
   resources: Record<string, ResourceConfig>,
+  apiBase: string,
 ): void {
   for (const [name, resource] of Object.entries(resources)) {
     const base = `/api/ui/${name}`;
@@ -67,8 +73,8 @@ function addResourceRoutes(
         const data = (await resource.list()) as Record<string, unknown>[];
         const tableBuilder = tableFromSchema(resource.schema, data)
           .withTitle(capitalize(name))
-          .withRowLink(`/api/ui/${name}/{id}`)
-          .withCreateUrl(`/api/ui/${name}/new`);
+          .withRowLink(`${apiBase}/${name}/{id}`)
+          .withCreateUrl(`${apiBase}/${name}/new`);
         if (resource.columnOverrides) {
           tableBuilder.withColumnOverrides(resource.columnOverrides);
         }
@@ -84,7 +90,7 @@ function addResourceRoutes(
         const createSchema = resource.updateSchema ?? resource.schema;
         const newFormBuilder = formFromSchema(createSchema)
           .withTitle(`New ${singularize(name)}`)
-          .withSubmit({ method: 'POST', url: `/api/ui/${name}` });
+          .withSubmit({ method: 'POST', url: `${apiBase}/${name}` });
         if (resource.fieldOverrides) {
           newFormBuilder.withFieldOverrides(resource.fieldOverrides);
         }
@@ -109,11 +115,11 @@ function addResourceRoutes(
         }
         const builder = formFromSchema(resource.schema)
           .withTitle(`Edit ${singularize(name)}`)
-          .withSubmit({ method: 'PUT', url: `/api/ui/${name}/${id}` });
+          .withSubmit({ method: 'PUT', url: `${apiBase}/${name}/${id}` });
         if (resource.delete) {
           builder.withDelete({
             method: 'DELETE',
-            url: `/api/ui/${name}/${id}`,
+            url: `${apiBase}/${name}/${id}`,
           });
         }
         if (resource.updateSchema) {
@@ -198,4 +204,15 @@ export function createRetrofitApp(config: RetrofitConfig): express.Express {
   app.use(createExpressRouter(config));
   app.use(serveUiShell(config.theme));
   return app;
+}
+
+export function retrofitUi(
+  app: express.Express,
+  config: { theme?: RetrofitTheme; apiBase?: string } = {},
+): (spec: ResourceSpec) => ResourceSpec {
+  app.get('/retrofit.json', (_req: Request, res: Response) => {
+    res.json({ apiBase: config.apiBase ?? '/api/ui', theme: config.theme });
+  });
+  app.use(serveUiShell(config.theme));
+  return (spec) => spec;
 }

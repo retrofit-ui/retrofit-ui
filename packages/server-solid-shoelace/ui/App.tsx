@@ -1,6 +1,9 @@
 import { HashRouter, Route } from '@solidjs/router';
+import { createContext } from 'solid-js';
 import { FormView } from './FormView';
 import { TableView } from './TableView';
+
+export const ApiBaseContext = createContext('/api/ui');
 
 function Landing() {
   return (
@@ -13,13 +16,15 @@ function Landing() {
   );
 }
 
-export function App() {
+export function App(props: { apiBase?: string }) {
   return (
-    <HashRouter>
-      <Route path="/" component={Landing} />
-      <Route path="/:resource" component={TableView} />
-      <Route path="/:resource/new" component={FormView} />
-      <Route path="/:resource/:id" component={FormView} />
-    </HashRouter>
+    <ApiBaseContext.Provider value={props.apiBase ?? '/api/ui'}>
+      <HashRouter>
+        <Route path="/" component={Landing} />
+        <Route path="/:resource" component={TableView} />
+        <Route path="/:resource/new" component={FormView} />
+        <Route path="/:resource/:id" component={FormView} />
+      </HashRouter>
+    </ApiBaseContext.Provider>
   );
 }

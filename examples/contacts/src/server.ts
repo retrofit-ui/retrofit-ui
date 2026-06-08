@@ -1,11 +1,23 @@
-import {
-  createRetrofitApp,
-  resource,
-} from '@retrofit-ui/server-solid-shoelace';
+import { retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
+import express from 'express';
 import { ContactSchema, UpdateContactSchema } from './schemas';
 import { store } from './store';
 
-const app = createRetrofitApp({
+const app = express();
+app.use(express.json());
+
+app.get('/contacts', (_req, res) => res.json(store.all()));
+app.get('/contacts/:id', (req, res) => res.json(store.find(req.params.id)));
+app.post('/contacts', (req, res) => res.json(store.create(req.body)));
+app.put('/contacts/:id', (req, res) =>
+  res.json(store.update(req.params.id, req.body)),
+);
+app.delete('/contacts/:id', (req, res) => {
+  store.delete(req.params.id);
+  res.json({ ok: true });
+});
+
+const retrofit = retrofitUi(app, {
   theme: {
     cssVariables: {
       '--sl-color-primary-50': '#f0fdf4',
@@ -23,23 +35,28 @@ const app = createRetrofitApp({
     extraCss: `.retrofit-thead { background-color: #14532d; }
 .retrofit-th { color: #f0fdf4; border-bottom-color: #166534; }`,
   },
-  resources: {
-    contacts: resource(ContactSchema)
-      .updateSchema(UpdateContactSchema)
-      .columnOverride('name', { sortable: true })
-      .columnOverride('email', { filterable: true })
-      .fieldOverride('notes', { type: 'textarea' })
-      .fieldOverride('phone', {
-        placeholder: '+1 555 000 0000',
-        validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
-      })
-      .list(() => store.all())
-      .find((id) => store.find(id))
-      .create((data) => store.create(data))
-      .update((id, data) => store.update(id, data))
-      .delete((id) => store.delete(id))
-      .build(),
-  },
+});
+
+app.get('/api/ui/contacts', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.schema(ContactSchema)
+        .updateSchema(UpdateContactSchema)
+        .columnOverride('name', { sortable: true })
+        .columnOverride('email', { filterable: true })
+        .fieldOverride('notes', { type: 'textarea' })
+        .fieldOverride('phone', {
+          placeholder: '+1 555 000 0000',
+          validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
+        })
+        .list({ method: 'GET', url: '/contacts' })
+        .find({ method: 'GET', url: '/contacts/{id}' })
+        .create({ method: 'POST', url: '/contacts' })
+        .update({ method: 'PUT', url: '/contacts/{id}' })
+        .delete({ method: 'DELETE', url: '/contacts/{id}' })
+        .build(),
+    ),
+  );
 });
 
 const PORT = process.env.PORT ?? 3000;

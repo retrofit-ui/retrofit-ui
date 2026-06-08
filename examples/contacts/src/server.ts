@@ -1,4 +1,7 @@
-import { retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
+import {
+  retrofitUi,
+  TableFormWorkflowBundle,
+} from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
 import { ContactSchema, UpdateContactSchema } from './schemas';
 import { store } from './store';
@@ -37,27 +40,26 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-app.get('/api/ui/contacts', (_req, res) => {
-  res.json(
-    retrofit(
-      TableView.schema(ContactSchema)
-        .updateSchema(UpdateContactSchema)
-        .columnOverride('name', { sortable: true })
-        .columnOverride('email', { filterable: true })
-        .fieldOverride('notes', { type: 'textarea' })
-        .fieldOverride('phone', {
-          placeholder: '+1 555 000 0000',
-          validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
-        })
-        .list({ method: 'GET', url: '/contacts' })
-        .find({ method: 'GET', url: '/contacts/{id}' })
-        .create({ method: 'POST', url: '/contacts' })
-        .update({ method: 'PUT', url: '/contacts/{id}' })
-        .delete({ method: 'DELETE', url: '/contacts/{id}' })
-        .build(),
-    ),
-  );
-});
+TableFormWorkflowBundle.schema(ContactSchema)
+  .updateSchema(UpdateContactSchema)
+  .table((t) =>
+    t
+      .columnOverride('name', { sortable: true })
+      .columnOverride('email', { filterable: true }),
+  )
+  .form((f) =>
+    f.fieldOverride('notes', { type: 'textarea' }).fieldOverride('phone', {
+      placeholder: '+1 555 000 0000',
+      validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
+    }),
+  )
+  .list({ method: 'GET', url: '/contacts' })
+  .find({ method: 'GET', url: '/contacts/{id}' })
+  .create({ method: 'POST', url: '/contacts' })
+  .update({ method: 'PUT', url: '/contacts/{id}' })
+  .delete({ method: 'DELETE', url: '/contacts/{id}' })
+  .build()
+  .register(app, retrofit, '/api/ui/contacts');
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

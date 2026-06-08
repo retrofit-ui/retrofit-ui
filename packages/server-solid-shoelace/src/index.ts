@@ -1,4 +1,9 @@
-export type { EndpointDirective, ResourceSpec } from '@retrofit-ui/core';
+export type {
+  EndpointDirective,
+  FormSpec,
+  ResourceSpec,
+  TableSpec,
+} from '@retrofit-ui/core';
 export {
   createExpressRouter,
   createRetrofitApp,
@@ -16,3 +21,8 @@ export type {
   RetrofitTheme,
 } from './types';
 export { TableView, TableViewBuilder } from './view-builder';
+export {
+  TableFormWorkflowBundle,
+  WorkflowBundle,
+  WorkflowBundleBuilder,
+} from './workflow-bundle';

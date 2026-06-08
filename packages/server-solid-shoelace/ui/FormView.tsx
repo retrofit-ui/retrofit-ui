@@ -5,13 +5,13 @@ import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
-import type { ResourceSpec } from '@retrofit-ui/core';
+import type { FormSpec, ResourceSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, createSignal, For, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './App';
 
 interface FormViewData {
-  spec: ResourceSpec;
+  spec: FormSpec | ResourceSpec;
   entity: Record<string, unknown>;
 }
 
@@ -20,9 +20,14 @@ async function fetchFormView(
   id: string | undefined,
   apiBase: string,
 ): Promise<FormViewData> {
-  const res = await fetch(`${apiBase}/${resource}`);
-  if (!res.ok) throw new Error(`Failed to fetch spec for ${resource}`);
-  const spec = (await res.json()) as ResourceSpec;
+  const idParam = id ?? 'new';
+  let res = await fetch(`${apiBase}/${resource}/${idParam}`);
+  if (res.status === 404) {
+    // Backwards compat: developer registered only the unified /api/ui/{resource} endpoint
+    res = await fetch(`${apiBase}/${resource}`);
+  }
+  if (!res.ok) throw new Error(`Failed to fetch form spec for ${resource}`);
+  const spec = (await res.json()) as FormSpec | ResourceSpec;
 
   if (!id || id === 'new') {
     return { spec, entity: {} };
@@ -77,7 +82,7 @@ export function FormView() {
 }
 
 interface FormEditorProps {
-  spec: ResourceSpec;
+  spec: FormSpec | ResourceSpec;
   entity: Record<string, unknown>;
   resource: string;
   id: string | undefined;

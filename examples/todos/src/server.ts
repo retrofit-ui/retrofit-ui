@@ -1,7 +1,4 @@
-import {
-  retrofitUi,
-  TableFormWorkflowBundle,
-} from '@retrofit-ui/server-solid-shoelace';
+import { retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
 import { CreateTodoSchema, TodoSchema } from './schemas';
 import { store } from './store';
@@ -40,15 +37,20 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-TableFormWorkflowBundle.schema(TodoSchema)
-  .updateSchema(CreateTodoSchema)
-  .list({ method: 'GET', url: '/todos' })
-  .find({ method: 'GET', url: '/todos/{id}' })
-  .create({ method: 'POST', url: '/todos' })
-  .update({ method: 'PUT', url: '/todos/{id}' })
-  .delete({ method: 'DELETE', url: '/todos/{id}' })
-  .build()
-  .register(app, retrofit, '/api/ui/todos');
+// Single spec endpoint — inline editing, no separate form view
+app.get('/api/ui/todos', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.schema(TodoSchema)
+        .updateSchema(CreateTodoSchema) // marks title/done/priority as editable
+        .list({ method: 'GET', url: '/todos' })
+        .create({ method: 'POST', url: '/todos' })
+        .update({ method: 'PUT', url: '/todos/{id}' })
+        .delete({ method: 'DELETE', url: '/todos/{id}' })
+        .build(),
+    ),
+  );
+});
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

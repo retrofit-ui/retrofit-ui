@@ -2,15 +2,14 @@
  * Expense Tracker — demonstrates server-controlled validation rules.
  *
  * KEY DEMO POINT: The `amount` min/max bounds and `date` regex pattern are
- * defined here on the server and returned as part of the spec. If you change
- * them here (e.g. raise the max from 10 000 to 50 000), every client that
- * fetches /api/ui/expenses picks up the new rules automatically — no
- * client-side deploy needed.
+ * defined here on the server. Change them here and every client picks up the
+ * new rules automatically — no frontend deploy needed.
  */
 
 import {
+  formSpec,
   retrofitUi,
-  TableFormWorkflowBundle,
+  TableView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
 import { CreateExpenseSchema, ExpenseSchema } from './schemas';
@@ -50,32 +49,41 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-TableFormWorkflowBundle.schema(ExpenseSchema)
-  .updateSchema(CreateExpenseSchema)
-  .table((t) =>
-    t
-      .columnOverride('amount', { sortable: true })
-      .columnOverride('category', { filterable: true })
-      .columnOverride('status', { filterable: true }),
-  )
-  .form((f) =>
-    f
-      .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
-      .fieldOverride('date', {
-        placeholder: 'YYYY-MM-DD',
-        helpText: 'YYYY-MM-DD',
-        validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-      })
-      .fieldOverride('notes', { type: 'textarea' })
-      .fieldOverride('description', { validation: { min: 3 } }),
-  )
-  .list({ method: 'GET', url: '/expenses' })
-  .find({ method: 'GET', url: '/expenses/{id}' })
-  .create({ method: 'POST', url: '/expenses' })
-  .update({ method: 'PUT', url: '/expenses/{id}' })
-  .delete({ method: 'DELETE', url: '/expenses/{id}' })
-  .build()
-  .register(app, retrofit, '/api/ui/expenses');
+// Narrow table — only the 3 most actionable columns
+app.get('/api/ui/expenses', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.schema(ExpenseSchema)
+        .visibleColumns(['description', 'amount', 'date'])
+        .find({ method: 'GET', url: '/expenses/{id}' })
+        .list({ method: 'GET', url: '/expenses' })
+        .create({ method: 'POST', url: '/expenses' })
+        .build(),
+    ),
+  );
+});
+
+// Simple form with server-controlled validation rules
+app.get('/api/ui/expenses/:id', (_req, res) => {
+  res.json(
+    retrofit(
+      formSpec(ExpenseSchema, CreateExpenseSchema)
+        .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
+        .fieldOverride('date', {
+          placeholder: 'YYYY-MM-DD',
+          helpText: 'YYYY-MM-DD',
+          validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+        })
+        .fieldOverride('notes', { type: 'textarea' })
+        .fieldOverride('description', { validation: { min: 3 } })
+        .find({ method: 'GET', url: '/expenses/{id}' })
+        .create({ method: 'POST', url: '/expenses' })
+        .update({ method: 'PUT', url: '/expenses/{id}' })
+        .delete({ method: 'DELETE', url: '/expenses/{id}' })
+        .build(),
+    ),
+  );
+});
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

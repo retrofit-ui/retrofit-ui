@@ -1,17 +1,17 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
-import '@shoelace-style/shoelace/dist/components/input/input.js';
-import '@shoelace-style/shoelace/dist/components/select/select.js';
-import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/input/input.js';
+import '@shoelace-style/shoelace/dist/components/option/option.js';
+import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
-import type { FormSpec, ResourceSpec } from '@retrofit-ui/core';
+import type { FormSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, createSignal, For, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './App';
 
 interface FormViewData {
-  spec: FormSpec | ResourceSpec;
+  spec: FormSpec;
   entity: Record<string, unknown>;
 }
 
@@ -21,22 +21,16 @@ async function fetchFormView(
   apiBase: string,
 ): Promise<FormViewData> {
   const idParam = id ?? 'new';
-  let res = await fetch(`${apiBase}/${resource}/${idParam}`);
-  if (res.status === 404) {
-    // Backwards compat: developer registered only the unified /api/ui/{resource} endpoint
-    res = await fetch(`${apiBase}/${resource}`);
-  }
+  const res = await fetch(`${apiBase}/${resource}/${idParam}`);
   if (!res.ok) throw new Error(`Failed to fetch form spec for ${resource}`);
-  const spec = (await res.json()) as FormSpec | ResourceSpec;
+  const spec = (await res.json()) as FormSpec;
 
   if (!id || id === 'new') {
     return { spec, entity: {} };
   }
 
   const findEndpoint = spec.endpoints?.find;
-  if (!findEndpoint) {
-    return { spec, entity: {} };
-  }
+  if (!findEndpoint) return { spec, entity: {} };
 
   const entityUrl = findEndpoint.url.replace('{id}', id);
   const entityRes = await fetch(entityUrl);
@@ -82,7 +76,7 @@ export function FormView() {
 }
 
 interface FormEditorProps {
-  spec: FormSpec | ResourceSpec;
+  spec: FormSpec;
   entity: Record<string, unknown>;
   resource: string;
   id: string | undefined;
@@ -118,7 +112,6 @@ function FormEditor(props: FormEditorProps) {
     return props.id ? `Edit ${base}` : `New ${base}`;
   };
 
-  // On create forms, hide readOnly fields (server-managed; can't be set during creation)
   const visibleFields = () =>
     props.id ? props.spec.fields : props.spec.fields.filter((f) => !f.readOnly);
 
@@ -222,16 +215,23 @@ function FormEditor(props: FormEditorProps) {
             const fieldLabel = () => field.label + (field.required ? ' *' : '');
             const err = () => errors()[field.name];
             const strVal = () => String(values()[field.name] ?? '');
+            const isTextarea = () =>
+              field.type === 'textarea' || field.type === 'markdown';
 
             return (
               <div>
-                <Show when={field.type === 'textarea'}>
+                <Show when={isTextarea()}>
                   <sl-textarea
                     label={fieldLabel()}
                     placeholder={field.placeholder}
-                    help-text={field.helpText ?? undefined}
+                    help-text={
+                      field.type === 'markdown'
+                        ? (field.helpText ?? 'Markdown supported')
+                        : (field.helpText ?? undefined)
+                    }
                     disabled={field.readOnly || undefined}
                     prop:value={strVal()}
+                    rows={field.type === 'markdown' ? 12 : 4}
                     invalid={!!err() || undefined}
                     on:sl-input={(e: Event) =>
                       setValue(
@@ -283,7 +283,7 @@ function FormEditor(props: FormEditorProps) {
                 </Show>
                 <Show
                   when={
-                    field.type !== 'textarea' &&
+                    !isTextarea() &&
                     field.type !== 'select' &&
                     field.type !== 'checkbox'
                   }

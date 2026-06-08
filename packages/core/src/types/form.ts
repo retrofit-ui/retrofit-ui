@@ -11,6 +11,7 @@ export const FieldTypeSchema = z.enum([
   'checkbox',
   'radio',
   'textarea',
+  'markdown',
   'file',
 ]);
 export type FieldType = z.infer<typeof FieldTypeSchema>;

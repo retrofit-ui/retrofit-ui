@@ -5,12 +5,10 @@ import type {
   FormSpec,
   TableSpec,
 } from '@retrofit-ui/core';
-import {
-  formFromSchema,
-  tableFromSchema,
-} from '@retrofit-ui/schema-builder-zod';
 import type express from 'express';
 import type { ZodObject, ZodRawShape } from 'zod';
+import { FormSpecBuilder } from './form-builder';
+import { TableViewBuilder } from './view-builder';
 
 export class TableCustomizer {
   readonly _columnOverrides: Record<string, Partial<Column>> = {};
@@ -111,42 +109,35 @@ export class WorkflowBundleBuilder<S extends ZodRawShape> {
   }
 
   build(): WorkflowBundle {
-    const baseColumns = tableFromSchema(this._schema, []).build().columns;
-    const columns = baseColumns.map((col) => {
-      const override = this._tableCustomizer._columnOverrides[col.key];
-      return override ? { ...col, ...override } : col;
-    });
-
-    const formBuilder = formFromSchema(this._schema);
-    if (this._updateSchema) {
-      formBuilder.withMutability(this._updateSchema);
+    // Build table spec — no updateSchema here so columns are NOT editable inline;
+    // the bundle uses the form view route for mutations, not inline editing.
+    const tableBuilder = TableViewBuilder.schema(this._schema);
+    for (const [key, override] of Object.entries(
+      this._tableCustomizer._columnOverrides,
+    )) {
+      tableBuilder.columnOverride(key, override);
     }
-    const baseFields = formBuilder.build().fields;
-    const fields = baseFields.map((field) => {
-      const override = this._formCustomizer._fieldOverrides[field.name];
-      return override ? { ...field, ...override } : field;
-    });
+    if (this._endpoints.list) tableBuilder.list(this._endpoints.list);
+    if (this._endpoints.find) tableBuilder.find(this._endpoints.find);
+    if (this._endpoints.create) tableBuilder.create(this._endpoints.create);
+    if (this._endpoints.update) tableBuilder.update(this._endpoints.update);
+    if (this._endpoints.delete) tableBuilder.delete(this._endpoints.delete);
+    const tableSpec = tableBuilder.build();
 
-    const tableSpec: TableSpec = {
-      columns,
-      endpoints: {
-        ...(this._endpoints.list && { list: this._endpoints.list }),
-        ...(this._endpoints.find && { find: this._endpoints.find }),
-        ...(this._endpoints.create && { create: this._endpoints.create }),
-      },
-    };
+    // Build form spec
+    const formBuilder = new FormSpecBuilder(this._schema, this._updateSchema);
+    for (const [key, override] of Object.entries(
+      this._formCustomizer._fieldOverrides,
+    )) {
+      formBuilder.fieldOverride(key, override);
+    }
+    if (this._endpoints.find) formBuilder.find(this._endpoints.find);
+    if (this._endpoints.create) formBuilder.create(this._endpoints.create);
+    if (this._endpoints.update) formBuilder.update(this._endpoints.update);
+    if (this._endpoints.delete) formBuilder.delete(this._endpoints.delete);
+    const formSpecResult = formBuilder.build();
 
-    const formSpec: FormSpec = {
-      fields,
-      endpoints: {
-        ...(this._endpoints.find && { find: this._endpoints.find }),
-        ...(this._endpoints.create && { create: this._endpoints.create }),
-        ...(this._endpoints.update && { update: this._endpoints.update }),
-        ...(this._endpoints.delete && { delete: this._endpoints.delete }),
-      },
-    };
-
-    return new WorkflowBundle(tableSpec, formSpec);
+    return new WorkflowBundle(tableSpec, formSpecResult);
   }
 }
 

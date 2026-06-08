@@ -1,20 +1,40 @@
 import type {
   Column,
   EndpointDirective,
-  Field,
-  ResourceSpec,
+  FieldOption,
+  RowAction,
+  TableSpec,
 } from '@retrofit-ui/core';
-import {
-  formFromSchema,
-  tableFromSchema,
-} from '@retrofit-ui/schema-builder-zod';
-import type { ZodObject, ZodRawShape } from 'zod';
+import { tableFromSchema } from '@retrofit-ui/schema-builder-zod';
+import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
+
+function getDef(schema: ZodTypeAny): Record<string, unknown> {
+  return schema._def as unknown as Record<string, unknown>;
+}
+
+function unwrapOptional(schema: ZodTypeAny): ZodTypeAny {
+  const def = getDef(schema);
+  return def.type === 'optional' ? (def.innerType as ZodTypeAny) : schema;
+}
+
+function deriveEnumOptions(schema: ZodTypeAny): FieldOption[] | undefined {
+  const inner = unwrapOptional(schema);
+  const def = getDef(inner);
+  if (def.type !== 'enum') return undefined;
+  const entries = def.entries as Record<string, unknown> | undefined;
+  if (!entries) return undefined;
+  return Object.values(entries).map((v) => ({
+    label: String(v),
+    value: v as string,
+  }));
+}
 
 export class TableViewBuilder<S extends ZodRawShape> {
   private _updateSchema?: ZodObject<ZodRawShape>;
   private _columnOverrides: Record<string, Partial<Column>> = {};
-  private _fieldOverrides: Record<string, Partial<Field>> = {};
-  private _endpoints: ResourceSpec['endpoints'] = {};
+  private _rowActions: RowAction[] = [];
+  private _visibleKeys?: string[];
+  private _endpoints: TableSpec['endpoints'] = {};
 
   private constructor(private readonly _schema: ZodObject<S>) {}
 
@@ -24,6 +44,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return new TableViewBuilder(schema);
   }
 
+  /** Columns in updateSchema are marked editable; others are read-only in inline edit mode. */
   updateSchema(schema: ZodObject<ZodRawShape>): this {
     this._updateSchema = schema;
     return this;
@@ -34,8 +55,14 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return this;
   }
 
-  fieldOverride(key: string, override: Partial<Field>): this {
-    this._fieldOverrides[key] = { ...this._fieldOverrides[key], ...override };
+  rowAction(action: RowAction): this {
+    this._rowActions.push(action);
+    return this;
+  }
+
+  /** Only include these column keys in the output spec. */
+  visibleColumns(keys: string[]): this {
+    this._visibleKeys = keys;
     return this;
   }
 
@@ -64,24 +91,32 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return this;
   }
 
-  build(): ResourceSpec {
+  build(): TableSpec {
+    const editableKeys = this._updateSchema
+      ? new Set(Object.keys(this._updateSchema.shape))
+      : null;
+
+    const shape = this._schema.shape as unknown as Record<string, ZodTypeAny>;
     const baseColumns = tableFromSchema(this._schema, []).build().columns;
-    const columns = baseColumns.map((col) => {
+
+    let columns = baseColumns.map((col) => {
+      const editable = editableKeys ? editableKeys.has(col.key) : false;
+      const options = deriveEnumOptions(shape[col.key] as ZodTypeAny);
+      const base: Column = { ...col, editable, ...(options && { options }) };
       const override = this._columnOverrides[col.key];
-      return override ? { ...col, ...override } : col;
+      return override ? { ...base, ...override } : base;
     });
 
-    const formBuilder = formFromSchema(this._schema);
-    if (this._updateSchema) {
-      formBuilder.withMutability(this._updateSchema);
+    if (this._visibleKeys) {
+      const keySet = new Set(this._visibleKeys);
+      columns = columns.filter((c) => keySet.has(c.key));
     }
-    const baseFields = formBuilder.build().fields;
-    const fields = baseFields.map((field) => {
-      const override = this._fieldOverrides[field.name];
-      return override ? { ...field, ...override } : field;
-    });
 
-    return { columns, fields, endpoints: this._endpoints };
+    return {
+      columns,
+      endpoints: this._endpoints,
+      ...(this._rowActions.length > 0 && { rowActions: this._rowActions }),
+    };
   }
 }
 

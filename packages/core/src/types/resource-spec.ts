@@ -6,39 +6,42 @@ export interface EndpointDirective {
   url: string;
 }
 
+/** Per-row action button shown in the table's actions column. */
+export interface RowAction {
+  label: string;
+  /** Route pattern appended to /#/{resource}/; {id} is substituted from the row. */
+  routePattern: string;
+}
+
 /** Returned by GET /api/ui/{resource} — drives the table view. */
 export interface TableSpec {
   columns: Column[];
   endpoints: {
     list?: EndpointDirective;
-    find?: EndpointDirective; // enables row clicks; also provides ID field name
+    find?: EndpointDirective; // enables row clicks + ID extraction
     create?: EndpointDirective; // shows "New" button when present
+    update?: EndpointDirective; // enables inline row save
+    delete?: EndpointDirective; // enables row delete button
   };
+  rowActions?: RowAction[];
   metadata?: { title?: string };
 }
 
-/** Returned by GET /api/ui/{resource}/:id — drives both new and edit form views. */
+/** Returned by GET /api/ui/{resource}/:id — drives new and edit form views. */
 export interface FormSpec {
   fields: Field[];
   endpoints: {
-    find?: EndpointDirective; // SPA fetches entity for edit pre-population
-    create?: EndpointDirective;
-    update?: EndpointDirective;
-    delete?: EndpointDirective;
-  };
-  metadata?: { title?: string };
-}
-
-/** Unified spec — legacy single-endpoint pattern from TableView.schema(). */
-export interface ResourceSpec {
-  columns: Column[];
-  fields: Field[];
-  endpoints: {
-    list?: EndpointDirective;
     find?: EndpointDirective;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;
   };
+  metadata?: { title?: string };
+}
+
+/** Returned by GET /api/ui/{resource}/:id/render — drives the markdown render view. */
+export interface MarkdownViewSpec {
+  entityEndpoint: EndpointDirective;
+  field: string;
   metadata?: { title?: string };
 }

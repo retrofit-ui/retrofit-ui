@@ -1,4 +1,9 @@
-export { createExpressRouter, createRetrofitApp } from './adapters/express';
+export type { EndpointDirective, ResourceSpec } from '@retrofit-ui/core';
+export {
+  createExpressRouter,
+  createRetrofitApp,
+  retrofitUi,
+} from './adapters/express';
 export { serveUiShell } from './adapters/ui-shell';
 export { defineConfig, defineRetrofitConfig } from './config';
 export { FormRegistry } from './registry';
@@ -10,3 +15,4 @@ export type {
   RetrofitConfig,
   RetrofitTheme,
 } from './types';
+export { TableView, TableViewBuilder } from './view-builder';

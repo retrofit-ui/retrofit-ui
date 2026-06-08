@@ -1,11 +1,23 @@
-import {
-  createRetrofitApp,
-  resource,
-} from '@retrofit-ui/server-solid-shoelace';
+import { retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
+import express from 'express';
 import { CreateTodoSchema, TodoSchema } from './schemas';
 import { store } from './store';
 
-const app = createRetrofitApp({
+const app = express();
+app.use(express.json());
+
+app.get('/todos', (_req, res) => res.json(store.all()));
+app.get('/todos/:id', (req, res) => res.json(store.find(req.params.id)));
+app.post('/todos', (req, res) => res.json(store.create(req.body)));
+app.put('/todos/:id', (req, res) =>
+  res.json(store.update(req.params.id, req.body)),
+);
+app.delete('/todos/:id', (req, res) => {
+  store.delete(req.params.id);
+  res.json({ ok: true });
+});
+
+const retrofit = retrofitUi(app, {
   theme: {
     cssVariables: {
       '--sl-color-primary-50': '#f5f3ff',
@@ -23,16 +35,21 @@ const app = createRetrofitApp({
     extraCss: `.retrofit-thead { background-color: #4c1d95; }
 .retrofit-th { color: #f5f3ff; border-bottom-color: #6d28d9; }`,
   },
-  resources: {
-    todos: resource(TodoSchema)
-      .updateSchema(CreateTodoSchema)
-      .list(() => store.all())
-      .find((id) => store.find(id))
-      .create((data) => store.create(data))
-      .update((id, data) => store.update(id, data))
-      .delete((id) => store.delete(id))
-      .build(),
-  },
+});
+
+app.get('/api/ui/todos', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.schema(TodoSchema)
+        .updateSchema(CreateTodoSchema)
+        .list({ method: 'GET', url: '/todos' })
+        .find({ method: 'GET', url: '/todos/{id}' })
+        .create({ method: 'POST', url: '/todos' })
+        .update({ method: 'PUT', url: '/todos/{id}' })
+        .delete({ method: 'DELETE', url: '/todos/{id}' })
+        .build(),
+    ),
+  );
 });
 
 const PORT = process.env.PORT ?? 3000;

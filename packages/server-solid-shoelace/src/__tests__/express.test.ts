@@ -172,7 +172,7 @@ describe('resource routes – items', () => {
   it('GET /api/ui/items/:id spec includes delete action when delete handler is configured', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
     const data = (await res.json()) as any;
-    expect(data.spec.metadata?.deleteAction).toBeDefined();
+    expect(data.spec.endpoints?.delete).toBeDefined();
   });
 
   it('GET /api/ui/items/:id uses updateSchema for mutability when configured', async () => {

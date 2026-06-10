@@ -8,7 +8,8 @@
       "!**/dist",
       "!**/node_modules",
       "!**/definitions",
-      "!.claude"
+      "!.claude",
+      "!**/META-INF/resources"
     ]
   },
   "linter": {

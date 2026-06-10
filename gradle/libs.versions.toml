@@ -1,0 +1,15 @@
+[versions]
+springBoot = "3.3.4"
+springDepMgmt = "1.1.6"
+playwright = "1.47.0"
+
+[libraries]
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure" }
+spring-boot-starter-web   = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-config-proc   = { module = "org.springframework.boot:spring-boot-configuration-processor" }
+spring-boot-starter-test  = { module = "org.springframework.boot:spring-boot-starter-test" }
+playwright = { module = "com.microsoft.playwright:playwright", version.ref = "playwright" }
+
+[plugins]
+spring-boot    = { id = "org.springframework.boot",        version.ref = "springBoot" }
+spring-depmgmt = { id = "io.spring.dependency-management", version.ref = "springDepMgmt" }

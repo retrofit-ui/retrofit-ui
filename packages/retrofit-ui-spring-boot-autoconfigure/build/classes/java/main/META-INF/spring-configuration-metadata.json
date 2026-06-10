@@ -1,0 +1,33 @@
+{
+  "groups": [
+    {
+      "name": "retrofit-ui",
+      "type": "io.retrofitui.autoconfigure.RetrofitUiProperties",
+      "sourceType": "io.retrofitui.autoconfigure.RetrofitUiProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "retrofit-ui.api-base",
+      "type": "java.lang.String",
+      "description": "Base URL the SPA uses to call resource API endpoints.",
+      "sourceType": "io.retrofitui.autoconfigure.RetrofitUiProperties",
+      "defaultValue": "\/api\/ui"
+    },
+    {
+      "name": "retrofit-ui.path",
+      "type": "java.lang.String",
+      "description": "URL prefix where the SPA and \/retrofit.json are served.",
+      "sourceType": "io.retrofitui.autoconfigure.RetrofitUiProperties",
+      "defaultValue": "\/retrofit-ui"
+    },
+    {
+      "name": "retrofit-ui.theme",
+      "type": "java.lang.String",
+      "description": "Shoelace theme name (\"light\" or \"dark\").",
+      "sourceType": "io.retrofitui.autoconfigure.RetrofitUiProperties",
+      "defaultValue": "light"
+    }
+  ],
+  "hints": []
+}

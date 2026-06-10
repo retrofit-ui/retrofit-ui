@@ -56,5 +56,6 @@ Temporary Items
 # tooling
 .claude/
 
-# gradle build cache
+# gradle build cache and compiled output
 .gradle/
+build/

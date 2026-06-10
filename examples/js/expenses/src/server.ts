@@ -55,40 +55,37 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-// Narrow table — only the 3 most actionable columns
+// Narrow table — only the 3 most actionable columns; rows embedded in response
 app.get('/api/ui/expenses', (_req, res) => {
   res.json(
     retrofit(
-      TableView.schema(ExpenseSchema)
+      TableView.forRows(ExpenseSchema, store.all())
         .visibleColumns(['description', 'amount', 'date'])
         .find({ method: 'GET', url: '/expenses/{id}' })
-        .list({ method: 'GET', url: '/expenses' })
         .create({ method: 'POST', url: '/expenses' })
         .build(),
     ),
   );
 });
 
-// Simple form with server-controlled validation rules
-app.get('/api/ui/expenses/:id', (_req, res) => {
-  res.json(
-    retrofit(
-      formSpec(ExpenseSchema, CreateExpenseSchema)
-        .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
-        .fieldOverride('date', {
-          placeholder: 'YYYY-MM-DD',
-          helpText: 'YYYY-MM-DD',
-          validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-        })
-        .fieldOverride('notes', { type: 'textarea' })
-        .fieldOverride('description', { validation: { min: 3 } })
-        .find({ method: 'GET', url: '/expenses/{id}' })
-        .create({ method: 'POST', url: '/expenses' })
-        .update({ method: 'PUT', url: '/expenses/{id}' })
-        .delete({ method: 'DELETE', url: '/expenses/{id}' })
-        .build(),
-    ),
-  );
+// Form with server-controlled validation rules; entity values embedded on fields
+app.get('/api/ui/expenses/:id', (req, res) => {
+  const { id } = req.params;
+  const entity = id !== 'new' ? store.find(id) : null;
+  const builder = formSpec(ExpenseSchema, CreateExpenseSchema)
+    .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
+    .fieldOverride('date', {
+      placeholder: 'YYYY-MM-DD',
+      helpText: 'YYYY-MM-DD',
+      validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+    })
+    .fieldOverride('notes', { type: 'textarea' })
+    .fieldOverride('description', { validation: { min: 3 } })
+    .create({ method: 'POST', url: '/expenses' })
+    .update({ method: 'PUT', url: '/expenses/{id}' })
+    .delete({ method: 'DELETE', url: '/expenses/{id}' });
+  if (entity) builder.values(entity as Record<string, unknown>);
+  res.json(retrofit(builder.build()));
 });
 
 // Stacked layout: two filter dropdowns + table — navigate to /#/expenses-filtered

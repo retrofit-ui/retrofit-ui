@@ -35,6 +35,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
   private _rowActions: RowAction[] = [];
   private _visibleKeys?: string[];
   private _endpoints: TableSpec['endpoints'] = {};
+  private _rows?: Record<string, unknown>[];
 
   private constructor(private readonly _schema: ZodObject<S>) {}
 
@@ -42,6 +43,18 @@ export class TableViewBuilder<S extends ZodRawShape> {
     schema: ZodObject<S>,
   ): TableViewBuilder<S> {
     return new TableViewBuilder(schema);
+  }
+
+  static forRows<S extends ZodRawShape>(
+    schema: ZodObject<S>,
+    rows: Record<string, unknown>[],
+  ): TableViewBuilder<S> {
+    return TableViewBuilder.schema(schema).rows(rows);
+  }
+
+  rows(rows: Record<string, unknown>[]): this {
+    this._rows = rows;
+    return this;
   }
 
   /** Columns in updateSchema are marked editable; others are read-only in inline edit mode. */
@@ -115,6 +128,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return {
       columns,
       endpoints: this._endpoints,
+      ...(this._rows !== undefined && { rows: this._rows }),
       ...(this._rowActions.length > 0 && { rowActions: this._rowActions }),
     };
   }

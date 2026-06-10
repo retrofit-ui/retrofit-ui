@@ -62,7 +62,7 @@ export function createExpressRouter(config: RetrofitConfig): express.Router {
   for (const [name, resource] of Object.entries(config.resources ?? {})) {
     const prefix = `${apiBase}/${name}`;
 
-    // GET /api/ui/:name — table spec + inline data
+    // GET /api/ui/:name — table spec with inline rows
     router.get(prefix, async (_req, res) => {
       if (!resource.list) {
         res.status(501).json({ error: 'Not implemented' });
@@ -74,15 +74,14 @@ export function createExpressRouter(config: RetrofitConfig): express.Router {
         if (resource.updateSchema) builder.updateSchema(resource.updateSchema);
         for (const [k, v] of Object.entries(resource.columnOverrides ?? {}))
           builder.columnOverride(k, v);
-        builder.list({ method: 'GET', url: prefix });
+        builder.rows(data as Record<string, unknown>[]);
         builder.find({ method: 'GET', url: `${prefix}/{id}` });
         if (resource.create) builder.create({ method: 'POST', url: prefix });
         if (resource.update)
           builder.update({ method: 'PUT', url: `${prefix}/{id}` });
         if (resource.delete)
           builder.delete({ method: 'DELETE', url: `${prefix}/{id}` });
-        const spec = builder.build();
-        res.json({ ...spec, data });
+        res.json(builder.build());
       } catch {
         res.status(500).json({ error: 'Internal server error' });
       }
@@ -100,7 +99,7 @@ export function createExpressRouter(config: RetrofitConfig): express.Router {
       res.json(builder.build());
     });
 
-    // GET /api/ui/:name/:id — edit form spec + entity
+    // GET /api/ui/:name/:id — edit form spec with inline field values
     router.get(`${prefix}/:id`, async (req, res) => {
       if (!resource.find) {
         res.status(501).json({ error: 'Not implemented' });
@@ -118,12 +117,12 @@ export function createExpressRouter(config: RetrofitConfig): express.Router {
         );
         for (const [k, v] of Object.entries(resource.fieldOverrides ?? {}))
           builder.fieldOverride(k, v);
-        builder.find({ method: 'GET', url: `${prefix}/{id}` });
+        builder.values(entity as Record<string, unknown>);
         if (resource.update)
           builder.update({ method: 'PUT', url: `${prefix}/{id}` });
         if (resource.delete)
           builder.delete({ method: 'DELETE', url: `${prefix}/{id}` });
-        res.json({ spec: builder.build(), entity });
+        res.json(builder.build());
       } catch {
         res.status(500).json({ error: 'Internal server error' });
       }

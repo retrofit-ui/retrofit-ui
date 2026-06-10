@@ -61,13 +61,18 @@ TableFormWorkflowBundle.schema(ContactSchema)
       validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
     }),
   )
-  .list({ method: 'GET', url: '/contacts' })
   .find({ method: 'GET', url: '/contacts/{id}' })
   .create({ method: 'POST', url: '/contacts' })
   .update({ method: 'PUT', url: '/contacts/{id}' })
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build()
-  .register(app, retrofit, '/api/ui/contacts');
+  .register(
+    app,
+    retrofit,
+    '/api/ui/contacts',
+    () => store.all(),
+    (id) => store.find(id),
+  );
 
 // Stacked layout: filter → new-contact form (type pre-filled) → table
 // Navigate to /#/contacts-by-type

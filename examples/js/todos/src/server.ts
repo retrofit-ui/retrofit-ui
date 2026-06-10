@@ -45,13 +45,12 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-// Single spec endpoint — inline editing, no separate form view
+// Single spec endpoint — inline editing, rows embedded in response
 app.get('/api/ui/todos', (_req, res) => {
   res.json(
     retrofit(
-      TableView.schema(TodoSchema)
+      TableView.forRows(TodoSchema, store.all())
         .updateSchema(CreateTodoSchema) // marks title/done/priority as editable
-        .list({ method: 'GET', url: '/todos' })
         .create({ method: 'POST', url: '/todos' })
         .update({ method: 'PUT', url: '/todos/{id}' })
         .delete({ method: 'DELETE', url: '/todos/{id}' })

@@ -16,8 +16,9 @@ export interface RowAction {
 /** Returned by GET /api/ui/{resource} — drives the table view. */
 export interface TableSpec {
   columns: Column[];
+  rows?: Record<string, unknown>[];
   endpoints: {
-    list?: EndpointDirective;
+    list?: EndpointDirective; // used by PageView filter-tables
     find?: EndpointDirective; // enables row clicks + ID extraction
     create?: EndpointDirective; // shows "New" button when present
     update?: EndpointDirective; // enables inline row save
@@ -31,7 +32,6 @@ export interface TableSpec {
 export interface FormSpec {
   fields: Field[];
   endpoints: {
-    find?: EndpointDirective;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;

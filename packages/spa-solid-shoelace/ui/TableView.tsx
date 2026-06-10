@@ -36,7 +36,9 @@ async function fetchTableView(
 
   const spec = json as unknown as TableSpec;
   let data: Record<string, unknown>[] = [];
-  if (spec.endpoints?.list) {
+  if (spec.rows) {
+    data = spec.rows;
+  } else if (spec.endpoints?.list) {
     const dataRes = await fetch(spec.endpoints.list.url);
     if (dataRes.ok) {
       data = (await dataRes.json()) as Record<string, unknown>[];

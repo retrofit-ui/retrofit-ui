@@ -25,18 +25,10 @@ async function fetchFormView(
   if (!res.ok) throw new Error(`Failed to fetch form spec for ${resource}`);
   const spec = (await res.json()) as FormSpec;
 
-  if (!id || id === 'new') {
-    return { spec, entity: {} };
+  const entity: Record<string, unknown> = {};
+  for (const f of spec.fields) {
+    if (f.value !== undefined) entity[f.name] = f.value;
   }
-
-  const findEndpoint = spec.endpoints?.find;
-  if (!findEndpoint) return { spec, entity: {} };
-
-  const entityUrl = findEndpoint.url.replace('{id}', id);
-  const entityRes = await fetch(entityUrl);
-  if (!entityRes.ok)
-    throw new Error(`Failed to fetch entity from ${entityUrl}`);
-  const entity = (await entityRes.json()) as Record<string, unknown>;
   return { spec, entity };
 }
 

@@ -65,16 +65,15 @@ const retrofit = retrofitUi(app, {
   },
 });
 
-// Table view — click row to edit, Preview button to render
+// Table view — rows embedded; click row to edit, Preview button to render
 app.get('/api/ui/posts', (_req, res) => {
   res.json(
     retrofit(
-      TableView.schema(PostSchema)
+      TableView.forRows(PostSchema, store.all())
         .columnOverride('title', { sortable: true })
         .columnOverride('status', { filterable: true })
         .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
         .find({ method: 'GET', url: '/posts/{id}' })
-        .list({ method: 'GET', url: '/posts' })
         .create({ method: 'POST', url: '/posts' })
         .build(),
     ),
@@ -83,24 +82,22 @@ app.get('/api/ui/posts', (_req, res) => {
 
 // Form view — handles new (/api/ui/posts/new) and edit (/api/ui/posts/:id)
 // Express ':id' matches 'new' too, so one handler covers both
-app.get('/api/ui/posts/:id', (_req, res) => {
-  res.json(
-    retrofit(
-      formSpec(PostSchema, UpdatePostSchema)
-        .fieldOverride('body', { type: 'markdown' })
-        .fieldOverride('slug', {
-          helpText: 'lowercase, hyphens only',
-          validation: { pattern: '^[a-z0-9-]+$' },
-        })
-        .fieldOverride('tags', { helpText: 'comma-separated' })
-        .fieldOverride('title', { validation: { max: 200 } })
-        .find({ method: 'GET', url: '/posts/{id}' })
-        .create({ method: 'POST', url: '/posts' })
-        .update({ method: 'PUT', url: '/posts/{id}' })
-        .delete({ method: 'DELETE', url: '/posts/{id}' })
-        .build(),
-    ),
-  );
+app.get('/api/ui/posts/:id', (req, res) => {
+  const { id } = req.params;
+  const entity = id !== 'new' ? store.find(id) : null;
+  const builder = formSpec(PostSchema, UpdatePostSchema)
+    .fieldOverride('body', { type: 'markdown' })
+    .fieldOverride('slug', {
+      helpText: 'lowercase, hyphens only',
+      validation: { pattern: '^[a-z0-9-]+$' },
+    })
+    .fieldOverride('tags', { helpText: 'comma-separated' })
+    .fieldOverride('title', { validation: { max: 200 } })
+    .create({ method: 'POST', url: '/posts' })
+    .update({ method: 'PUT', url: '/posts/{id}' })
+    .delete({ method: 'DELETE', url: '/posts/{id}' });
+  if (entity) builder.values(entity as Record<string, unknown>);
+  res.json(retrofit(builder.build()));
 });
 
 // Markdown render spec — 3 path segments, won't conflict with /:id above

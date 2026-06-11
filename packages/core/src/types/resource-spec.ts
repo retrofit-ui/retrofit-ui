@@ -36,7 +36,7 @@ export interface FormSpec {
     update?: EndpointDirective;
     delete?: EndpointDirective;
   };
-  metadata?: { title?: string };
+  metadata?: { title?: string; autoSubmit?: boolean };
 }
 
 /** Returned by GET /api/ui/{resource}/:id/render — drives the markdown render view. */

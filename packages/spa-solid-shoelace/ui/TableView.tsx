@@ -396,7 +396,10 @@ export function TableView() {
         {(v) => (
           <Switch>
             <Match when={v().kind === 'page'}>
-              <PageView spec={(v() as { kind: 'page'; spec: PageSpec }).spec} />
+              <PageView
+                spec={(v() as { kind: 'page'; spec: PageSpec }).spec}
+                onRefresh={() => void refetch()}
+              />
             </Match>
             <Match when={v().kind === 'table'}>
               <div class="retrofit-view">
@@ -444,7 +447,12 @@ export function TableView() {
                         {(row) => (
                           <DataRow
                             row={row}
-                            spec={tableData()!.spec}
+                            spec={
+                              tableData()?.spec ?? {
+                                columns: [],
+                                endpoints: {},
+                              }
+                            }
                             resource={params.resource}
                             onRefresh={() => void refetch()}
                           />
@@ -456,7 +464,9 @@ export function TableView() {
                         }
                       >
                         <NewRow
-                          spec={tableData()!.spec}
+                          spec={
+                            tableData()?.spec ?? { columns: [], endpoints: {} }
+                          }
                           onCreated={() => void refetch()}
                         />
                       </Show>

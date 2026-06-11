@@ -7,14 +7,17 @@
  */
 
 import {
-  filterForm,
   formSpec,
   pageSpec,
   retrofitUi,
   TableView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
-import { CreateExpenseSchema, ExpenseSchema } from './schemas';
+import {
+  CreateExpenseSchema,
+  ExpenseFilterSchema,
+  ExpenseSchema,
+} from './schemas';
 import { store } from './store';
 
 const app = express();
@@ -88,35 +91,17 @@ app.get('/api/ui/expenses/:id', (req, res) => {
   res.json(retrofit(builder.build()));
 });
 
-// Stacked layout: two filter dropdowns + table — navigate to /#/expenses-filtered
+// Stacked layout: auto-submit filter form + table — navigate to /#/expenses-filtered
 app.get('/api/ui/expenses-filtered', (_req, res) => {
   res.json(
     retrofit(
       pageSpec()
         .title('Expenses')
-        .filterForm(
-          filterForm()
-            .field('category', {
-              type: 'select',
-              label: 'Category',
-              placeholder: 'All Categories',
-              options: [
-                { label: 'Travel', value: 'travel' },
-                { label: 'Meals', value: 'meals' },
-                { label: 'Equipment', value: 'equipment' },
-                { label: 'Other', value: 'other' },
-              ],
-            })
-            .field('status', {
-              type: 'select',
-              label: 'Status',
-              placeholder: 'All Statuses',
-              options: [
-                { label: 'Pending', value: 'pending' },
-                { label: 'Approved', value: 'approved' },
-                { label: 'Rejected', value: 'rejected' },
-              ],
-            })
+        .form(
+          formSpec(ExpenseFilterSchema)
+            .fieldOverride('category', { placeholder: 'All Categories' })
+            .fieldOverride('status', { placeholder: 'All Statuses' })
+            .autoSubmit()
             .build(),
         )
         .table(
@@ -132,6 +117,42 @@ app.get('/api/ui/expenses-filtered', (_req, res) => {
               method: 'GET',
               url: '/expenses?category={category}&status={status}',
             })
+            .build(),
+        )
+        .build(),
+    ),
+  );
+});
+
+// Stacked layout: create form + embedded table — navigate to /#/expenses-stacked
+app.get('/api/ui/expenses-stacked', (_req, res) => {
+  res.json(
+    retrofit(
+      pageSpec()
+        .title('Expenses')
+        .form(
+          formSpec(ExpenseSchema, CreateExpenseSchema)
+            .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
+            .fieldOverride('date', {
+              placeholder: 'YYYY-MM-DD',
+              helpText: 'YYYY-MM-DD',
+              validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+            })
+            .fieldOverride('notes', { type: 'textarea' })
+            .fieldOverride('description', { validation: { min: 3 } })
+            .create({ method: 'POST', url: '/expenses' })
+            .build(),
+          'New Expense',
+        )
+        .table(
+          TableView.forRows(ExpenseSchema, store.all())
+            .visibleColumns([
+              'description',
+              'amount',
+              'category',
+              'status',
+              'date',
+            ])
             .build(),
         )
         .build(),

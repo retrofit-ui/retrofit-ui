@@ -10,7 +10,7 @@ const posts: Post[] = [
     body: 'Retrofit UI is a server-driven UI framework that lets you define your UI schema on the server and render it on the client without coupling the two.',
     status: 'published',
     tags: 'retrofit,ui,server-driven',
-    author: 'Alice',
+    author: 'alice',
     updatedAt: '2026-05-01T10:00:00.000Z',
   },
   {
@@ -20,7 +20,7 @@ const posts: Post[] = [
     body: 'Server-driven UI decouples your business logic from the presentation layer. Validation rules, field visibility, and available options are all controlled from one place: the server.',
     status: 'draft',
     tags: 'architecture,server-driven',
-    author: 'Bob',
+    author: 'bob',
     updatedAt: '2026-05-15T14:30:00.000Z',
   },
   {
@@ -30,7 +30,7 @@ const posts: Post[] = [
     body: 'Zod schemas are the source of truth for form fields in Retrofit UI. The formFromSchema builder reads your schema and generates the correct field types automatically.',
     status: 'archived',
     tags: 'zod,forms,typescript',
-    author: 'Carol',
+    author: 'carol',
     updatedAt: '2026-04-20T09:00:00.000Z',
   },
 ];

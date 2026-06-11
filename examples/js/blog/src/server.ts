@@ -15,6 +15,12 @@ import express from 'express';
 import { PostSchema, UpdatePostSchema } from './schemas';
 import { store } from './store';
 
+const AUTHORS = [
+  { id: 'alice', name: 'Alice Smith' },
+  { id: 'bob', name: 'Bob Jones' },
+  { id: 'carol', name: 'Carol White' },
+];
+
 const app = express();
 app.use(express.json());
 
@@ -27,7 +33,6 @@ app.post('/posts', (req, res) =>
   res.json(
     store.create({
       ...(req.body as object),
-      author: 'Anonymous',
       updatedAt: new Date().toISOString(),
     }),
   ),
@@ -93,6 +98,11 @@ app.get('/api/ui/posts/:id', (req, res) => {
     })
     .fieldOverride('tags', { helpText: 'comma-separated' })
     .fieldOverride('title', { validation: { max: 200 } })
+    .fieldOverride('author', {
+      type: 'select',
+      label: 'Author',
+      options: AUTHORS.map((a) => ({ label: a.name, value: a.id })),
+    })
     .create({ method: 'POST', url: '/posts' })
     .update({ method: 'PUT', url: '/posts/{id}' })
     .delete({ method: 'DELETE', url: '/posts/{id}' });

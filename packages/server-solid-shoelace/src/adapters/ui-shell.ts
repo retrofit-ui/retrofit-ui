@@ -18,30 +18,34 @@ function injectTheme(html: string, css: string): string {
   return html.replace('</head>', `<style>\n${css}\n</style>\n</head>`);
 }
 
-function resolveUiShellPath(): string {
-  // tsup may bundle this into dist/ (chunk) or dist/adapters/ depending on
-  // whether it's shared. Try both locations relative to import.meta.url.
-  const currentDir = path.dirname(new URL(import.meta.url).pathname);
-  const candidates = [
-    path.join(currentDir, 'ui-shell'), // chunk lives in dist/
-    path.join(currentDir, '..', 'ui-shell'), // file lives in dist/adapters/
-  ];
-  return candidates.find((p) => fs.existsSync(p)) ?? (candidates[1] as string);
-}
-
 export function serveUiShell(theme?: RetrofitTheme): express.RequestHandler {
-  const distPath = resolveUiShellPath();
+  let distPath: string | null = null;
+  let staticMiddleware: express.RequestHandler | null = null;
 
-  const staticMiddleware = express.static(distPath, { index: false });
-  const indexPath = path.join(distPath, 'index.html');
+  const init = async () => {
+    if (distPath) return;
+    // Dynamic import keeps spa-solid-shoelace an optional peer dep
+    const spa = await import('@retrofit-ui/spa-solid-shoelace');
+    distPath = spa.distPath;
+    staticMiddleware = express.static(distPath, { index: false });
+  };
 
-  return (req: Request, res: Response, next) => {
-    staticMiddleware(req, res, () => {
-      // SPA uses hash routing — only serve index.html for GET /
+  return async (req: Request, res: Response, next) => {
+    try {
+      await init();
+    } catch (err) {
+      next(err);
+      return;
+    }
+
+    // biome-ignore lint/style/noNonNullAssertion: set by init()
+    staticMiddleware!(req, res, () => {
       if (req.method !== 'GET' || req.path !== '/') {
         next();
         return;
       }
+      // biome-ignore lint/style/noNonNullAssertion: set by init()
+      const indexPath = path.join(distPath!, 'index.html');
       if (!fs.existsSync(indexPath)) {
         next();
         return;

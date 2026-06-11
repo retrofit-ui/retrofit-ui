@@ -40,6 +40,7 @@ export const FieldSchema = z.object({
   placeholder: z.string().optional(),
   helpText: z.string().optional(),
   options: z.array(FieldOptionSchema).optional(),
+  value: z.unknown().optional(),
 });
 export type Field = z.infer<typeof FieldSchema>;
 

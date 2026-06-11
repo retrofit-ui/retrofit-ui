@@ -140,12 +140,12 @@ describe('POST /api/forms/:id/submit', () => {
 });
 
 describe('resource routes – items', () => {
-  it('GET /api/ui/items returns a table spec', async () => {
+  it('GET /api/ui/items returns a table spec with inline rows', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items`);
     expect(res.status).toBe(200);
     const data = (await res.json()) as any;
     expect(data.columns).toBeDefined();
-    expect(data.data).toBeDefined();
+    expect(data.rows).toBeDefined();
   });
 
   it('GET /api/ui/items returns 500 when list throws', async () => {
@@ -161,26 +161,27 @@ describe('resource routes – items', () => {
     expect(data.fields).toBeDefined();
   });
 
-  it('GET /api/ui/items/:id returns spec and entity for existing item', async () => {
+  it('GET /api/ui/items/:id returns flat FormSpec with inline field values', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
     expect(res.status).toBe(200);
     const data = (await res.json()) as any;
-    expect(data.spec).toBeDefined();
-    expect(data.entity).toEqual({ id: 1, name: 'Foo' });
+    expect(data.fields).toBeDefined();
+    const nameField = data.fields.find(
+      (f: { name: string }) => f.name === 'name',
+    );
+    expect(nameField?.value).toBe('Foo');
   });
 
   it('GET /api/ui/items/:id spec includes delete action when delete handler is configured', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
     const data = (await res.json()) as any;
-    expect(data.spec.metadata?.deleteAction).toBeDefined();
+    expect(data.endpoints?.delete).toBeDefined();
   });
 
   it('GET /api/ui/items/:id uses updateSchema for mutability when configured', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
     const data = (await res.json()) as any;
-    const idField = data.spec.fields.find(
-      (f: { name: string }) => f.name === 'id',
-    );
+    const idField = data.fields.find((f: { name: string }) => f.name === 'id');
     expect(idField?.readOnly).toBe(true);
   });
 

@@ -10,6 +10,12 @@ export const ExpenseSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Reuses the enum literals from ExpenseSchema to avoid drift
+export const ExpenseFilterSchema = z.object({
+  category: z.enum(['travel', 'meals', 'equipment', 'other']).optional(),
+  status: z.enum(['pending', 'approved', 'rejected']).optional(),
+});
+
 // CreateExpenseSchema omits id and status — those are server-controlled
 export const CreateExpenseSchema = z.object({
   description: z.string(),

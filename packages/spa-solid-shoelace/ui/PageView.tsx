@@ -122,8 +122,9 @@ function FilterFormPane(props: { spec: FilterFormSpec }) {
 // ── FormPane ──────────────────────────────────────────────────────────────────
 
 function FormPane(props: { spec: FormSpec; title?: string }) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { refresh } = useContext(PageRefreshContext);
+  const autoSubmit = () => !!props.spec.metadata?.autoSubmit;
 
   const visibleFields = () => props.spec.fields.filter((f) => !f.readOnly);
 
@@ -168,6 +169,9 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
 
   function setValue(name: string, val: unknown) {
     setValues((prev) => ({ ...prev, [name]: val }));
+    if (autoSubmit()) {
+      setSearchParams({ [name]: String(val) });
+    }
   }
 
   function validate(): boolean {
@@ -273,7 +277,9 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
                       )
                     }
                   >
-                    <sl-option value="">-- select --</sl-option>
+                    <sl-option value="">
+                      {field.placeholder ?? '-- select --'}
+                    </sl-option>
                     <For each={field.options}>
                       {(opt) => (
                         <sl-option value={String(opt.value)}>
@@ -343,11 +349,13 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
         <Show when={submitError()}>
           <p class="retrofit-error-message">{submitError()}</p>
         </Show>
-        <div>
-          <sl-button type="submit" variant="primary" disabled={submitting()}>
-            Add
-          </sl-button>
-        </div>
+        <Show when={!autoSubmit()}>
+          <div>
+            <sl-button type="submit" variant="primary" disabled={submitting()}>
+              Add
+            </sl-button>
+          </div>
+        </Show>
       </form>
     </div>
   );
@@ -359,10 +367,12 @@ function TablePane(props: { spec: TableSpec }) {
   const [searchParams] = useSearchParams();
   const { count } = useContext(PageRefreshContext);
 
-  const [data] = createResource(
-    // Track both search params and the refresh counter so the table refetches
-    // whenever the filter changes OR a form pane submits successfully.
-    () => JSON.stringify({ sp: searchParams, r: count() }),
+  // Only fires when there is a list endpoint; null source skips the fetch.
+  const [fetchedData] = createResource(
+    () =>
+      props.spec.endpoints?.list
+        ? JSON.stringify({ sp: searchParams, r: count() })
+        : null,
     async () => {
       const ep = props.spec.endpoints?.list;
       if (!ep) return [] as Record<string, unknown>[];
@@ -376,17 +386,27 @@ function TablePane(props: { spec: TableSpec }) {
     },
   );
 
+  // Embedded rows (forRows): read props.spec.rows directly — reactive when
+  // the parent re-fetches the page spec and passes a new spec prop.
+  const rows = () =>
+    props.spec.endpoints?.list
+      ? (fetchedData() ?? [])
+      : (props.spec.rows ?? []);
+
+  const isLoading = () => !!props.spec.endpoints?.list && fetchedData.loading;
+  const hasError = () => !!props.spec.endpoints?.list && !!fetchedData.error;
+
   return (
     <div class="retrofit-pane">
-      <Show when={data.loading}>
+      <Show when={isLoading()}>
         <p class="retrofit-muted">Loading...</p>
       </Show>
-      <Show when={data.error}>
-        <p class="retrofit-error-message">Error: {String(data.error)}</p>
+      <Show when={hasError()}>
+        <p class="retrofit-error-message">Error: {String(fetchedData.error)}</p>
       </Show>
-      <Show when={!data.loading && data() !== undefined}>
+      <Show when={!isLoading() && !hasError()}>
         <Show
-          when={(data() ?? []).length > 0}
+          when={rows().length > 0}
           fallback={<p class="retrofit-empty">No data.</p>}
         >
           <table class="retrofit-table">
@@ -405,7 +425,7 @@ function TablePane(props: { spec: TableSpec }) {
               </tr>
             </thead>
             <tbody>
-              <For each={data() ?? []}>
+              <For each={rows()}>
                 {(row) => (
                   <tr class="retrofit-tr">
                     <For each={props.spec.columns}>
@@ -435,11 +455,14 @@ function TablePane(props: { spec: TableSpec }) {
 
 // ── PageView ──────────────────────────────────────────────────────────────────
 
-export function PageView(props: { spec: PageSpec }) {
+export function PageView(props: { spec: PageSpec; onRefresh?: () => void }) {
   const [refreshCount, setRefreshCount] = createSignal(0);
   const ctx: RefreshCtx = {
     count: refreshCount,
-    refresh: () => setRefreshCount((n) => n + 1),
+    refresh: () => {
+      setRefreshCount((n) => n + 1);
+      props.onRefresh?.();
+    },
   };
 
   return (

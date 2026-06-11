@@ -6,6 +6,7 @@ export class FormSpecBuilder<S extends ZodRawShape> {
   private _fieldOverrides: Record<string, Partial<Field>> = {};
   private _endpoints: FormSpec['endpoints'] = {};
   private _entity?: Record<string, unknown>;
+  private _autoSubmit = false;
 
   constructor(
     private readonly _schema: ZodObject<S>,
@@ -37,6 +38,11 @@ export class FormSpecBuilder<S extends ZodRawShape> {
     return this;
   }
 
+  autoSubmit(): this {
+    this._autoSubmit = true;
+    return this;
+  }
+
   build(): FormSpec {
     const builder = formFromSchema(this._schema);
     if (this._updateSchema) {
@@ -52,7 +58,11 @@ export class FormSpecBuilder<S extends ZodRawShape> {
       }
       return withOverride;
     });
-    return { fields, endpoints: this._endpoints };
+    return {
+      fields,
+      endpoints: this._endpoints,
+      ...(this._autoSubmit && { metadata: { autoSubmit: true } }),
+    };
   }
 }
 

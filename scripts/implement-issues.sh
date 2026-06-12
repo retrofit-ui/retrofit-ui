@@ -55,13 +55,20 @@ mkdir -p "$LOG_BASE"
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 elapsed() { echo $(( $(date +%s) - $1 ))s; }
 
-# Find the open PR number for an issue using GitHub's built-in linked PR tracking.
+# Find the open PR number for an issue: first via GitHub's linked-PR tracking,
+# then by the expected branch name (catches PRs that didn't say "closes #N").
 find_pr() {
   local number="$1"
-  gh issue view "$number" --repo "$REPO" \
+  local pr
+  pr=$(gh issue view "$number" --repo "$REPO" \
     --json closedByPullRequestsReferences \
     --jq '[.closedByPullRequestsReferences[] | select(.state == "OPEN")] | .[0].number // empty' \
-    2>/dev/null || true
+    2>/dev/null || true)
+  if [ -z "$pr" ]; then
+    pr=$(gh pr list --repo "$REPO" --head "feat/issue-${number}" --state open \
+      --json number --jq '.[0].number // empty' 2>/dev/null || true)
+  fi
+  echo "$pr"
 }
 
 # Return the PR's overall CI conclusion: success | failure | pending | none
@@ -79,6 +86,36 @@ pr_has_conflicts() {
   local pr_number="$1"
   gh pr view "$pr_number" --repo "$REPO" --json mergeable \
     --jq '.mergeable == "CONFLICTING"' 2>/dev/null || echo "false"
+}
+
+# Return all PR feedback posted after the last push as a JSON array of {author, body}.
+# Covers: timeline comments, review submissions, and inline code review comments.
+pr_new_comments() {
+  local pr_number="$1"
+  local last_push
+  last_push=$(gh pr view "$pr_number" --repo "$REPO" \
+    --json commits --jq '.commits[-1].committedDate' 2>/dev/null || echo "")
+  [ -z "$last_push" ] && { echo "[]"; return; }
+
+  local timeline review inline
+  timeline=$(gh pr view "$pr_number" --repo "$REPO" \
+    --json comments \
+    --jq --arg s "$last_push" \
+    '[.comments[] | select(.createdAt > $s) | {author: .author.login, body: .body}]' \
+    2>/dev/null || echo "[]")
+
+  review=$(gh pr view "$pr_number" --repo "$REPO" \
+    --json reviews \
+    --jq --arg s "$last_push" \
+    '[.reviews[] | select(.submittedAt > $s and ((.body // "") != "")) | {author: .author.login, body: ("Review (" + .state + "): " + .body)}]' \
+    2>/dev/null || echo "[]")
+
+  inline=$(gh api "repos/$REPO/pulls/$pr_number/comments" \
+    --jq --arg s "$last_push" \
+    '[.[] | select(.created_at > $s) | {author: .user.login, body: ("Inline on `" + .path + "`:\n" + .diff_hunk + "\nComment: " + .body)}]' \
+    2>/dev/null || echo "[]")
+
+  jq -n --argjson a "$timeline" --argjson b "$review" --argjson c "$inline" '$a + $b + $c'
 }
 
 # ── Per-issue worker ──────────────────────────────────────────────────────────
@@ -109,10 +146,14 @@ run_issue() {
     ci_status=$(pr_ci_status "$pr_number")
     conflicts=$(pr_has_conflicts "$pr_number")
 
-    log "  → PR #${pr_number} exists  ci=${ci_status}  conflicts=${conflicts}"
+    local new_comments new_comment_count
+    new_comments=$(pr_new_comments "$pr_number")
+    new_comment_count=$(echo "$new_comments" | jq length)
 
-    if [ "$ci_status" = "success" ] && [ "$conflicts" = "false" ]; then
-      log "  → all green, skipping  (elapsed: $(elapsed $t0))"
+    log "  → PR #${pr_number} exists  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}"
+
+    if [ "$ci_status" = "success" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ]; then
+      log "  → all green, no new comments, skipping  (elapsed: $(elapsed $t0))"
       return 0
     fi
 
@@ -126,6 +167,10 @@ run_issue() {
     local fix_context=""
     [ "$conflicts" = "true" ]      && fix_context+="- The PR has MERGE CONFLICTS with main. Rebase or merge main into this branch to resolve them.\n"
     [ "$ci_status" = "failure" ]   && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
+    if [ "$new_comment_count" -gt 0 ]; then
+      fix_context+="- There are ${new_comment_count} new review comment(s) on the PR since the last push. Address each one:\n"
+      fix_context+="$(echo "$new_comments" | jq -r '.[] | "  [\(.author.login)]: \(.body)"')\n"
+    fi
 
     local log_file="${LOG_BASE}/issue-${number}.log"
     log "  → logging to ${log_file}"
@@ -190,7 +235,7 @@ ${body}
 - Implement the feature. Follow existing code style — no extra abstractions, no cleanup outside the issue scope.
 - Run \`pnpm build\` and \`pnpm test\` (if tests exist for the changed area). Fix any failures before committing.
 - Commit with: feat: <description> (closes #${number})
-- Open a pull request against main that closes issue #${number}.
+- Open a pull request against main. The PR body MUST contain the exact text \`closes #${number}\` so GitHub links it to the issue.
 - Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
   ) && log "  ✓ #${number} done  (elapsed: $(elapsed $t0))" \
     || log "  ✗ #${number} failed  (elapsed: $(elapsed $t0))"
@@ -199,7 +244,7 @@ ${body}
   git worktree remove --force "$worktree" 2>/dev/null || true
 }
 
-export -f run_issue find_pr pr_ci_status pr_has_conflicts log elapsed
+export -f run_issue find_pr pr_ci_status pr_has_conflicts pr_new_comments log elapsed
 export REPO WORKTREE_BASE LOG_BASE
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────

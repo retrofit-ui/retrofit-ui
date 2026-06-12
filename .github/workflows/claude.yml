@@ -22,10 +22,8 @@ jobs:
   # ── Phase 1: Issue opened → ask clarifying questions ─────────────────────────
   clarify:
     if: |
-      github.event_name == 'issues' && (
-        github.event.issue.author_association == 'OWNER' ||
-        github.event.issue.author_association == 'MEMBER'
-      )
+      github.event_name == 'issues' &&
+      github.actor == 'thenomadlad'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,8 +47,7 @@ jobs:
   plan:
     if: |
       github.event_name == 'issue_comment' && (
-        github.event.comment.author_association == 'OWNER' ||
-        github.event.comment.author_association == 'MEMBER'
+        github.actor == 'thenomadlad'
       ) &&
       contains(github.event.comment.body, '@claude') &&
       contains(github.event.comment.body, 'plan')
@@ -80,8 +77,7 @@ jobs:
   implement:
     if: |
       github.event_name == 'issue_comment' && (
-        github.event.comment.author_association == 'OWNER' ||
-        github.event.comment.author_association == 'MEMBER'
+        github.actor == 'thenomadlad'
       ) &&
       contains(github.event.comment.body, '@claude') &&
       contains(github.event.comment.body, 'implement')
@@ -104,8 +100,7 @@ jobs:
   converse:
     if: |
       github.event_name == 'issue_comment' && (
-        github.event.comment.author_association == 'OWNER' ||
-        github.event.comment.author_association == 'MEMBER'
+        github.actor == 'thenomadlad'
       ) &&
       contains(github.event.comment.body, '@claude') &&
       !contains(github.event.comment.body, 'plan') &&
@@ -123,8 +118,7 @@ jobs:
   pr-review:
     if: |
       github.event_name == 'pull_request_review_comment' && (
-        github.event.comment.author_association == 'OWNER' ||
-        github.event.comment.author_association == 'MEMBER'
+        github.actor == 'thenomadlad'
       )
     runs-on: ubuntu-latest
     steps:

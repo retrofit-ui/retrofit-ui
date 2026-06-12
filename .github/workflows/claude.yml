@@ -12,6 +12,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
 
 # One Claude job at a time per issue/PR to avoid interleaved comments.
 concurrency:

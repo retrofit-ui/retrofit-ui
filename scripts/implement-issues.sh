@@ -98,22 +98,20 @@ pr_new_comments() {
   [ -z "$last_push" ] && { echo "[]"; return; }
 
   local timeline review inline
-  timeline=$(gh pr view "$pr_number" --repo "$REPO" \
-    --json comments \
-    --jq --arg s "$last_push" \
+  timeline=$(gh pr view "$pr_number" --repo "$REPO" --json comments \
+    2>/dev/null | jq --arg s "$last_push" \
     '[.comments[] | select(.createdAt > $s) | {author: .author.login, body: .body}]' \
-    2>/dev/null || echo "[]")
+    || echo "[]")
 
-  review=$(gh pr view "$pr_number" --repo "$REPO" \
-    --json reviews \
-    --jq --arg s "$last_push" \
+  review=$(gh pr view "$pr_number" --repo "$REPO" --json reviews \
+    2>/dev/null | jq --arg s "$last_push" \
     '[.reviews[] | select(.submittedAt > $s and ((.body // "") != "")) | {author: .author.login, body: ("Review (" + .state + "): " + .body)}]' \
-    2>/dev/null || echo "[]")
+    || echo "[]")
 
   inline=$(gh api "repos/$REPO/pulls/$pr_number/comments" \
-    --jq --arg s "$last_push" \
+    2>/dev/null | jq --arg s "$last_push" \
     '[.[] | select(.created_at > $s) | {author: .user.login, body: ("Inline on `" + .path + "`:\n" + .diff_hunk + "\nComment: " + .body)}]' \
-    2>/dev/null || echo "[]")
+    || echo "[]")
 
   jq -n --argjson a "$timeline" --argjson b "$review" --argjson c "$inline" '$a + $b + $c'
 }

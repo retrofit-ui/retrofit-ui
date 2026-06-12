@@ -17,6 +17,7 @@ import {
 } from 'solid-js';
 import { ApiBaseContext } from './App';
 import { PageView } from './PageView';
+import { showToast } from './toast';
 
 type ResourceData =
   | { kind: 'page'; spec: PageSpec }
@@ -159,6 +160,7 @@ function DataRow(props: {
       });
       if (res.ok) {
         setEditing(false);
+        showToast('success', 'Saved successfully');
         props.onRefresh();
       }
     } finally {
@@ -175,7 +177,10 @@ function DataRow(props: {
     const url = ep.url.replace('{id}', id);
     try {
       const res = await fetch(url, { method: ep.method });
-      if (res.ok) props.onRefresh();
+      if (res.ok) {
+        showToast('success', 'Deleted successfully');
+        props.onRefresh();
+      }
     } finally {
       setDeleting(false);
     }
@@ -311,6 +316,7 @@ function NewRow(props: { spec: TableSpec; onCreated: () => void }) {
       });
       if (res.ok) {
         setValues(emptyValues());
+        showToast('success', 'Created successfully');
         props.onCreated();
       }
     } finally {

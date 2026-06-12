@@ -50,22 +50,13 @@ mkdir -p "$WORKTREE_BASE"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-# Find the open PR number for a given issue (by branch name or body reference).
+# Find the open PR number for an issue using GitHub's built-in linked PR tracking.
 find_pr() {
   local number="$1"
-  local branch="feat/issue-${number}"
-
-  # Prefer exact branch match first
-  local pr
-  pr=$(gh pr list --repo "$REPO" --state open --head "$branch" \
-    --json number --jq '.[0].number // empty' 2>/dev/null || true)
-  [ -n "$pr" ] && { echo "$pr"; return; }
-
-  # Fall back to body search
-  pr=$(gh pr list --repo "$REPO" --state open \
-    --search "closes #${number} in:body" \
-    --json number --jq '.[0].number // empty' 2>/dev/null || true)
-  echo "${pr:-}"
+  gh issue view "$number" --repo "$REPO" \
+    --json closedByPullRequestsReferences \
+    --jq '[.closedByPullRequestsReferences[] | select(.state == "OPEN")] | .[0].number // empty' \
+    2>/dev/null || true
 }
 
 # Return the PR's overall CI conclusion: success | failure | pending | none

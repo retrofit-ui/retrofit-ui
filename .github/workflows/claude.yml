@@ -1,0 +1,40 @@
+name: Claude Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude:
+    # Only repo owner and collaborators (write access) can trigger.
+    # This prevents abuse on a public repo — fork contributors cannot
+    # trigger issue_comment events, so secrets are never exposed to them.
+    if: |
+      github.event.comment.author_association == 'OWNER' ||
+      github.event.comment.author_association == 'COLLABORATOR' ||
+      (
+        github.event_name == 'issues' && (
+          github.event.issue.author_association == 'OWNER' ||
+          github.event.issue.author_association == 'COLLABORATOR'
+        )
+      )
+    runs-on: ubuntu-latest
+    concurrency:
+      group: claude-${{ github.repository }}-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}

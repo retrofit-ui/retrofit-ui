@@ -8,8 +8,10 @@ import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 import type {
   FilterFormSpec,
   FormSpec,
+  LayoutConfig,
   PageSpec,
   TableSpec,
+  ViewSpec,
 } from '@retrofit-ui/core';
 import { useSearchParams } from '@solidjs/router';
 import {
@@ -125,6 +127,22 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { refresh } = useContext(PageRefreshContext);
   const autoSubmit = () => !!props.spec.metadata?.autoSubmit;
+  const fLayout = () => props.spec.metadata?.layout;
+  const hideLabel = () => fLayout()?.labelPosition === 'hidden';
+  const formContainerStyle = () =>
+    fLayout()?.columns
+      ? {
+          display: 'grid',
+          'grid-template-columns': `repeat(${String(fLayout()?.columns)}, 1fr)`,
+          gap: fLayout()?.gap ?? 'var(--sl-spacing-medium)',
+        }
+      : {
+          display: 'flex',
+          'flex-direction': fLayout()?.direction ?? 'column',
+          gap: fLayout()?.gap ?? 'var(--sl-spacing-medium)',
+          'flex-wrap':
+            fLayout()?.direction === 'row' ? ('wrap' as const) : undefined,
+        };
 
   const visibleFields = () => props.spec.fields.filter((f) => !f.readOnly);
 
@@ -230,14 +248,7 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
           {props.title}
         </h2>
       </Show>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: 'flex',
-          'flex-direction': 'column',
-          gap: 'var(--sl-spacing-medium)',
-        }}
-      >
+      <form onSubmit={handleSubmit} style={formContainerStyle()}>
         <For each={visibleFields()}>
           {(field) => {
             const fieldLabel = () => field.label + (field.required ? ' *' : '');
@@ -250,7 +261,8 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
               <div>
                 <Show when={isTextarea()}>
                   <sl-textarea
-                    label={fieldLabel()}
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
                     placeholder={field.placeholder}
                     help-text={field.helpText ?? undefined}
                     prop:value={strVal()}
@@ -266,7 +278,8 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
                 </Show>
                 <Show when={field.type === 'select'}>
                   <sl-select
-                    label={fieldLabel()}
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
                     help-text={field.helpText ?? undefined}
                     prop:value={strVal()}
                     invalid={!!err() || undefined}
@@ -312,7 +325,8 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
                   }
                 >
                   <sl-input
-                    label={fieldLabel()}
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
                     type={field.type}
                     placeholder={field.placeholder}
                     help-text={field.helpText ?? undefined}
@@ -453,6 +467,93 @@ function TablePane(props: { spec: TableSpec }) {
   );
 }
 
+// ── BoxPane + ViewRenderer ────────────────────────────────────────────────────
+
+function boxStyle(lc?: LayoutConfig): Record<string, string | undefined> {
+  const isGrid = !!(lc?.columns ?? lc?.columnTemplate);
+  if (isGrid) {
+    return {
+      display: 'grid',
+      'grid-template-columns':
+        lc?.columnTemplate ?? `repeat(${String(lc?.columns ?? 1)}, 1fr)`,
+      gap: lc?.gap ?? 'var(--sl-spacing-2x-large)',
+      'align-items': lc?.align,
+      'justify-content': lc?.justify,
+    };
+  }
+  return {
+    display: 'flex',
+    'flex-direction': lc?.direction ?? 'column',
+    gap: lc?.gap ?? 'var(--sl-spacing-2x-large)',
+    'flex-wrap': lc?.wrap ? 'wrap' : undefined,
+    'align-items': lc?.align,
+    'justify-content': lc?.justify,
+  };
+}
+
+function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
+  return (
+    <div style={boxStyle(props.layout)}>
+      <For each={props.children}>
+        {(child) => <ViewRenderer spec={child} />}
+      </For>
+    </div>
+  );
+}
+
+function ViewRenderer(props: { spec: ViewSpec }) {
+  return (
+    <Switch>
+      <Match when={props.spec.kind === 'box'}>
+        <BoxPane
+          layout={
+            (
+              props.spec as {
+                kind: 'box';
+                layout?: LayoutConfig;
+                children: ViewSpec[];
+              }
+            ).layout
+          }
+          children={
+            (
+              props.spec as {
+                kind: 'box';
+                layout?: LayoutConfig;
+                children: ViewSpec[];
+              }
+            ).children
+          }
+        />
+      </Match>
+      <Match when={props.spec.kind === 'filter-form'}>
+        <FilterFormPane
+          spec={
+            (props.spec as { kind: 'filter-form'; spec: FilterFormSpec }).spec
+          }
+        />
+      </Match>
+      <Match when={props.spec.kind === 'form'}>
+        <FormPane
+          spec={
+            (props.spec as { kind: 'form'; spec: FormSpec; title?: string })
+              .spec
+          }
+          title={
+            (props.spec as { kind: 'form'; spec: FormSpec; title?: string })
+              .title
+          }
+        />
+      </Match>
+      <Match when={props.spec.kind === 'table'}>
+        <TablePane
+          spec={(props.spec as { kind: 'table'; spec: TableSpec }).spec}
+        />
+      </Match>
+    </Switch>
+  );
+}
+
 // ── PageView ──────────────────────────────────────────────────────────────────
 
 export function PageView(props: { spec: PageSpec; onRefresh?: () => void }) {
@@ -471,45 +572,7 @@ export function PageView(props: { spec: PageSpec; onRefresh?: () => void }) {
         <Show when={props.spec.title}>
           <h1 class="retrofit-page-title">{props.spec.title}</h1>
         </Show>
-        <div
-          style={{
-            display: 'flex',
-            'flex-direction': 'column',
-            gap: 'var(--sl-spacing-2x-large)',
-          }}
-        >
-          <For each={props.spec.panes}>
-            {(pane) => (
-              <Switch>
-                <Match when={pane.kind === 'filter-form'}>
-                  <FilterFormPane
-                    spec={
-                      (pane as { kind: 'filter-form'; spec: FilterFormSpec })
-                        .spec
-                    }
-                  />
-                </Match>
-                <Match when={pane.kind === 'form'}>
-                  <FormPane
-                    spec={
-                      (pane as { kind: 'form'; spec: FormSpec; title?: string })
-                        .spec
-                    }
-                    title={
-                      (pane as { kind: 'form'; spec: FormSpec; title?: string })
-                        .title
-                    }
-                  />
-                </Match>
-                <Match when={pane.kind === 'table'}>
-                  <TablePane
-                    spec={(pane as { kind: 'table'; spec: TableSpec }).spec}
-                  />
-                </Match>
-              </Switch>
-            )}
-          </For>
-        </div>
+        <BoxPane layout={props.spec.layout} children={props.spec.children} />
       </div>
     </PageRefreshContext.Provider>
   );

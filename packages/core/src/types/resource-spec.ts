@@ -28,6 +28,13 @@ export interface TableSpec {
   metadata?: { title?: string };
 }
 
+export interface FormLayoutConfig {
+  direction?: 'row' | 'column';
+  gap?: string;
+  columns?: number;
+  labelPosition?: 'above' | 'hidden';
+}
+
 /** Returned by GET /api/ui/{resource}/:id — drives new and edit form views. */
 export interface FormSpec {
   fields: Field[];
@@ -36,7 +43,11 @@ export interface FormSpec {
     update?: EndpointDirective;
     delete?: EndpointDirective;
   };
-  metadata?: { title?: string; autoSubmit?: boolean };
+  metadata?: {
+    title?: string;
+    autoSubmit?: boolean;
+    layout?: FormLayoutConfig;
+  };
 }
 
 /** Returned by GET /api/ui/{resource}/:id/render — drives the markdown render view. */

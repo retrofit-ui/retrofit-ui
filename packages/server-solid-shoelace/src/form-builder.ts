@@ -1,4 +1,9 @@
-import type { EndpointDirective, Field, FormSpec } from '@retrofit-ui/core';
+import type {
+  EndpointDirective,
+  Field,
+  FormLayoutConfig,
+  FormSpec,
+} from '@retrofit-ui/core';
 import { formFromSchema } from '@retrofit-ui/schema-builder-zod';
 import type { ZodObject, ZodRawShape } from 'zod';
 
@@ -7,6 +12,7 @@ export class FormSpecBuilder<S extends ZodRawShape> {
   private _endpoints: FormSpec['endpoints'] = {};
   private _entity?: Record<string, unknown>;
   private _autoSubmit = false;
+  private _layout?: FormLayoutConfig;
 
   constructor(
     private readonly _schema: ZodObject<S>,
@@ -43,6 +49,11 @@ export class FormSpecBuilder<S extends ZodRawShape> {
     return this;
   }
 
+  layout(config: FormLayoutConfig): this {
+    this._layout = config;
+    return this;
+  }
+
   build(): FormSpec {
     const builder = formFromSchema(this._schema);
     if (this._updateSchema) {
@@ -61,7 +72,12 @@ export class FormSpecBuilder<S extends ZodRawShape> {
     return {
       fields,
       endpoints: this._endpoints,
-      ...(this._autoSubmit && { metadata: { autoSubmit: true } }),
+      ...((this._autoSubmit || this._layout) && {
+        metadata: {
+          ...(this._autoSubmit && { autoSubmit: true }),
+          ...(this._layout && { layout: this._layout }),
+        },
+      }),
     };
   }
 }

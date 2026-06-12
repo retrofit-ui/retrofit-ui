@@ -81,6 +81,23 @@ function singularize(name: string): string {
 }
 
 function FormEditor(props: FormEditorProps) {
+  const fLayout = () => props.spec.metadata?.layout;
+  const hideLabel = () => fLayout()?.labelPosition === 'hidden';
+  const formContainerStyle = () =>
+    fLayout()?.columns
+      ? {
+          display: 'grid',
+          'grid-template-columns': `repeat(${String(fLayout()?.columns)}, 1fr)`,
+          gap: fLayout()?.gap ?? 'var(--sl-spacing-medium)',
+        }
+      : {
+          display: 'flex',
+          'flex-direction': fLayout()?.direction ?? 'column',
+          gap: fLayout()?.gap ?? 'var(--sl-spacing-medium)',
+          'flex-wrap':
+            fLayout()?.direction === 'row' ? ('wrap' as const) : undefined,
+        };
+
   const submitAction = () => {
     if (props.id) {
       const ep = props.spec.endpoints?.update;
@@ -194,14 +211,7 @@ function FormEditor(props: FormEditorProps) {
         &larr; Back
       </button>
       <h1 class="retrofit-page-title">{title()}</h1>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          display: 'flex',
-          'flex-direction': 'column',
-          gap: 'var(--sl-spacing-medium)',
-        }}
-      >
+      <form onSubmit={handleSubmit} style={formContainerStyle()}>
         <For each={visibleFields()}>
           {(field) => {
             const fieldLabel = () => field.label + (field.required ? ' *' : '');
@@ -214,7 +224,8 @@ function FormEditor(props: FormEditorProps) {
               <div>
                 <Show when={isTextarea()}>
                   <sl-textarea
-                    label={fieldLabel()}
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
                     placeholder={field.placeholder}
                     help-text={
                       field.type === 'markdown'
@@ -235,7 +246,8 @@ function FormEditor(props: FormEditorProps) {
                 </Show>
                 <Show when={field.type === 'select'}>
                   <sl-select
-                    label={fieldLabel()}
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}
                     prop:value={strVal()}
@@ -281,7 +293,8 @@ function FormEditor(props: FormEditorProps) {
                   }
                 >
                   <sl-input
-                    label={fieldLabel()}
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
                     type={field.type}
                     placeholder={field.placeholder}
                     help-text={field.helpText ?? undefined}

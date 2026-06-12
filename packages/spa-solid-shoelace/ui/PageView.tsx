@@ -505,36 +505,50 @@ function ViewRenderer(props: { spec: ViewSpec }) {
   return (
     <Switch>
       <Match when={props.spec.kind === 'box'}>
-        {() => {
-          const s = props.spec as {
-            kind: 'box';
-            layout?: LayoutConfig;
-            children: ViewSpec[];
-          };
-          return <BoxPane layout={s.layout} children={s.children} />;
-        }}
+        <BoxPane
+          layout={
+            (
+              props.spec as {
+                kind: 'box';
+                layout?: LayoutConfig;
+                children: ViewSpec[];
+              }
+            ).layout
+          }
+          children={
+            (
+              props.spec as {
+                kind: 'box';
+                layout?: LayoutConfig;
+                children: ViewSpec[];
+              }
+            ).children
+          }
+        />
       </Match>
       <Match when={props.spec.kind === 'filter-form'}>
-        {() => {
-          const s = props.spec as { kind: 'filter-form'; spec: FilterFormSpec };
-          return <FilterFormPane spec={s.spec} />;
-        }}
+        <FilterFormPane
+          spec={
+            (props.spec as { kind: 'filter-form'; spec: FilterFormSpec }).spec
+          }
+        />
       </Match>
       <Match when={props.spec.kind === 'form'}>
-        {() => {
-          const s = props.spec as {
-            kind: 'form';
-            spec: FormSpec;
-            title?: string;
-          };
-          return <FormPane spec={s.spec} title={s.title} />;
-        }}
+        <FormPane
+          spec={
+            (props.spec as { kind: 'form'; spec: FormSpec; title?: string })
+              .spec
+          }
+          title={
+            (props.spec as { kind: 'form'; spec: FormSpec; title?: string })
+              .title
+          }
+        />
       </Match>
       <Match when={props.spec.kind === 'table'}>
-        {() => {
-          const s = props.spec as { kind: 'table'; spec: TableSpec };
-          return <TablePane spec={s.spec} />;
-        }}
+        <TablePane
+          spec={(props.spec as { kind: 'table'; spec: TableSpec }).spec}
+        />
       </Match>
     </Switch>
   );

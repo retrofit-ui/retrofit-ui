@@ -14,6 +14,7 @@ REPO="retrofit-ui/retrofit-ui"
 LIMIT=50
 JOBS=1
 WORKTREE_BASE=".claude/worktrees"
+LOG_BASE="$(pwd)/.claude/logs"
 
 # ── Arg parsing ───────────────────────────────────────────────────────────────
 
@@ -45,10 +46,14 @@ else
 fi
 
 count=$(echo "$issues_json" | jq length)
-echo "Processing $count issue(s) with --jobs $JOBS"
+echo "Processing $count issue(s) with --jobs $JOBS  (oldest first)"
 mkdir -p "$WORKTREE_BASE"
+mkdir -p "$LOG_BASE"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+log() { echo "[$(date '+%H:%M:%S')] $*"; }
+elapsed() { echo $(( $(date +%s) - $1 ))s; }
 
 # Find the open PR number for an issue using GitHub's built-in linked PR tracking.
 find_pr() {
@@ -88,10 +93,15 @@ run_issue() {
   branch="feat/issue-${number}"
   worktree="${WORKTREE_BASE}/issue-${number}"
 
+  local t0
+  t0=$(date +%s)
+
   echo ""
   echo "━━━ #${number}: ${title} ━━━"
+  log "Starting issue #${number}"
 
   pr_number=$(find_pr "$number")
+  log "PR lookup done  pr=${pr_number:-none}"
 
   # ── Branch A: PR already exists — check and fix if needed ──────────────────
   if [ -n "$pr_number" ]; then
@@ -99,10 +109,10 @@ run_issue() {
     ci_status=$(pr_ci_status "$pr_number")
     conflicts=$(pr_has_conflicts "$pr_number")
 
-    echo "  → PR #${pr_number} exists  ci=${ci_status}  conflicts=${conflicts}"
+    log "  → PR #${pr_number} exists  ci=${ci_status}  conflicts=${conflicts}"
 
     if [ "$ci_status" = "success" ] && [ "$conflicts" = "false" ]; then
-      echo "  → all green, skipping"
+      log "  → all green, skipping  (elapsed: $(elapsed $t0))"
       return 0
     fi
 
@@ -117,10 +127,16 @@ run_issue() {
     [ "$conflicts" = "true" ]      && fix_context+="- The PR has MERGE CONFLICTS with main. Rebase or merge main into this branch to resolve them.\n"
     [ "$ci_status" = "failure" ]   && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
 
+    local log_file="${LOG_BASE}/issue-${number}.log"
+    log "  → logging to ${log_file}"
+    log "  → entering worktree: ${worktree}"
     (
       cd "$worktree"
+      log "  → pulling origin main into worktree"
       git pull origin main --no-edit 2>/dev/null || true   # attempt rebase surface
+      log "  → launching claude for fix  branch=${branch}"
       claude --dangerously-skip-permissions \
+        --verbose \
         --max-turns 40 \
         -p "You are fixing an existing pull request for the retrofit-ui TypeScript monorepo.
 
@@ -135,10 +151,11 @@ ${fix_context}
 - Run \`pnpm build\` and \`pnpm test\` to confirm everything passes before pushing.
 - Commit any fixes and push to origin/${branch}.
 - Do not open a new PR — one already exists (#${pr_number}).
-- Do not ask for confirmation. Work autonomously to completion."
-    ) && echo "  ✓ #${number} PR fixed" \
-      || echo "  ✗ #${number} fix attempt failed"
+- Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
+    ) && log "  ✓ #${number} PR fixed  (elapsed: $(elapsed $t0))" \
+      || log "  ✗ #${number} fix attempt failed  (elapsed: $(elapsed $t0))"
 
+    log "  → removing worktree ${worktree}"
     git worktree remove --force "$worktree" 2>/dev/null || true
     return 0
   fi
@@ -150,9 +167,14 @@ ${fix_context}
   git branch -D "$branch" 2>/dev/null || true
   git worktree add "$worktree" -b "$branch" main
 
+  local log_file="${LOG_BASE}/issue-${number}.log"
+  log "  → logging to ${log_file}"
+  log "  → entering worktree: ${worktree}"
   (
     cd "$worktree"
+    log "  → launching claude for new implementation  branch=${branch}"
     claude --dangerously-skip-permissions \
+      --verbose \
       --max-turns 40 \
       -p "You are implementing a GitHub issue for the retrofit-ui TypeScript monorepo.
 
@@ -169,24 +191,25 @@ ${body}
 - Run \`pnpm build\` and \`pnpm test\` (if tests exist for the changed area). Fix any failures before committing.
 - Commit with: feat: <description> (closes #${number})
 - Open a pull request against main that closes issue #${number}.
-- Do not ask for confirmation. Work autonomously to completion."
-  ) && echo "  ✓ #${number} done" \
-    || echo "  ✗ #${number} failed"
+- Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
+  ) && log "  ✓ #${number} done  (elapsed: $(elapsed $t0))" \
+    || log "  ✗ #${number} failed  (elapsed: $(elapsed $t0))"
 
+  log "  → removing worktree ${worktree}"
   git worktree remove --force "$worktree" 2>/dev/null || true
 }
 
-export -f run_issue find_pr pr_ci_status pr_has_conflicts
-export REPO WORKTREE_BASE
+export -f run_issue find_pr pr_ci_status pr_has_conflicts log elapsed
+export REPO WORKTREE_BASE LOG_BASE
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
 
 if [ "$JOBS" -eq 1 ]; then
-  echo "$issues_json" | jq -c '.[]' | while read -r issue; do
+  echo "$issues_json" | jq -c 'sort_by(.number) | .[]' | while read -r issue; do
     run_issue "$issue"
   done
 else
-  echo "$issues_json" | jq -c '.[]' | \
+  echo "$issues_json" | jq -c 'sort_by(.number) | .[]' | \
     xargs -P "$JOBS" -I{} bash -c 'run_issue "$@"' _ {}
 fi
 

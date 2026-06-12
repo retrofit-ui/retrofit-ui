@@ -9,6 +9,7 @@ import type { FormSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, createSignal, For, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './App';
+import { showToast } from './toast';
 
 interface FormViewData {
   spec: FormSpec;
@@ -181,6 +182,10 @@ function FormEditor(props: FormEditorProps) {
         setSubmitError(String(body.error ?? `Request failed: ${res.status}`));
         return;
       }
+      showToast(
+        'success',
+        props.id ? 'Saved successfully' : 'Created successfully',
+      );
       props.onDone();
     } catch (err) {
       setSubmitError(String(err));
@@ -196,12 +201,13 @@ function FormEditor(props: FormEditorProps) {
     try {
       const res = await fetch(action.url, { method: action.method });
       if (!res.ok) {
-        alert(`Delete failed: ${res.status}`);
+        showToast('danger', `Delete failed: ${res.status}`);
         return;
       }
+      showToast('success', 'Deleted successfully');
       props.onDone();
     } catch (err) {
-      alert(`Delete failed: ${String(err)}`);
+      showToast('danger', `Delete failed: ${String(err)}`);
     }
   }
 

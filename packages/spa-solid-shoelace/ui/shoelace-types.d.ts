@@ -84,6 +84,19 @@ declare module 'solid-js' {
         children?: JSX.Element;
       };
       'sl-divider': JSX.HTMLAttributes<HTMLElement> & { vertical?: boolean };
+      'sl-alert': JSX.HTMLAttributes<HTMLElement> & {
+        variant?: 'primary' | 'success' | 'neutral' | 'warning' | 'danger';
+        open?: boolean;
+        closable?: boolean;
+        duration?: number;
+        children?: JSX.Element;
+        'on:sl-after-hide'?: SlEventHandler;
+      };
+      'sl-icon': JSX.HTMLAttributes<HTMLElement> & {
+        name?: string;
+        src?: string;
+        slot?: string;
+      };
     }
   }
 }

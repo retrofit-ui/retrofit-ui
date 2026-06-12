@@ -97,10 +97,17 @@ test.describe('Expenses auto-submit filter layout', () => {
     page,
   }) => {
     await page.goto('/#/expenses-filtered');
+    await waitForForm(page);
     await waitForTable(page);
 
     await expect(page.locator('sl-button[type="submit"]')).toHaveCount(0);
     await expect(page.locator('sl-select')).toHaveCount(2);
+
+    // Filter fields should be laid out horizontally (flex row)
+    const flexDir = await page
+      .locator('form')
+      .evaluate((el) => getComputedStyle(el).flexDirection);
+    expect(flexDir).toBe('row');
 
     const initialCount = await page.locator('tbody tr').count();
     expect(initialCount).toBeGreaterThan(0);

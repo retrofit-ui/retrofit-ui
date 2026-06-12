@@ -1,36 +1,122 @@
 name: Claude Assistant
 
 on:
+  issues:
+    types: [opened]
   issue_comment:
     types: [created]
   pull_request_review_comment:
     types: [created]
-  issues:
-    types: [opened, assigned]
 
 permissions:
   contents: write
   pull-requests: write
   issues: write
 
+# One Claude job at a time per issue/PR to avoid interleaved comments.
+concurrency:
+  group: claude-${{ github.repository }}-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
-  claude:
-    # Only repo owner and collaborators (write access) can trigger.
-    # This prevents abuse on a public repo — fork contributors cannot
-    # trigger issue_comment events, so secrets are never exposed to them.
+  # ── Phase 1: Issue opened → ask clarifying questions ─────────────────────────
+  clarify:
     if: |
-      github.event.comment.author_association == 'OWNER' ||
-      github.event.comment.author_association == 'COLLABORATOR' ||
-      (
-        github.event_name == 'issues' && (
-          github.event.issue.author_association == 'OWNER' ||
-          github.event.issue.author_association == 'COLLABORATOR'
-        )
-      )
+      github.event_name == 'issues' &&
+      github.event.issue.author_association == 'OWNER'
     runs-on: ubuntu-latest
-    concurrency:
-      group: claude-${{ github.repository }}-${{ github.event.issue.number || github.event.pull_request.number }}
-      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            A new issue has been filed. Do NOT write any code or propose an implementation yet.
+
+            Read the issue and ask 2–4 focused clarifying questions to nail down:
+            - Scope and exact requirements
+            - Edge cases or constraints
+            - Acceptance criteria / definition of done
+
+            Keep it conversational. End your comment by letting the author know they can
+            reply with `@claude plan` when they're satisfied with the answers.
+
+  # ── Phase 2: @claude plan → propose implementation plan, no code ─────────────
+  plan:
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '@claude') &&
+      contains(github.event.comment.body, 'plan')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Based on the issue and the conversation so far, propose a concrete implementation plan.
+
+            Your plan must include:
+            - Which files will change and why
+            - The approach and any significant design decisions
+            - Step-by-step implementation order
+            - Any risks, tradeoffs, or open questions
+
+            Do NOT write any code. Do NOT create or modify any files. Only post a written plan.
+
+            End your comment by letting the author know they can reply with `@claude implement`
+            to execute the plan, or continue the conversation to refine it.
+
+  # ── Phase 3: @claude implement → write code, open PR ────────────────────────
+  implement:
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '@claude') &&
+      contains(github.event.comment.body, 'implement')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Implement the feature described in this issue, following the plan that was
+            proposed in this thread (if any). If no plan was proposed, use the full
+            conversation as context and apply your best judgment.
+
+            Open a pull request with your changes.
+
+  # ── Phase 4: @claude <anything else> → general conversation ──────────────────
+  converse:
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.comment.body, '@claude') &&
+      !contains(github.event.comment.body, 'plan') &&
+      !contains(github.event.comment.body, 'implement')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # ── PR review comments → respond or push fixes directly ──────────────────────
+  pr-review:
+    if: |
+      github.event_name == 'pull_request_review_comment' &&
+      github.event.comment.author_association == 'OWNER'
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:

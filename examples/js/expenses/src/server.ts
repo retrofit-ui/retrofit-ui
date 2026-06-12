@@ -10,6 +10,7 @@ import {
   formSpec,
   pageSpec,
   retrofitUi,
+  row,
   TableView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
@@ -102,6 +103,7 @@ app.get('/api/ui/expenses-filtered', (_req, res) => {
             .fieldOverride('category', { placeholder: 'All Categories' })
             .fieldOverride('status', { placeholder: 'All Statuses' })
             .autoSubmit()
+            .layout({ direction: 'row' })
             .build(),
         )
         .table(
@@ -153,6 +155,48 @@ app.get('/api/ui/expenses-stacked', (_req, res) => {
               'status',
               'date',
             ])
+            .build(),
+        )
+        .build(),
+    ),
+  );
+});
+
+// Dashboard: create form + expense list side by side — navigate to /#/expenses-dashboard
+app.get('/api/ui/expenses-dashboard', (_req, res) => {
+  res.json(
+    retrofit(
+      pageSpec()
+        .title('Expenses')
+        .add(
+          row()
+            .form(
+              formSpec(ExpenseSchema, CreateExpenseSchema)
+                .fieldOverride('amount', {
+                  validation: { min: 0.01, max: 10000 },
+                })
+                .fieldOverride('date', {
+                  placeholder: 'YYYY-MM-DD',
+                  helpText: 'YYYY-MM-DD',
+                  validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+                })
+                .fieldOverride('notes', { type: 'textarea' })
+                .fieldOverride('description', { validation: { min: 3 } })
+                .create({ method: 'POST', url: '/expenses' })
+                .build(),
+              'New Expense',
+            )
+            .table(
+              TableView.forRows(ExpenseSchema, store.all())
+                .visibleColumns([
+                  'description',
+                  'amount',
+                  'category',
+                  'status',
+                  'date',
+                ])
+                .build(),
+            )
             .build(),
         )
         .build(),

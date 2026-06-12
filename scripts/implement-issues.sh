@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Implement open GitHub issues via Claude CLI, one per git worktree.
+# If an issue already has an open PR, checks its CI/conflict status and
+# has Claude fix any problems rather than skipping.
 #
 # Usage:
 #   ./scripts/implement-issues.sh              # all open issues, sequential
@@ -46,11 +48,48 @@ count=$(echo "$issues_json" | jq length)
 echo "Processing $count issue(s) with --jobs $JOBS"
 mkdir -p "$WORKTREE_BASE"
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+# Find the open PR number for a given issue (by branch name or body reference).
+find_pr() {
+  local number="$1"
+  local branch="feat/issue-${number}"
+
+  # Prefer exact branch match first
+  local pr
+  pr=$(gh pr list --repo "$REPO" --state open --head "$branch" \
+    --json number --jq '.[0].number // empty' 2>/dev/null || true)
+  [ -n "$pr" ] && { echo "$pr"; return; }
+
+  # Fall back to body search
+  pr=$(gh pr list --repo "$REPO" --state open \
+    --search "closes #${number} in:body" \
+    --json number --jq '.[0].number // empty' 2>/dev/null || true)
+  echo "${pr:-}"
+}
+
+# Return the PR's overall CI conclusion: success | failure | pending | none
+pr_ci_status() {
+  local pr_number="$1"
+  gh pr checks "$pr_number" --repo "$REPO" --json state \
+    --jq '[.[].state] | if any(. == "FAILURE" or . == "ERROR") then "failure"
+          elif any(. == "PENDING" or . == "IN_PROGRESS") then "pending"
+          elif all(. == "SUCCESS") then "success"
+          else "none" end' 2>/dev/null || echo "none"
+}
+
+# Return "true" if the PR has merge conflicts.
+pr_has_conflicts() {
+  local pr_number="$1"
+  gh pr view "$pr_number" --repo "$REPO" --json mergeable \
+    --jq '.mergeable == "CONFLICTING"' 2>/dev/null || echo "false"
+}
+
 # ── Per-issue worker ──────────────────────────────────────────────────────────
 
 run_issue() {
   local issue="$1"
-  local number title body branch worktree
+  local number title body branch worktree pr_number
 
   number=$(echo "$issue" | jq -r '.number')
   title=$(echo  "$issue" | jq -r '.title')
@@ -61,25 +100,65 @@ run_issue() {
   echo ""
   echo "━━━ #${number}: ${title} ━━━"
 
-  # Skip if an open PR already exists
-  local existing
-  existing=$(gh pr list --repo "$REPO" --state open \
-    --search "closes #${number} in:body" --json number | jq length)
-  if [ "$existing" -gt 0 ]; then
-    echo "  → skipping: open PR already exists"
+  pr_number=$(find_pr "$number")
+
+  # ── Branch A: PR already exists — check and fix if needed ──────────────────
+  if [ -n "$pr_number" ]; then
+    local ci_status conflicts
+    ci_status=$(pr_ci_status "$pr_number")
+    conflicts=$(pr_has_conflicts "$pr_number")
+
+    echo "  → PR #${pr_number} exists  ci=${ci_status}  conflicts=${conflicts}"
+
+    if [ "$ci_status" = "success" ] && [ "$conflicts" = "false" ]; then
+      echo "  → all green, skipping"
+      return 0
+    fi
+
+    # Something needs fixing — open a worktree on the existing branch
+    if [ -d "$worktree" ]; then
+      git worktree remove --force "$worktree" 2>/dev/null || true
+    fi
+    git fetch origin "$branch"
+    git worktree add "$worktree" "$branch"
+
+    local fix_context=""
+    [ "$conflicts" = "true" ]      && fix_context+="- The PR has MERGE CONFLICTS with main. Rebase or merge main into this branch to resolve them.\n"
+    [ "$ci_status" = "failure" ]   && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
+
+    (
+      cd "$worktree"
+      git pull origin main --no-edit 2>/dev/null || true   # attempt rebase surface
+      claude --dangerously-skip-permissions \
+        --max-turns 40 \
+        -p "You are fixing an existing pull request for the retrofit-ui TypeScript monorepo.
+
+## Issue #${number}: ${title}
+## PR: #${pr_number} (branch \`${branch}\`)
+
+${fix_context}
+## Instructions
+
+- You are already on branch \`${branch}\` in an isolated git worktree.
+- Fix the problems listed above. Do not change unrelated code.
+- Run \`pnpm build\` and \`pnpm test\` to confirm everything passes before pushing.
+- Commit any fixes and push to origin/${branch}.
+- Do not open a new PR — one already exists (#${pr_number}).
+- Do not ask for confirmation. Work autonomously to completion."
+    ) && echo "  ✓ #${number} PR fixed" \
+      || echo "  ✗ #${number} fix attempt failed"
+
+    git worktree remove --force "$worktree" 2>/dev/null || true
     return 0
   fi
 
-  # Clean up any leftover worktree from a previous run
+  # ── Branch B: No PR yet — implement from scratch ────────────────────────────
   if [ -d "$worktree" ]; then
     git worktree remove --force "$worktree" 2>/dev/null || true
   fi
   git branch -D "$branch" 2>/dev/null || true
-
-  # Create a fresh worktree on a new branch
   git worktree add "$worktree" -b "$branch" main
 
-  # Run Claude inside the worktree
   (
     cd "$worktree"
     claude --dangerously-skip-permissions \
@@ -103,11 +182,10 @@ ${body}
   ) && echo "  ✓ #${number} done" \
     || echo "  ✗ #${number} failed"
 
-  # Remove the worktree (branch stays for the PR)
   git worktree remove --force "$worktree" 2>/dev/null || true
 }
 
-export -f run_issue
+export -f run_issue find_pr pr_ci_status pr_has_conflicts
 export REPO WORKTREE_BASE
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────

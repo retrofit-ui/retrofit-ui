@@ -144,7 +144,9 @@ test.describe('Todos inline-edit table', () => {
 
     const secondRow = page.locator('tbody tr').nth(1);
     await secondRow.locator('sl-button').filter({ hasText: 'Delete' }).click();
-    await page.locator('sl-button[slot="footer"][variant="danger"]').click();
+    await page
+      .locator('sl-dialog[open] sl-button[slot="footer"][variant="danger"]')
+      .click();
 
     await expect(
       page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),

@@ -49,6 +49,10 @@ app.delete('/posts/:id', (req, res) => {
   store.delete(req.params.id);
   res.json({ ok: true });
 });
+app.post('/test/reset', (_req, res) => {
+  store.reset();
+  res.json({ ok: true });
+});
 
 const retrofit = retrofitUi(app, {
   theme: {

@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test';
 const TABLE_URL = '/#/posts';
 const NEW_URL = '/#/posts/new';
 
+test.beforeAll(async ({ request }) => {
+  await request.post('/test/reset');
+});
+
 async function waitForTable(page: import('@playwright/test').Page) {
   await page.waitForSelector('table');
 }
@@ -110,8 +114,10 @@ test.describe('Blog edit form', () => {
   test('Delete button removes the post', async ({ page }) => {
     await page.goto('/#/posts/3');
     await waitForForm(page);
-    await page.locator('sl-button[variant="danger"]').click();
-    await page.locator('sl-button[slot="footer"][variant="danger"]').click();
+    await page.locator('form sl-button[variant="danger"]').click();
+    await page
+      .locator('sl-dialog[open] sl-button[slot="footer"][variant="danger"]')
+      .click();
     await expect(
       page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),
     ).toBeVisible();

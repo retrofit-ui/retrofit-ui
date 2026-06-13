@@ -1,8 +1,6 @@
 import type { Post } from './schemas';
 
-let nextId = 4;
-
-const posts: Post[] = [
+const SEED: Post[] = [
   {
     id: 1,
     title: 'Getting Started with Retrofit UI',
@@ -35,9 +33,18 @@ const posts: Post[] = [
   },
 ];
 
+let nextId = 4;
+const posts: Post[] = SEED.map((p) => ({ ...p }));
+
 export const store = {
   all(): Post[] {
     return posts;
+  },
+
+  reset(): void {
+    posts.length = 0;
+    posts.push(...SEED.map((p) => ({ ...p })));
+    nextId = 4;
   },
 
   byStatus(status: string): Post[] {

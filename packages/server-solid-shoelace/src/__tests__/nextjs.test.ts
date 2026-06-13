@@ -76,7 +76,7 @@ describe('GET /api/forms', () => {
     expect(res.status).toBe(200);
     const data = (await res.json()) as { id: string }[];
     expect(data).toHaveLength(1);
-    expect(data[0].id).toBe('contact');
+    expect(data[0]?.id).toBe('contact');
   });
 });
 

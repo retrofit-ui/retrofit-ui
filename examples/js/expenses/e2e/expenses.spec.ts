@@ -85,6 +85,10 @@ test.describe('Expenses stacked layout (form + table)', () => {
     await page.locator('sl-option[value="other"]').click();
     await page.locator('sl-button[type="submit"]').click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
+    ).toBeVisible();
+
     await page.waitForTimeout(1500);
     // Still on the same URL — no redirect
     await expect(page).toHaveURL(/expenses-stacked/);
@@ -157,6 +161,10 @@ test.describe('Expenses dashboard layout (row — form beside table)', () => {
     await page.locator('sl-option[value="meals"]').click();
     await page.locator('sl-button[type="submit"]').click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
+    ).toBeVisible();
+
     await page.waitForTimeout(1500);
     await expect(page).toHaveURL(/expenses-dashboard/);
     await expect(page.getByText('Dashboard E2E')).toBeVisible();
@@ -193,6 +201,10 @@ test.describe('Expenses simple form', () => {
     await page.locator('sl-option[value="other"]').click();
     await page.locator('sl-button[type="submit"]').click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
+    ).toBeVisible();
+
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
     await expect(page.getByText('Office supplies')).toBeVisible();
@@ -212,6 +224,10 @@ test.describe('Expenses simple form', () => {
     await desc.fill('Updated via E2E');
     await page.locator('sl-button[type="submit"]').click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Saved successfully' }),
+    ).toBeVisible();
+
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
     await expect(page.getByText('Updated via E2E')).toBeVisible();
@@ -223,6 +239,10 @@ test.describe('Expenses simple form', () => {
 
     page.on('dialog', (dialog) => dialog.accept());
     await page.locator('sl-button[variant="danger"]').click();
+
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),
+    ).toBeVisible();
 
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);

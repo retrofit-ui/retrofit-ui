@@ -1,6 +1,7 @@
 package io.retrofitui.examples.contacts;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.WaitUntilState;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -107,5 +108,24 @@ class ContactsE2ETest {
         page.waitForSelector("form", new Page.WaitForSelectorOptions().setTimeout(10_000));
 
         assertThat(page.locator("form").count()).isGreaterThan(0);
+    }
+
+    @Test
+    void createContactShowsSuccessToast() {
+        page.navigate(url("/retrofit-ui#/contacts/new"),
+            new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
+        page.waitForSelector("form", new Page.WaitForSelectorOptions().setTimeout(10_000));
+
+        page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Name *")).fill("Toast Contact");
+        page.getByRole(AriaRole.TEXTBOX, new Page.GetByRoleOptions().setName("Email *")).fill("toast@example.com");
+        page.locator("sl-select").click();
+        page.locator("sl-option[value='work']").click();
+
+        page.locator("sl-button[type='submit']").click();
+
+        page.waitForSelector("sl-alert", new Page.WaitForSelectorOptions().setTimeout(5_000));
+        assertThat(page.locator("sl-alert")
+            .filter(new Locator.FilterOptions().setHasText("Created successfully")).count())
+            .isGreaterThan(0);
     }
 }

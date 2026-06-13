@@ -246,6 +246,10 @@ test.describe('Contacts by Type — stacked layout', () => {
 
     await page.locator('sl-button[type="submit"]').click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
+    ).toBeVisible();
+
     // New contact should appear in the filtered table without navigation
     await expect(page.getByText('Eve Test')).toBeVisible();
 
@@ -306,6 +310,10 @@ test.describe('Create new contact', () => {
 
     await page.locator('sl-button[type="submit"]').click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
+    ).toBeVisible();
+
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
 
@@ -351,6 +359,10 @@ test.describe('Edit existing contact', () => {
 
     await page.locator('sl-button[type="submit"]').click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Saved successfully' }),
+    ).toBeVisible();
+
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
 
@@ -367,6 +379,10 @@ test.describe('Delete contact', () => {
 
     page.on('dialog', (dialog) => dialog.accept());
     await page.locator('sl-button[variant="danger"]').click();
+
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),
+    ).toBeVisible();
 
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);

@@ -237,8 +237,8 @@ test.describe('Expenses simple form', () => {
     await page.goto('/#/expenses/2');
     await waitForForm(page);
 
-    page.on('dialog', (dialog) => dialog.accept());
     await page.locator('sl-button[variant="danger"]').click();
+    await page.locator('sl-button[slot="footer"][variant="danger"]').click();
 
     await expect(
       page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),

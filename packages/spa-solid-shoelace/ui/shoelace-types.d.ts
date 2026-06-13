@@ -97,6 +97,16 @@ declare module 'solid-js' {
         src?: string;
         slot?: string;
       };
+      'sl-dialog': JSX.HTMLAttributes<HTMLElement> & {
+        open?: boolean;
+        'prop:open'?: boolean;
+        label?: string;
+        'no-header'?: boolean;
+        children?: JSX.Element;
+        'on:sl-show'?: SlEventHandler;
+        'on:sl-hide'?: SlEventHandler;
+        'on:sl-request-close'?: SlEventHandler;
+      };
     }
   }
 }

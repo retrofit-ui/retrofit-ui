@@ -35,14 +35,14 @@ if [ ${#ISSUE_ARGS[@]} -gt 0 ]; then
   issues_json="["
   sep=""
   for n in "${ISSUE_ARGS[@]}"; do
-    issue=$(gh issue view "$n" --repo "$REPO" --json number,title,body)
+    issue=$(gh issue view "$n" --repo "$REPO" --json number,title,body,labels)
     issues_json+="${sep}${issue}"
     sep=","
   done
   issues_json+="]"
 else
   issues_json=$(gh issue list --repo "$REPO" --state open \
-    --json number,title,body --limit "$LIMIT")
+    --json number,title,body,labels --limit "$LIMIT")
 fi
 
 count=$(echo "$issues_json" | jq length)
@@ -133,6 +133,12 @@ run_issue() {
 
   echo ""
   echo "━━━ #${number}: ${title} ━━━"
+
+  if echo "$issue" | jq -e '[.labels[].name] | contains(["needs refinement"])' > /dev/null 2>&1; then
+    log "  → issue has 'needs refinement' label, skipping"
+    return 0
+  fi
+
   log "Starting issue #${number}"
 
   pr_number=$(find_pr "$number")

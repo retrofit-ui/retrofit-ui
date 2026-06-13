@@ -229,13 +229,29 @@ ${body}
 
 ## Instructions
 
-- You are already on branch \`${branch}\` in an isolated git worktree. Do NOT create a new branch.
+Work in this order:
+
+### 1. Plan
 - Read CLAUDE.md if it exists for project conventions.
-- Explore the codebase enough to understand where the changes belong.
-- Implement the feature. Follow existing code style — no extra abstractions, no cleanup outside the issue scope.
-- Run \`pnpm build\` and \`pnpm test\` (if tests exist for the changed area). Fix any failures before committing.
+- Explore the codebase to understand where the changes belong.
+- Write a concrete implementation plan: what files change, what the approach is, and what edge cases to watch for. Keep it concise (bullet points).
+
+### 2. Write tests and failing stubs first
+- Write the unit/integration tests that the implementation must pass.
+- Add usage of the new feature in the relevant \`examples/\` apps (stub it out so it compiles but doesn't work yet).
+- Write e2e tests in \`examples/\` that exercise the new behaviour end-to-end.
+- Run \`pnpm test\` to confirm the tests fail as expected (red).
+
+### 3. Implement
+- You are already on branch \`${branch}\` in an isolated git worktree. Do NOT create a new branch.
+- Implement the feature to make the tests pass. Follow existing code style — no extra abstractions, no cleanup outside the issue scope.
+- Run \`pnpm build\` and \`pnpm test\` to confirm everything is green.
+
+### 4. Commit and open PR
 - Commit with: feat: <description> (closes #${number})
-- Open a pull request against main. The PR body MUST contain the exact text \`closes #${number}\` so GitHub links it to the issue.
+- Open a pull request against main. The PR body MUST:
+  - Contain the exact text \`closes #${number}\` so GitHub links it to the issue.
+  - Include the implementation plan from step 1 as the description.
 - Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
     log "  → pushing ${branch} to origin"
     git push origin "$branch" 2>&1 | tee -a "$log_file" || log "  ⚠ push failed for ${branch}"

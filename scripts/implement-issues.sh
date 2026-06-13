@@ -150,8 +150,8 @@ run_issue() {
 
     log "  → PR #${pr_number} exists  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}"
 
-    if [ "$ci_status" = "success" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ]; then
-      log "  → all green, no new comments, skipping  (elapsed: $(elapsed $t0))"
+    if [ "$ci_status" != "failure" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ]; then
+      log "  → ci=${ci_status}, no conflicts, no new comments, skipping  (elapsed: $(elapsed $t0))"
       return 0
     fi
 

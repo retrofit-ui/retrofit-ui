@@ -3,6 +3,7 @@ import { createContext } from 'solid-js';
 import { FormView } from './FormView';
 import { MarkdownView } from './MarkdownView';
 import { TableView } from './TableView';
+import { ToastContainer } from './toast';
 
 export const ApiBaseContext = createContext('/api/ui');
 
@@ -27,6 +28,7 @@ export function App(props: { apiBase?: string }) {
         <Route path="/:resource/:id/render" component={MarkdownView} />
         <Route path="/:resource/:id" component={FormView} />
       </HashRouter>
+      <ToastContainer />
     </ApiBaseContext.Provider>
   );
 }

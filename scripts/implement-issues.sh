@@ -1,62 +1,37 @@
 #!/usr/bin/env bash
-# Implement open GitHub issues via Claude CLI, one per git worktree.
-# If an issue already has an open PR, checks its CI/conflict status and
-# has Claude fix any problems rather than skipping.
+# Implement open GitHub issues via Claude CLI, one at a time.
+# Each issue goes through two committed steps: plan, then implementation.
+# Skips issues labelled "needs refinement" and issues whose PR is already healthy.
+# Stops after MAX issues have been actively worked on (default: 1).
 #
 # Usage:
-#   ./scripts/implement-issues.sh              # all open issues, sequential
-#   ./scripts/implement-issues.sh 66 62        # specific issue numbers
-#   ./scripts/implement-issues.sh --jobs 3     # run up to 3 in parallel
-#   ./scripts/implement-issues.sh --jobs 3 66 62 47
+#   ./scripts/implement-issues.sh        # implement 1 issue
+#   ./scripts/implement-issues.sh 3      # implement up to 3 issues
 set -euo pipefail
 
 REPO="retrofit-ui/retrofit-ui"
 LIMIT=50
-JOBS=1
+MAX=${1:-1}
 WORKTREE_BASE=".claude/worktrees"
 LOG_BASE="$(pwd)/.claude/logs"
-
-# ── Arg parsing ───────────────────────────────────────────────────────────────
-
-ISSUE_ARGS=()
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --jobs|-j) JOBS="$2"; shift 2 ;;
-    *) ISSUE_ARGS+=("$1"); shift ;;
-  esac
-done
+PLAN_DIR="docs/github_issues/plans"
 
 # ── Gather issues ─────────────────────────────────────────────────────────────
 
 git checkout main
 git pull origin main
 
-if [ ${#ISSUE_ARGS[@]} -gt 0 ]; then
-  issues_json="["
-  sep=""
-  for n in "${ISSUE_ARGS[@]}"; do
-    issue=$(gh issue view "$n" --repo "$REPO" --json number,title,body,labels)
-    issues_json+="${sep}${issue}"
-    sep=","
-  done
-  issues_json+="]"
-else
-  issues_json=$(gh issue list --repo "$REPO" --state open \
-    --json number,title,body,labels --limit "$LIMIT")
-fi
+issues_json=$(gh issue list --repo "$REPO" --state open \
+  --json number,title,body,labels --limit "$LIMIT")
 
-count=$(echo "$issues_json" | jq length)
-echo "Processing $count issue(s) with --jobs $JOBS  (oldest first)"
-mkdir -p "$WORKTREE_BASE"
-mkdir -p "$LOG_BASE"
+echo "Found $(echo "$issues_json" | jq length) open issue(s), will work on up to $MAX"
+mkdir -p "$WORKTREE_BASE" "$LOG_BASE"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-log() { echo "[$(date '+%H:%M:%S')] $*"; }
+log()     { echo "[$(date '+%H:%M:%S')] $*"; }
 elapsed() { echo $(( $(date +%s) - $1 ))s; }
 
-# Find the open PR number for an issue: first via GitHub's linked-PR tracking,
-# then by the expected branch name (catches PRs that didn't say "closes #N").
 find_pr() {
   local number="$1"
   local pr
@@ -71,7 +46,6 @@ find_pr() {
   echo "$pr"
 }
 
-# Return the PR's overall CI conclusion: success | failure | pending | none
 pr_ci_status() {
   local pr_number="$1"
   gh pr checks "$pr_number" --repo "$REPO" --json state \
@@ -81,15 +55,12 @@ pr_ci_status() {
           else "none" end' 2>/dev/null || echo "none"
 }
 
-# Return "true" if the PR has merge conflicts.
 pr_has_conflicts() {
   local pr_number="$1"
   gh pr view "$pr_number" --repo "$REPO" --json mergeable \
     --jq '.mergeable == "CONFLICTING"' 2>/dev/null || echo "false"
 }
 
-# Return all PR feedback posted after the last push as a JSON array of {author, body}.
-# Covers: timeline comments, review submissions, and inline code review comments.
 pr_new_comments() {
   local pr_number="$1"
   local last_push
@@ -116,172 +87,200 @@ pr_new_comments() {
   jq -n --argjson a "$timeline" --argjson b "$review" --argjson c "$inline" '$a + $b + $c'
 }
 
-# ── Per-issue worker ──────────────────────────────────────────────────────────
+# ── Main loop ─────────────────────────────────────────────────────────────────
 
-run_issue() {
-  local issue="$1"
-  local number title body branch worktree pr_number
+worked_on=0
+
+while IFS= read -r issue; do
+  [ "$worked_on" -ge "$MAX" ] && break
 
   number=$(echo "$issue" | jq -r '.number')
   title=$(echo  "$issue" | jq -r '.title')
   body=$(echo   "$issue" | jq -r '.body // "(no description)"')
   branch="feat/issue-${number}"
   worktree="${WORKTREE_BASE}/issue-${number}"
-
-  local t0
-  t0=$(date +%s)
+  plan_file="${PLAN_DIR}/issue-${number}.md"
+  log_file="${LOG_BASE}/issue-${number}.log"
 
   echo ""
   echo "━━━ #${number}: ${title} ━━━"
 
   if echo "$issue" | jq -e '[.labels[].name] | contains(["needs refinement"])' > /dev/null 2>&1; then
-    log "  → issue has 'needs refinement' label, skipping"
-    return 0
+    log "  → skipping: labelled 'needs refinement'"
+    continue
   fi
 
-  log "Starting issue #${number}"
-
+  t0=$(date +%s)
   pr_number=$(find_pr "$number")
   log "PR lookup done  pr=${pr_number:-none}"
 
-  # ── Branch A: PR already exists — check and fix if needed ──────────────────
+  # ── Gather PR status ────────────────────────────────────────────────────────
+  ci_status="none"
+  conflicts="false"
+  new_comments="[]"
+  new_comment_count=0
+
   if [ -n "$pr_number" ]; then
-    local ci_status conflicts
     ci_status=$(pr_ci_status "$pr_number")
     conflicts=$(pr_has_conflicts "$pr_number")
-
-    local new_comments new_comment_count
     new_comments=$(pr_new_comments "$pr_number")
     new_comment_count=$(echo "$new_comments" | jq length)
 
-    log "  → PR #${pr_number} exists  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}"
+    log "  → PR #${pr_number}  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}"
 
     if [ "$ci_status" != "failure" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ]; then
-      log "  → ci=${ci_status}, no conflicts, no new comments, skipping  (elapsed: $(elapsed $t0))"
-      return 0
+      log "  → healthy, skipping  (elapsed: $(elapsed $t0))"
+      continue
     fi
+  fi
 
-    # Something needs fixing — open a worktree on the existing branch
-    if [ -d "$worktree" ]; then
-      git worktree remove --force "$worktree" 2>/dev/null || true
-    fi
-    git fetch origin "$branch"
+  # ── Set up worktree ─────────────────────────────────────────────────────────
+  [ -d "$worktree" ] && git worktree remove --force "$worktree" 2>/dev/null || true
+
+  if [ -n "$pr_number" ] || git rev-parse --verify "origin/$branch" &>/dev/null 2>&1; then
+    git fetch origin "$branch" 2>/dev/null || true
     git worktree add "$worktree" "$branch"
-
-    local fix_context=""
-    [ "$conflicts" = "true" ]      && fix_context+="- The PR has MERGE CONFLICTS with main. Rebase or merge main into this branch to resolve them.\n"
-    [ "$ci_status" = "failure" ]   && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
-    if [ "$new_comment_count" -gt 0 ]; then
-      fix_context+="- There are ${new_comment_count} new review comment(s) on the PR since the last push. Address each one:\n"
-      fix_context+="$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')\n"
-    fi
-
-    local log_file="${LOG_BASE}/issue-${number}.log"
-    log "  → logging to ${log_file}"
-    log "  → entering worktree: ${worktree}"
-    (
-      cd "$worktree"
-      log "  → pulling origin main into worktree"
-      git pull origin main --no-edit 2>/dev/null || true   # attempt rebase surface
-      log "  → launching claude for fix  branch=${branch}"
-      claude --dangerously-skip-permissions \
-        --verbose \
-        --max-turns 40 \
-        -p "You are fixing an existing pull request for the retrofit-ui TypeScript monorepo.
-
-## Issue #${number}: ${title}
-## PR: #${pr_number} (branch \`${branch}\`)
-
-${fix_context}
-## Instructions
-
-- You are already on branch \`${branch}\` in an isolated git worktree.
-- Fix the problems listed above. Do not change unrelated code.
-- Run \`pnpm build\` and \`pnpm test\` to confirm everything passes before pushing.
-- Commit any fixes and push to origin/${branch}.
-- Do not open a new PR — one already exists (#${pr_number}).
-- Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
-      log "  → pushing ${branch} to origin"
-      git push origin "$branch" 2>&1 | tee -a "$log_file" || log "  ⚠ push failed for ${branch}"
-    ) && log "  ✓ #${number} PR fixed  (elapsed: $(elapsed $t0))" \
-      || log "  ✗ #${number} fix attempt failed  (elapsed: $(elapsed $t0))"
-
-    log "  → removing worktree ${worktree}"
-    git worktree remove --force "$worktree" 2>/dev/null || true
-    return 0
+  else
+    git branch -D "$branch" 2>/dev/null || true
+    git worktree add "$worktree" -b "$branch" main
   fi
 
-  # ── Branch B: No PR yet — implement from scratch ────────────────────────────
-  if [ -d "$worktree" ]; then
-    git worktree remove --force "$worktree" 2>/dev/null || true
+  # ── Step 1: Plan ────────────────────────────────────────────────────────────
+  plan_committed=false
+  if git -C "$worktree" log --oneline -- "$plan_file" 2>/dev/null | grep -q .; then
+    plan_committed=true
   fi
-  git branch -D "$branch" 2>/dev/null || true
-  git worktree add "$worktree" -b "$branch" main
 
-  local log_file="${LOG_BASE}/issue-${number}.log"
-  log "  → logging to ${log_file}"
-  log "  → entering worktree: ${worktree}"
-  (
-    cd "$worktree"
-    log "  → launching claude for new implementation  branch=${branch}"
-    claude --dangerously-skip-permissions \
-      --verbose \
-      --max-turns 40 \
-      -p "You are implementing a GitHub issue for the retrofit-ui TypeScript monorepo.
+  if [ "$plan_committed" = false ]; then
+    log "  → step 1: creating plan"
+    plan_prompt="You are creating an implementation plan for a GitHub issue in the retrofit-ui TypeScript monorepo.
 
 ## Issue #${number}: ${title}
 
 ${body}
 
+## Task
+
+- Read CLAUDE.md for project conventions.
+- Explore the codebase to understand where changes belong.
+- Write the plan to \`${plan_file}\` (create directories as needed). The plan must cover:
+  - Files to change and why
+  - Implementation approach and key decisions
+  - Edge cases to handle
+  - Tests to write (unit, integration, e2e)
+- Be concrete and specific — this plan will be handed to a separate implementation step.
+- Do not start implementing. Only produce the plan file."
+  elif [ "$new_comment_count" -gt 0 ]; then
+    log "  → step 1: updating plan based on ${new_comment_count} review comment(s)"
+    formatted_comments=$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
+    plan_prompt="You are updating an implementation plan based on pull request review feedback.
+
+## Issue #${number}: ${title}
+## PR: #${pr_number} (branch \`${branch}\`)
+
+The current plan is at \`${plan_file}\`. Review comments since the last push:
+
+${formatted_comments}
+
+## Task
+
+- Read the current plan at \`${plan_file}\`.
+- Update it to address the review feedback. Add, remove, or revise sections as needed.
+- If a comment is addressed by the existing plan already, note that explicitly.
+- Do not start implementing. Only update the plan file."
+  else
+    log "  → step 1: resuming/completing plan"
+    plan_prompt="You are reviewing and completing an implementation plan for a GitHub issue.
+
+## Issue #${number}: ${title}
+
+The plan so far is at \`${plan_file}\`. It may be incomplete or missing sections.
+
+## Task
+
+- Read the current plan at \`${plan_file}\`.
+- Fill in any missing or shallow sections (files to change, approach, edge cases, tests).
+- If the plan is already complete, make no changes.
+- Do not start implementing. Only update the plan file if needed."
+  fi
+
+  (cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 20 \
+    -p "$plan_prompt" 2>&1 | tee "$log_file")
+
+  # Commit plan if new or changed
+  (
+    cd "$worktree"
+    mkdir -p "$PLAN_DIR"
+    git add "$plan_file"
+    if ! git diff --cached --quiet; then
+      git commit -m "plan: #${number} ${title}"
+      git push origin "$branch"
+      log "  → plan committed and pushed"
+    else
+      log "  → plan unchanged, skipping commit"
+    fi
+  )
+
+  # ── Step 2: Implementation ──────────────────────────────────────────────────
+  log "  → step 2: implementing"
+
+  fix_context=""
+  [ "$conflicts" = "true" ]    && fix_context+="- The PR has MERGE CONFLICTS with main. Rebase or merge main into this branch to resolve them.\n"
+  [ "$ci_status" = "failure" ] && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
+
+  (
+    cd "$worktree"
+    git pull origin main --no-edit 2>/dev/null || true
+    claude --dangerously-skip-permissions --verbose --max-turns 40 \
+      -p "You are implementing a GitHub issue for the retrofit-ui TypeScript monorepo.
+
+## Issue #${number}: ${title}
+$([ -n "$pr_number" ] && echo "## PR: #${pr_number} (branch \`${branch}\`)")
+
+Your implementation plan is at \`${plan_file}\`. Read it before writing any code.
+
+$([ -n "$fix_context" ] && printf "## Problems to fix\n\n${fix_context}")
 ## Instructions
 
-Work in this order:
-
-### 1. Plan
-- Read CLAUDE.md if it exists for project conventions.
-- Explore the codebase to understand where the changes belong.
-- Write a concrete implementation plan: what files change, what the approach is, and what edge cases to watch for. Keep it concise (bullet points).
-
-### 2. Write tests and failing stubs first
-- Write the unit/integration tests that the implementation must pass.
-- Add usage of the new feature in the relevant \`examples/\` apps (stub it out so it compiles but doesn't work yet).
-- Write e2e tests in \`examples/\` that exercise the new behaviour end-to-end.
-- Run \`pnpm test\` to confirm the tests fail as expected (red).
-
-### 3. Implement
-- You are already on branch \`${branch}\` in an isolated git worktree. Do NOT create a new branch.
-- Implement the feature to make the tests pass. Follow existing code style — no extra abstractions, no cleanup outside the issue scope.
+- Follow the plan in \`${plan_file}\`.
+- Write tests first (unit, integration, e2e per the plan), then implement to make them pass.
 - Run \`pnpm build\` and \`pnpm test\` to confirm everything is green.
+- Do not commit, push, or open a PR — the script handles that.
+- Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee -a "$log_file"
+  )
 
-### 4. Commit and open PR
-- Commit with: feat: <description> (closes #${number})
-- Open a pull request against main. The PR body MUST:
-  - Contain the exact text \`closes #${number}\` so GitHub links it to the issue.
-  - Include the implementation plan from step 1 as the description.
-- Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
-    log "  → pushing ${branch} to origin"
-    git push origin "$branch" 2>&1 | tee -a "$log_file" || log "  ⚠ push failed for ${branch}"
+  # Commit implementation (everything except the plan file, which is already committed)
+  (
+    cd "$worktree"
+    git add -A
+    git restore --staged "$plan_file" 2>/dev/null || true  # plan already committed
+    if ! git diff --cached --quiet; then
+      git commit -m "feat: ${title} (closes #${number})
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+      git push origin "$branch"
+      log "  → implementation committed and pushed"
+    else
+      log "  ⚠ no implementation changes to commit"
+      git push origin "$branch" 2>/dev/null || true
+    fi
   ) && log "  ✓ #${number} done  (elapsed: $(elapsed $t0))" \
     || log "  ✗ #${number} failed  (elapsed: $(elapsed $t0))"
 
-  log "  → removing worktree ${worktree}"
+  # Open PR if one doesn't exist yet
+  if [ -z "$pr_number" ]; then
+    plan_content=$(cat "${worktree}/${plan_file}" 2>/dev/null || echo "")
+    gh pr create --repo "$REPO" --base main --head "$branch" \
+      --title "feat: ${title}" \
+      --body "$(printf "closes #%s\n\n## Implementation plan\n\n%s" "$number" "$plan_content")" \
+      && log "  → PR opened" || log "  ⚠ PR creation failed"
+  fi
+
   git worktree remove --force "$worktree" 2>/dev/null || true
-}
+  worked_on=$(( worked_on + 1 ))
 
-export -f run_issue find_pr pr_ci_status pr_has_conflicts pr_new_comments log elapsed
-export REPO WORKTREE_BASE LOG_BASE
-
-# ── Dispatch ──────────────────────────────────────────────────────────────────
-
-if [ "$JOBS" -eq 1 ]; then
-  echo "$issues_json" | jq -c 'sort_by(.number) | .[]' | while read -r issue; do
-    run_issue "$issue"
-  done
-else
-  echo "$issues_json" | jq -c 'sort_by(.number) | .[]' | \
-    xargs -P "$JOBS" -I{} bash -c 'run_issue "$@"' _ {}
-fi
+done < <(echo "$issues_json" | jq -c 'sort_by(.number) | .[]')
 
 git checkout main
 echo ""
-echo "All done."
+echo "Done. Worked on ${worked_on}/${MAX} issue(s)."

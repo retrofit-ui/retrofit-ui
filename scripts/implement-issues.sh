@@ -167,7 +167,7 @@ run_issue() {
     [ "$ci_status" = "failure" ]   && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
     if [ "$new_comment_count" -gt 0 ]; then
       fix_context+="- There are ${new_comment_count} new review comment(s) on the PR since the last push. Address each one:\n"
-      fix_context+="$(echo "$new_comments" | jq -r '.[] | "  [\(.author.login)]: \(.body)"')\n"
+      fix_context+="$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')\n"
     fi
 
     local log_file="${LOG_BASE}/issue-${number}.log"

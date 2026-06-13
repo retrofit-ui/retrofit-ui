@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const TABLE_URL = '/#/todos';
+const EDIT_TODO_URL = '/#/todos/1';
 
 async function waitForTable(page: import('@playwright/test').Page) {
   await page.waitForSelector('table');
@@ -154,5 +155,49 @@ test.describe('Todos inline-edit table', () => {
 
     await waitForTable(page);
     await expect(page.getByText('Walk the dog')).toHaveCount(0);
+  });
+});
+
+test.describe('Todo form view with sl-switch for done field', () => {
+  test('edit form renders sl-switch for the done field', async ({ page }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+
+    await expect(page.locator('sl-switch')).toBeVisible();
+  });
+
+  test('sl-switch label contains the field label', async ({ page }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+
+    await expect(page.locator('sl-switch')).toContainText('Done');
+  });
+
+  test('toggling sl-switch and saving persists the change', async ({
+    page,
+  }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+
+    const sw = page.locator('sl-switch');
+    const initialChecked = await sw.evaluate(
+      (el: HTMLElement & { checked: boolean }) => el.checked,
+    );
+
+    await sw.click();
+
+    await page.locator('sl-button[type="submit"]').click();
+
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Saved successfully' }),
+    ).toBeVisible();
+
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+
+    const updatedChecked = await page
+      .locator('sl-switch')
+      .evaluate((el: HTMLElement & { checked: boolean }) => el.checked);
+    expect(updatedChecked).toBe(!initialChecked);
   });
 });

@@ -29,6 +29,15 @@ describe('FieldSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts switch field type', () => {
+    const result = FieldSchema.safeParse({
+      name: 'notifications',
+      label: 'Notifications',
+      type: 'switch',
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('rejects unknown field type', () => {
     const result = FieldSchema.safeParse({
       name: 'x',

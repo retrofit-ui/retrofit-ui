@@ -110,8 +110,8 @@ test.describe('Blog edit form', () => {
   test('Delete button removes the post', async ({ page }) => {
     await page.goto('/#/posts/3');
     await waitForForm(page);
-    page.on('dialog', (dialog) => dialog.accept());
     await page.locator('sl-button[variant="danger"]').click();
+    await page.locator('sl-button[slot="footer"][variant="danger"]').click();
     await expect(
       page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),
     ).toBeVisible();

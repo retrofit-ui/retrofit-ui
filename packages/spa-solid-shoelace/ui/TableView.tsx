@@ -1,5 +1,6 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
@@ -130,6 +131,7 @@ function DataRow(props: {
   });
   const [saving, setSaving] = createSignal(false);
   const [deleting, setDeleting] = createSignal(false);
+  const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
 
   const idField = () =>
     props.spec.endpoints?.find
@@ -171,7 +173,7 @@ function DataRow(props: {
   async function deleteRow() {
     const ep = props.spec.endpoints?.delete;
     if (!ep) return;
-    if (!confirm('Delete this item?')) return;
+    setShowDeleteDialog(false);
     setDeleting(true);
     const id = String(props.row[idField()]);
     const url = ep.url.replace('{id}', id);
@@ -192,102 +194,117 @@ function DataRow(props: {
     (props.spec.rowActions?.length ?? 0) > 0;
 
   return (
-    <tr
-      class={`retrofit-tr${!editing() && props.spec.endpoints?.find ? ' retrofit-tr--clickable' : ''}`}
-      onClick={() => {
-        if (editing()) return;
-        if (!props.spec.endpoints?.find) return;
-        const id = props.row[idField()];
-        if (id != null) navigate(`/${props.resource}/${String(id)}`);
-      }}
-    >
-      <For each={props.spec.columns}>
-        {(col) => (
+    <>
+      <tr
+        class={`retrofit-tr${!editing() && props.spec.endpoints?.find ? ' retrofit-tr--clickable' : ''}`}
+        onClick={() => {
+          if (editing()) return;
+          if (!props.spec.endpoints?.find) return;
+          const id = props.row[idField()];
+          if (id != null) navigate(`/${props.resource}/${String(id)}`);
+        }}
+      >
+        <For each={props.spec.columns}>
+          {(col) => (
+            <td
+              class="retrofit-td"
+              style={{ 'text-align': col.alignment }}
+              onClick={(e) => editing() && e.stopPropagation()}
+              onKeyDown={(e) => editing() && e.stopPropagation()}
+            >
+              <Show
+                when={editing() && col.editable}
+                fallback={
+                  <span>
+                    {col.type === 'boolean'
+                      ? props.row[col.key]
+                        ? '✓'
+                        : '✗'
+                      : String(props.row[col.key] ?? '')}
+                  </span>
+                }
+              >
+                <CellInput
+                  col={col}
+                  value={values()[col.key]}
+                  onChange={(v) =>
+                    setValues((prev) => ({ ...prev, [col.key]: v }))
+                  }
+                />
+              </Show>
+            </td>
+          )}
+        </For>
+        <Show when={hasActions()}>
           <td
             class="retrofit-td"
-            style={{ 'text-align': col.alignment }}
-            onClick={(e) => editing() && e.stopPropagation()}
-            onKeyDown={(e) => editing() && e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
-            <Show
-              when={editing() && col.editable}
-              fallback={
-                <span>
-                  {col.type === 'boolean'
-                    ? props.row[col.key]
-                      ? '✓'
-                      : '✗'
-                    : String(props.row[col.key] ?? '')}
-                </span>
-              }
-            >
-              <CellInput
-                col={col}
-                value={values()[col.key]}
-                onChange={(v) =>
-                  setValues((prev) => ({ ...prev, [col.key]: v }))
-                }
-              />
-            </Show>
-          </td>
-        )}
-      </For>
-      <Show when={hasActions()}>
-        <td
-          class="retrofit-td"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          <div style={{ display: 'flex', gap: '4px', 'flex-wrap': 'wrap' }}>
-            <Show when={!editing() && hasInlineEdit()}>
-              <sl-button size="small" variant="default" on:click={startEdit}>
-                Edit
-              </sl-button>
-            </Show>
-            <Show when={editing()}>
-              <sl-button
-                size="small"
-                variant="primary"
-                disabled={saving()}
-                on:click={saveEdit}
-              >
-                Save
-              </sl-button>
-              <sl-button size="small" variant="default" on:click={cancelEdit}>
-                Cancel
-              </sl-button>
-            </Show>
-            <Show when={!!props.spec.endpoints?.delete}>
-              <sl-button
-                size="small"
-                variant="danger"
-                disabled={deleting()}
-                on:click={deleteRow}
-              >
-                Delete
-              </sl-button>
-            </Show>
-            <For each={props.spec.rowActions ?? []}>
-              {(action) => (
+            <div style={{ display: 'flex', gap: '4px', 'flex-wrap': 'wrap' }}>
+              <Show when={!editing() && hasInlineEdit()}>
+                <sl-button size="small" variant="default" on:click={startEdit}>
+                  Edit
+                </sl-button>
+              </Show>
+              <Show when={editing()}>
                 <sl-button
                   size="small"
-                  variant="neutral"
-                  on:click={() => {
-                    const resolved = substitutePattern(
-                      action.routePattern,
-                      props.row,
-                    );
-                    navigate(`/${props.resource}${resolved}`);
-                  }}
+                  variant="primary"
+                  disabled={saving()}
+                  on:click={saveEdit}
                 >
-                  {action.label}
+                  Save
                 </sl-button>
-              )}
-            </For>
-          </div>
-        </td>
-      </Show>
-    </tr>
+                <sl-button size="small" variant="default" on:click={cancelEdit}>
+                  Cancel
+                </sl-button>
+              </Show>
+              <Show when={!!props.spec.endpoints?.delete}>
+                <sl-button
+                  size="small"
+                  variant="danger"
+                  disabled={deleting()}
+                  on:click={() => setShowDeleteDialog(true)}
+                >
+                  Delete
+                </sl-button>
+              </Show>
+              <For each={props.spec.rowActions ?? []}>
+                {(action) => (
+                  <sl-button
+                    size="small"
+                    variant="neutral"
+                    on:click={() => {
+                      const resolved = substitutePattern(
+                        action.routePattern,
+                        props.row,
+                      );
+                      navigate(`/${props.resource}${resolved}`);
+                    }}
+                  >
+                    {action.label}
+                  </sl-button>
+                )}
+              </For>
+            </div>
+          </td>
+        </Show>
+      </tr>
+      <sl-dialog label="Delete item?" prop:open={showDeleteDialog()}>
+        This action cannot be undone.
+        <sl-button
+          slot="footer"
+          variant="default"
+          on:click={() => setShowDeleteDialog(false)}
+        >
+          Cancel
+        </sl-button>
+        <sl-button slot="footer" variant="danger" on:click={deleteRow}>
+          Delete
+        </sl-button>
+      </sl-dialog>
+    </>
   );
 }
 

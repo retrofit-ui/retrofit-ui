@@ -1,5 +1,6 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
@@ -143,6 +144,7 @@ function FormEditor(props: FormEditorProps) {
   const [submitError, setSubmitError] = createSignal<string | undefined>(
     undefined,
   );
+  const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
 
   function setValue(name: string, val: unknown) {
     setValues((prev) => ({ ...prev, [name]: val }));
@@ -197,7 +199,7 @@ function FormEditor(props: FormEditorProps) {
   async function handleDelete() {
     const action = deleteAction();
     if (!action) return;
-    if (!confirm('Delete this item?')) return;
+    setShowDeleteDialog(false);
     try {
       const res = await fetch(action.url, { method: action.method });
       if (!res.ok) {
@@ -343,12 +345,29 @@ function FormEditor(props: FormEditorProps) {
             {submitLabel()}
           </sl-button>
           <Show when={deleteAction()}>
-            <sl-button type="button" variant="danger" on:click={handleDelete}>
+            <sl-button
+              type="button"
+              variant="danger"
+              on:click={() => setShowDeleteDialog(true)}
+            >
               Delete
             </sl-button>
           </Show>
         </div>
       </form>
+      <sl-dialog label="Delete item?" prop:open={showDeleteDialog()}>
+        This action cannot be undone.
+        <sl-button
+          slot="footer"
+          variant="default"
+          on:click={() => setShowDeleteDialog(false)}
+        >
+          Cancel
+        </sl-button>
+        <sl-button slot="footer" variant="danger" on:click={handleDelete}>
+          Delete
+        </sl-button>
+      </sl-dialog>
     </div>
   );
 }

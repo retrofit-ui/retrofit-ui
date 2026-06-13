@@ -134,6 +134,22 @@ Fix any remaining errors manually. Do not leave the repo in a state where `pnpm 
 - Do not generate migration shims or backwards-compat wrappers unless explicitly asked.
 - Do not commit to `main` directly — open a PR.
 
+## Typing HTTP responses in tests
+
+When casting `res.json()` in tests, use a specific inline type rather than `as any` (Biome forbids it) or leaving it untyped. Use optional chaining when accessing array elements or nullable properties — TypeScript strict mode treats indexed array access as `T | undefined`, and Biome also forbids non-null assertions (`!`):
+
+```ts
+// ✓
+const data = (await res.json()) as { id: string; name: string }[];
+expect(data[0]?.id).toBe('foo');
+
+// ✗ — Biome: noExplicitAny
+const data = (await res.json()) as any;
+
+// ✗ — Biome: noNonNullAssertion
+expect(data[0]!.id).toBe('foo');
+```
+
 ## Changesets
 
 Each user-visible change needs a changeset entry:

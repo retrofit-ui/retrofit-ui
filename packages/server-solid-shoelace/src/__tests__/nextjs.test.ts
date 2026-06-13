@@ -74,7 +74,7 @@ describe('GET /api/forms', () => {
   it('returns the list of registered forms', async () => {
     const res = await fetch(`${baseUrl}/api/forms`);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { id: string }[];
     expect(data).toHaveLength(1);
     expect(data[0].id).toBe('contact');
   });
@@ -84,7 +84,10 @@ describe('GET /api/forms/:id/schema', () => {
   it('returns the JSON schema for a known form', async () => {
     const res = await fetch(`${baseUrl}/api/forms/contact/schema`);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as {
+      type: string;
+      properties: Record<string, unknown>;
+    };
     expect(data.type).toBe('object');
     expect(data.properties.name).toBeDefined();
   });
@@ -109,7 +112,7 @@ describe('POST /api/forms/:id/submit', () => {
       body: JSON.stringify({ name: 'Alice', age: 30 }),
     });
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { ok: boolean };
     expect(data.ok).toBe(true);
     expect(onSubmit).toHaveBeenCalledOnce();
   });
@@ -121,7 +124,7 @@ describe('POST /api/forms/:id/submit', () => {
       body: JSON.stringify({ name: 123 }),
     });
     expect(res.status).toBe(422);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { errors: unknown };
     expect(data.errors).toBeDefined();
   });
 

@@ -70,7 +70,7 @@ describe('GET /api/forms', () => {
   it('returns the list of registered forms', async () => {
     const res = await fetch(`${baseUrl}/api/forms`);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { id: string; renderer: string }[];
     expect(data).toHaveLength(1);
     expect(data[0].id).toBe('contact');
     expect(data[0].renderer).toBe('form');
@@ -81,7 +81,10 @@ describe('GET /api/forms/:id/schema', () => {
   it('returns the JSON schema for a known form', async () => {
     const res = await fetch(`${baseUrl}/api/forms/contact/schema`);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as {
+      type: string;
+      properties: Record<string, unknown>;
+    };
     expect(data.type).toBe('object');
     expect(data.properties.name).toBeDefined();
   });
@@ -89,7 +92,7 @@ describe('GET /api/forms/:id/schema', () => {
   it('returns 404 for an unknown form id', async () => {
     const res = await fetch(`${baseUrl}/api/forms/missing/schema`);
     expect(res.status).toBe(404);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { error: string };
     expect(data.error).toBe('Form not found');
   });
 });
@@ -103,7 +106,7 @@ describe('POST /api/forms/:id/submit', () => {
       body: JSON.stringify({ name: 'Alice', age: 30 }),
     });
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { ok: boolean };
     expect(data.ok).toBe(true);
     expect(onSubmit).toHaveBeenCalledOnce();
   });
@@ -115,7 +118,7 @@ describe('POST /api/forms/:id/submit', () => {
       body: JSON.stringify({ name: 123 }),
     });
     expect(res.status).toBe(422);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { errors: unknown };
     expect(data.errors).toBeDefined();
   });
 
@@ -143,7 +146,7 @@ describe('resource routes – items', () => {
   it('GET /api/ui/items returns a table spec with inline rows', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items`);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { columns: unknown; rows: unknown };
     expect(data.columns).toBeDefined();
     expect(data.rows).toBeDefined();
   });
@@ -157,31 +160,35 @@ describe('resource routes – items', () => {
   it('GET /api/ui/items/new returns a form spec', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/new`);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { fields: unknown[] };
     expect(data.fields).toBeDefined();
   });
 
   it('GET /api/ui/items/:id returns flat FormSpec with inline field values', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as {
+      fields: { name: string; value?: unknown }[];
+    };
     expect(data.fields).toBeDefined();
-    const nameField = data.fields.find(
-      (f: { name: string }) => f.name === 'name',
-    );
+    const nameField = data.fields.find((f) => f.name === 'name');
     expect(nameField?.value).toBe('Foo');
   });
 
   it('GET /api/ui/items/:id spec includes delete action when delete handler is configured', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as {
+      endpoints?: { delete?: unknown };
+    };
     expect(data.endpoints?.delete).toBeDefined();
   });
 
   it('GET /api/ui/items/:id uses updateSchema for mutability when configured', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`);
-    const data = (await res.json()) as any;
-    const idField = data.fields.find((f: { name: string }) => f.name === 'id');
+    const data = (await res.json()) as {
+      fields: { name: string; readOnly?: boolean }[];
+    };
+    const idField = data.fields.find((f) => f.name === 'id');
     expect(idField?.readOnly).toBe(true);
   });
 
@@ -203,7 +210,7 @@ describe('resource routes – items', () => {
       body: JSON.stringify({ id: 2, name: 'Bar' }),
     });
     expect(res.status).toBe(201);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { ok: boolean };
     expect(data.ok).toBe(true);
   });
 
@@ -233,7 +240,7 @@ describe('resource routes – items', () => {
       body: JSON.stringify({ name: 'Updated' }),
     });
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { ok: boolean };
     expect(data.ok).toBe(true);
   });
 
@@ -259,7 +266,7 @@ describe('resource routes – items', () => {
   it('DELETE /api/ui/items/:id returns ok', async () => {
     const res = await fetch(`${baseUrl}/api/ui/items/1`, { method: 'DELETE' });
     expect(res.status).toBe(200);
-    const data = (await res.json()) as any;
+    const data = (await res.json()) as { ok: boolean };
     expect(data.ok).toBe(true);
   });
 

@@ -107,6 +107,9 @@ declare module 'solid-js' {
         'on:sl-hide'?: SlEventHandler;
         'on:sl-request-close'?: SlEventHandler;
       };
+      'sl-skeleton': JSX.HTMLAttributes<HTMLElement> & {
+        effect?: 'none' | 'sheen' | 'pulse';
+      };
     }
   }
 }

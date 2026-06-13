@@ -4,6 +4,7 @@ import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 
 import type { Column, PageSpec, TableSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
@@ -407,7 +408,23 @@ export function TableView() {
     <>
       <Show when={view.loading}>
         <div class="retrofit-view">
-          <p class="retrofit-muted">Loading...</p>
+          <table class="retrofit-table">
+            <tbody>
+              <For each={Array(5).fill(null)}>
+                {() => (
+                  <tr class="retrofit-tr">
+                    <For each={Array(4).fill(null)}>
+                      {() => (
+                        <td class="retrofit-td">
+                          <sl-skeleton effect="sheen" />
+                        </td>
+                      )}
+                    </For>
+                  </tr>
+                )}
+              </For>
+            </tbody>
+          </table>
         </div>
       </Show>
       <Show when={view.error}>

@@ -127,6 +127,44 @@ test.describe('Blog edit form', () => {
   });
 });
 
+test.describe('Loading skeleton states', () => {
+  test('table view shows sl-skeleton elements while loading', async ({
+    page,
+  }) => {
+    await page.route('**/api/ui/posts', async (route) => {
+      await new Promise<void>((r) => setTimeout(r, 600));
+      await route.continue();
+    });
+    await page.goto(TABLE_URL);
+    await expect(page.locator('sl-skeleton').first()).toBeVisible();
+    await waitForTable(page);
+  });
+
+  test('form view shows sl-skeleton elements while loading', async ({
+    page,
+  }) => {
+    await page.route('**/api/ui/posts/1', async (route) => {
+      await new Promise<void>((r) => setTimeout(r, 600));
+      await route.continue();
+    });
+    await page.goto('/#/posts/1');
+    await expect(page.locator('sl-skeleton').first()).toBeVisible();
+    await waitForForm(page);
+  });
+
+  test('markdown view shows sl-skeleton elements while loading', async ({
+    page,
+  }) => {
+    await page.route('**/api/ui/posts/1/render', async (route) => {
+      await new Promise<void>((r) => setTimeout(r, 600));
+      await route.continue();
+    });
+    await page.goto('/#/posts/1/render');
+    await expect(page.locator('sl-skeleton').first()).toBeVisible();
+    await page.waitForSelector('.retrofit-markdown');
+  });
+});
+
 test.describe('Blog markdown render view', () => {
   test('Preview button navigates to render view', async ({ page }) => {
     await page.goto(TABLE_URL);

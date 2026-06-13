@@ -195,6 +195,8 @@ ${fix_context}
 - Commit any fixes and push to origin/${branch}.
 - Do not open a new PR — one already exists (#${pr_number}).
 - Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
+      log "  → pushing ${branch} to origin"
+      git push origin "$branch" 2>&1 | tee -a "$log_file" || log "  ⚠ push failed for ${branch}"
     ) && log "  ✓ #${number} PR fixed  (elapsed: $(elapsed $t0))" \
       || log "  ✗ #${number} fix attempt failed  (elapsed: $(elapsed $t0))"
 
@@ -235,6 +237,8 @@ ${body}
 - Commit with: feat: <description> (closes #${number})
 - Open a pull request against main. The PR body MUST contain the exact text \`closes #${number}\` so GitHub links it to the issue.
 - Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee "$log_file"
+    log "  → pushing ${branch} to origin"
+    git push origin "$branch" 2>&1 | tee -a "$log_file" || log "  ⚠ push failed for ${branch}"
   ) && log "  ✓ #${number} done  (elapsed: $(elapsed $t0))" \
     || log "  ✗ #${number} failed  (elapsed: $(elapsed $t0))"
 

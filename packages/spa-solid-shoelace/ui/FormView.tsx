@@ -4,6 +4,7 @@ import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type { FormSpec } from '@retrofit-ui/core';
@@ -49,7 +50,25 @@ export function FormView() {
   return (
     <div class="retrofit-view">
       <Show when={data.loading}>
-        <p class="retrofit-muted">Loading...</p>
+        <div
+          style={{
+            display: 'flex',
+            'flex-direction': 'column',
+            gap: 'var(--sl-spacing-medium)',
+          }}
+        >
+          <For each={Array(4).fill(null)}>
+            {() => (
+              <div>
+                <sl-skeleton
+                  effect="sheen"
+                  style={{ width: '30%', 'margin-bottom': '4px' }}
+                />
+                <sl-skeleton effect="sheen" />
+              </div>
+            )}
+          </For>
+        </div>
       </Show>
       <Show when={data.error}>
         <p class="retrofit-error-message">Error: {String(data.error)}</p>

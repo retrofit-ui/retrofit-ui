@@ -1,3 +1,5 @@
+import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+
 import type { MarkdownViewSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { marked } from 'marked';
@@ -42,7 +44,19 @@ export function MarkdownView() {
   return (
     <div class="retrofit-view">
       <Show when={view.loading}>
-        <p class="retrofit-muted">Loading...</p>
+        <div
+          style={{
+            display: 'flex',
+            'flex-direction': 'column',
+            gap: 'var(--sl-spacing-medium)',
+          }}
+        >
+          <sl-skeleton effect="sheen" style={{ width: '55%' }} />
+          <sl-skeleton effect="sheen" />
+          <sl-skeleton effect="sheen" style={{ width: '80%' }} />
+          <sl-skeleton effect="sheen" />
+          <sl-skeleton effect="sheen" style={{ width: '40%' }} />
+        </div>
       </Show>
       <Show when={view.error}>
         <p class="retrofit-error-message">Error: {String(view.error)}</p>

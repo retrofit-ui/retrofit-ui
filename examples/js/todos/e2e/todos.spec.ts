@@ -93,6 +93,10 @@ test.describe('Todos inline-edit table', () => {
     await input.fill('Updated via inline edit');
     await firstRow.locator('sl-button').filter({ hasText: 'Save' }).click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Saved successfully' }),
+    ).toBeVisible();
+
     // Should stay on same URL
     await expect(page).toHaveURL(/\/#\/todos/);
     await waitForTable(page);
@@ -126,6 +130,10 @@ test.describe('Todos inline-edit table', () => {
 
     await lastRow.locator('sl-button').filter({ hasText: 'Add' }).click();
 
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
+    ).toBeVisible();
+
     await waitForTable(page);
     await expect(page.getByText('New inline todo')).toBeVisible();
   });
@@ -138,6 +146,10 @@ test.describe('Todos inline-edit table', () => {
 
     const secondRow = page.locator('tbody tr').nth(1);
     await secondRow.locator('sl-button').filter({ hasText: 'Delete' }).click();
+
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),
+    ).toBeVisible();
 
     await waitForTable(page);
     await expect(page.getByText('Walk the dog')).toHaveCount(0);

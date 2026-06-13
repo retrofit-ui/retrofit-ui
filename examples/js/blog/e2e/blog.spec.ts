@@ -84,6 +84,9 @@ test.describe('Blog edit form', () => {
     await page.locator('sl-select').click();
     await page.locator('sl-option[value="draft"]').click();
     await page.locator('sl-button[type="submit"]').click();
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
+    ).toBeVisible();
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
     await expect(page.getByText('E2E Test Post')).toBeVisible();
@@ -96,6 +99,9 @@ test.describe('Blog edit form', () => {
       .getByRole('textbox', { name: 'Title *' })
       .fill('Updated Post Title');
     await page.locator('sl-button[type="submit"]').click();
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Saved successfully' }),
+    ).toBeVisible();
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
     await expect(page.getByText('Updated Post Title')).toBeVisible();
@@ -106,6 +112,9 @@ test.describe('Blog edit form', () => {
     await waitForForm(page);
     page.on('dialog', (dialog) => dialog.accept());
     await page.locator('sl-button[variant="danger"]').click();
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Deleted successfully' }),
+    ).toBeVisible();
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
     await expect(page.getByText('Building Forms with Zod')).toHaveCount(0);

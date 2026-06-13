@@ -1,6 +1,7 @@
 package io.retrofitui.examples.todos;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.WaitUntilState;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -111,7 +112,30 @@ class TodosE2ETest {
             .filter(new Locator.FilterOptions().setHasText("Delete"))
             .click();
 
+        page.waitForSelector("sl-alert", new Page.WaitForSelectorOptions().setTimeout(5_000));
+        assertThat(page.locator("sl-alert")
+            .filter(new Locator.FilterOptions().setHasText("Deleted successfully")).count())
+            .isGreaterThan(0);
+
         page.waitForSelector("table", new Page.WaitForSelectorOptions().setTimeout(5_000));
         assertThat(page.getByText("Walk the dog").count()).isEqualTo(0);
+    }
+
+    @Test
+    void saveInlineEditShowsToast() {
+        page.navigate(url("/retrofit-ui#/todos"),
+            new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
+        page.waitForSelector("table", new Page.WaitForSelectorOptions().setTimeout(10_000));
+
+        var firstRow = page.locator("tbody tr").first();
+        firstRow.locator("sl-button").filter(new Locator.FilterOptions().setHasText("Edit")).click();
+
+        firstRow.getByRole(AriaRole.TEXTBOX).first().fill("Toast test todo");
+        firstRow.locator("sl-button").filter(new Locator.FilterOptions().setHasText("Save")).click();
+
+        page.waitForSelector("sl-alert", new Page.WaitForSelectorOptions().setTimeout(5_000));
+        assertThat(
+            page.locator("sl-alert").filter(new Locator.FilterOptions().setHasText("Saved successfully")).count()
+        ).isGreaterThan(0);
     }
 }

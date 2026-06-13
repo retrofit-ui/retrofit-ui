@@ -71,6 +71,13 @@ declare module 'solid-js' {
         'on:sl-change'?: SlEventHandler;
         children?: JSX.Element;
       };
+      'sl-switch': SlBaseProps & {
+        checked?: boolean;
+        'prop:checked'?: boolean;
+        value?: string;
+        'on:sl-change'?: SlEventHandler;
+        children?: JSX.Element;
+      };
       'sl-radio-group': SlBaseProps & {
         value?: string;
         'prop:value'?: string;

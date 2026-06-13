@@ -1,5 +1,6 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
@@ -150,7 +151,8 @@ function FormEditor(props: FormEditorProps) {
       visibleFields().map((f) => {
         const existing = props.entity[f.name];
         if (existing !== undefined) return [f.name, existing];
-        if (f.type === 'checkbox') return [f.name, false];
+        if (f.type === 'checkbox' || f.type === 'switch')
+          return [f.name, false];
         return [f.name, ''];
       }),
     );
@@ -312,11 +314,27 @@ function FormEditor(props: FormEditorProps) {
                     {fieldLabel()}
                   </sl-checkbox>
                 </Show>
+                <Show when={field.type === 'switch'}>
+                  <sl-switch
+                    disabled={field.readOnly || undefined}
+                    prop:checked={!!values()[field.name]}
+                    on:sl-change={(e: Event) =>
+                      setValue(
+                        field.name,
+                        (e.target as EventTarget & { checked: boolean })
+                          .checked,
+                      )
+                    }
+                  >
+                    {fieldLabel()}
+                  </sl-switch>
+                </Show>
                 <Show
                   when={
                     !isTextarea() &&
                     field.type !== 'select' &&
-                    field.type !== 'checkbox'
+                    field.type !== 'checkbox' &&
+                    field.type !== 'switch'
                   }
                 >
                   <sl-input

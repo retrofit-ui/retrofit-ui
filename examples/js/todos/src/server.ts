@@ -1,5 +1,6 @@
 import {
   filterForm,
+  formSpec,
   pageSpec,
   retrofitUi,
   TableView,
@@ -57,6 +58,21 @@ app.get('/api/ui/todos', (_req, res) => {
         .build(),
     ),
   );
+});
+
+// Form view with switch for the done field — navigate to /#/todos/:id (edit)
+// or /#/todos/new (create)
+app.get('/api/ui/todos/:id', (req, res) => {
+  const id = req.params.id;
+  const isNew = id === 'new';
+  const entity = isNew ? undefined : store.find(id);
+  const builder = formSpec(TodoSchema, CreateTodoSchema)
+    .fieldOverride('done', { type: 'switch' })
+    .update({ method: 'PUT', url: `/todos/${id}` })
+    .delete({ method: 'DELETE', url: `/todos/${id}` });
+  if (entity) builder.values(entity as Record<string, unknown>);
+  if (isNew) builder.create({ method: 'POST', url: '/todos' });
+  res.json(retrofit(builder.build()));
 });
 
 // Stacked layout: priority filter + todos table — navigate to /#/todos-by-priority

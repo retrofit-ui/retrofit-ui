@@ -19,7 +19,7 @@ export function buildTree(
     if (parentId == null || !byId.has(parentId)) {
       roots.push(treeNode);
     } else {
-      byId.get(parentId)!.children.push(treeNode);
+      byId.get(parentId)?.children.push(treeNode);
     }
   }
 

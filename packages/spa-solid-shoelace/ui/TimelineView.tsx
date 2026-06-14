@@ -8,26 +8,10 @@ import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, For, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './App';
 
-interface TimelineData {
-  spec: TimelineSpec;
-  events: Record<string, unknown>[];
-}
-
-async function fetchTimelineView(
-  specUrl: string,
-  id: string | undefined,
-): Promise<TimelineData> {
-  const specRes = await fetch(specUrl);
-  if (!specRes.ok) throw new Error('Failed to fetch timeline spec');
-  const spec = (await specRes.json()) as TimelineSpec;
-
-  const eventsUrl = id
-    ? spec.endpoint.url.replace('{id}', id)
-    : spec.endpoint.url;
-  const eventsRes = await fetch(eventsUrl);
-  if (!eventsRes.ok) throw new Error('Failed to fetch timeline events');
-  const events = (await eventsRes.json()) as Record<string, unknown>[];
-  return { spec, events };
+async function fetchTimelineSpec(specUrl: string): Promise<TimelineSpec> {
+  const res = await fetch(specUrl);
+  if (!res.ok) throw new Error('Failed to fetch timeline spec');
+  return (await res.json()) as TimelineSpec;
 }
 
 export function TimelineView() {
@@ -40,17 +24,14 @@ export function TimelineView() {
       ? `${apiBase}/${params.resource}/${params.id}/timeline`
       : `${apiBase}/${params.resource}/timeline`;
 
-  const [data] = createResource(
-    () => ({ url: specUrl(), id: params.id }),
-    ({ url, id }) => fetchTimelineView(url, id),
-  );
+  const [spec] = createResource(specUrl, fetchTimelineSpec);
 
   const backPath = () =>
     params.id ? `/${params.resource}/${params.id}` : `/${params.resource}`;
 
   return (
     <div class="retrofit-view">
-      <Show when={data.loading}>
+      <Show when={spec.loading}>
         <div
           style={{
             display: 'flex',
@@ -65,91 +46,67 @@ export function TimelineView() {
           <sl-skeleton effect="sheen" style={{ width: '40%' }} />
         </div>
       </Show>
-      <Show when={data.error}>
-        <p class="retrofit-error-message">Error: {String(data.error)}</p>
+      <Show when={spec.error}>
+        <p class="retrofit-error-message">Error: {String(spec.error)}</p>
       </Show>
-      <Show when={data()}>
-        {(d) => {
-          const { spec, events } = d();
-          return (
-            <div>
-              <button
-                type="button"
-                onClick={() => navigate(backPath())}
-                class="retrofit-back-btn"
-              >
-                &larr; Back
-              </button>
-              <Show when={spec.metadata?.title}>
-                <h1 class="retrofit-page-title">{spec.metadata?.title}</h1>
-              </Show>
-              <Show
-                when={events.length > 0}
-                fallback={<p class="retrofit-empty">No events.</p>}
-              >
-                <ul class="retrofit-timeline">
-                  <For each={events}>
-                    {(event) => {
-                      const variant = spec.fields.variant
-                        ? String(event[spec.fields.variant] ?? '')
-                        : undefined;
-                      const icon = spec.fields.icon
-                        ? String(event[spec.fields.icon] ?? '')
-                        : undefined;
-                      const timestamp = String(
-                        event[spec.fields.timestamp] ?? '',
-                      );
-                      const title = String(event[spec.fields.title] ?? '');
-                      const description = spec.fields.description
-                        ? String(event[spec.fields.description] ?? '')
-                        : undefined;
+      <Show when={spec()}>
+        {(s) => (
+          <div>
+            <button
+              type="button"
+              onClick={() => navigate(backPath())}
+              class="retrofit-back-btn"
+            >
+              &larr; Back
+            </button>
+            <Show when={s().metadata?.title}>
+              <h1 class="retrofit-page-title">{s().metadata?.title}</h1>
+            </Show>
+            <Show
+              when={s().events.length > 0}
+              fallback={<p class="retrofit-empty">No events.</p>}
+            >
+              <ul class="retrofit-timeline">
+                <For each={s().events}>
+                  {(event) => {
+                    const eventClass = event.variant
+                      ? `retrofit-timeline-event retrofit-timeline-event--${event.variant}`
+                      : 'retrofit-timeline-event';
 
-                      const eventClass = variant
-                        ? `retrofit-timeline-event retrofit-timeline-event--${variant}`
-                        : 'retrofit-timeline-event';
-
-                      return (
-                        <li class={eventClass}>
-                          <div class="retrofit-timeline-header">
-                            <Show when={icon && icon.length > 0}>
-                              <sl-icon name={icon} />
-                            </Show>
-                            <span class="retrofit-timeline-title">{title}</span>
-                            <Show when={variant && variant.length > 0}>
-                              <sl-badge
-                                variant={
-                                  variant as
-                                    | 'primary'
-                                    | 'success'
-                                    | 'neutral'
-                                    | 'warning'
-                                    | 'danger'
-                                }
-                              >
-                                {variant}
-                              </sl-badge>
-                            </Show>
-                            <Show when={timestamp.length > 0}>
-                              <sl-relative-time
-                                class="retrofit-timeline-time"
-                                date={timestamp}
-                              />
-                            </Show>
-                          </div>
-                          <Show when={description && description.length > 0}>
-                            <p class="retrofit-timeline-description">
-                              {description}
-                            </p>
+                    return (
+                      <li class={eventClass}>
+                        <div class="retrofit-timeline-header">
+                          <Show when={event.icon}>
+                            <sl-icon name={event.icon} />
                           </Show>
-                        </li>
-                      );
-                    }}
-                  </For>
-                </ul>
-              </Show>
-            </div>
-          );
-        }}
+                          <span class="retrofit-timeline-title">
+                            {event.title}
+                          </span>
+                          <Show when={event.variant}>
+                            <sl-badge variant={event.variant}>
+                              {event.variant}
+                            </sl-badge>
+                          </Show>
+                          <Show when={event.timestamp}>
+                            <sl-relative-time
+                              class="retrofit-timeline-time"
+                              date={event.timestamp}
+                            />
+                          </Show>
+                        </div>
+                        <Show when={event.description}>
+                          <p class="retrofit-timeline-description">
+                            {event.description}
+                          </p>
+                        </Show>
+                      </li>
+                    );
+                  }}
+                </For>
+              </ul>
+            </Show>
+          </div>
+        )}
       </Show>
     </div>
   );

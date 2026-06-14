@@ -141,43 +141,34 @@ app.get('/api/ui/posts/:id/render', (_req, res) => {
   );
 });
 
-// Demo event history — derived from post data
-app.get('/posts/:id/events', (req, res) => {
+// Timeline spec route — events are populated inline, no separate data fetch
+app.get('/api/ui/posts/:id/timeline', (req, res) => {
   const post = store.find(req.params.id);
   if (!post) {
     res.status(404).json({ error: 'Not found' });
     return;
   }
-  const variantMap: Record<string, string> = {
+  const variantMap: Record<string, 'success' | 'primary' | 'neutral'> = {
     published: 'success',
     draft: 'primary',
     archived: 'neutral',
   };
-  res.json([
-    {
-      timestamp: post.updatedAt,
-      event: `Marked as ${post.status}`,
-      detail: `Status changed to '${post.status}'.`,
-      status: variantMap[post.status as string] ?? 'neutral',
-    },
-    {
-      timestamp: '2026-01-01T00:00:00Z',
-      event: 'Created',
-      detail: 'Post was created.',
-      status: 'neutral',
-    },
-  ]);
-});
-
-// Timeline spec route
-app.get('/api/ui/posts/:id/timeline', (_req, res) => {
   res.json(
     retrofit(
-      TimelineView.endpoint({ method: 'GET', url: '/posts/{id}/events' })
-        .timestampField('timestamp')
-        .titleField('event')
-        .descriptionField('detail')
-        .variantField('status')
+      TimelineView.events([
+        {
+          timestamp: post.updatedAt as string,
+          title: `Marked as ${post.status as string}`,
+          description: `Status changed to '${post.status as string}'.`,
+          variant: variantMap[post.status as string] ?? 'neutral',
+        },
+        {
+          timestamp: '2026-01-01T00:00:00.000Z',
+          title: 'Created',
+          description: 'Post was created.',
+          variant: 'neutral',
+        },
+      ])
         .title('Post History')
         .build(),
     ),

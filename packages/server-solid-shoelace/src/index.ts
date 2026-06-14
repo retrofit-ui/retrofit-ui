@@ -10,6 +10,7 @@ export type {
   Pane,
   RowAction,
   TableSpec,
+  TimelineEvent,
   TimelineSpec,
   TreeSpec,
   ViewSpec,

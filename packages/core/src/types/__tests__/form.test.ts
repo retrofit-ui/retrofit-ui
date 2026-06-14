@@ -181,7 +181,11 @@ describe('FieldSchema', () => {
   });
 
   it('tooltip is optional', () => {
-    const result = FieldSchema.safeParse({ name: 'cvv', label: 'CVV', type: 'text' });
+    const result = FieldSchema.safeParse({
+      name: 'cvv',
+      label: 'CVV',
+      type: 'text',
+    });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.tooltip).toBeUndefined();
   });
@@ -194,7 +198,10 @@ describe('FieldSchema', () => {
       tooltip: 'The 3-digit code on the back of your card',
     });
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.tooltip).toBe('The 3-digit code on the back of your card');
+    if (result.success)
+      expect(result.data.tooltip).toBe(
+        'The 3-digit code on the back of your card',
+      );
   });
 
   it('tooltip and helpText can coexist', () => {
@@ -214,7 +221,14 @@ describe('FieldSchema', () => {
 
   it('tooltip survives round-trip through FormSchema.parse()', () => {
     const form = {
-      fields: [{ name: 'cvv', label: 'CVV', type: 'text', tooltip: 'The 3-digit code' }],
+      fields: [
+        {
+          name: 'cvv',
+          label: 'CVV',
+          type: 'text',
+          tooltip: 'The 3-digit code',
+        },
+      ],
     };
     expect(FormSchema.safeParse(form).success).toBe(true);
   });

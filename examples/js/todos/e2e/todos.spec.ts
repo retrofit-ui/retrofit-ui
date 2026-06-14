@@ -165,23 +165,33 @@ test.describe('Field tooltip', () => {
     await expect(page.locator('sl-tooltip').first()).toBeAttached();
   });
 
-  test('sl-icon-button with question-circle is visible next to the label', async ({ page }) => {
+  test('sl-icon-button with question-circle is visible next to the label', async ({
+    page,
+  }) => {
     await page.goto(EDIT_TODO_URL);
     await page.waitForSelector('form');
-    await expect(page.locator('sl-icon-button[name="question-circle"]').first()).toBeVisible();
+    await expect(
+      page.locator('sl-icon-button[name="question-circle"]').first(),
+    ).toBeVisible();
   });
 
-  test('tooltip content attribute matches configured string', async ({ page }) => {
+  test('tooltip content attribute matches configured string', async ({
+    page,
+  }) => {
     await page.goto(EDIT_TODO_URL);
     await page.waitForSelector('form');
-    const tooltip = page.locator('sl-tooltip[content="Enter a short description of the task"]');
+    const tooltip = page.locator(
+      'sl-tooltip[content="Enter a short description of the task"]',
+    );
     await expect(tooltip).toBeAttached();
   });
 
   test('field with tooltip and helpText renders both', async ({ page }) => {
     await page.goto(EDIT_TODO_URL);
     await page.waitForSelector('form');
-    const tooltip = page.locator('sl-tooltip[content="Enter a short description of the task"]');
+    const tooltip = page.locator(
+      'sl-tooltip[content="Enter a short description of the task"]',
+    );
     await expect(tooltip).toBeAttached();
     const titleInput = page.locator('sl-input').filter({ hasText: '' }).first();
     const helpText = await titleInput.evaluate(
@@ -190,7 +200,9 @@ test.describe('Field tooltip', () => {
     expect(helpText).toBe('Keep it brief');
   });
 
-  test('done field (switch, no tooltip) has no sibling sl-icon-button', async ({ page }) => {
+  test('done field (switch, no tooltip) has no sibling sl-icon-button', async ({
+    page,
+  }) => {
     await page.goto(EDIT_TODO_URL);
     await page.waitForSelector('form');
     const switchWrapper = page.locator('sl-switch').locator('..');

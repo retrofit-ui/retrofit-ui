@@ -154,7 +154,9 @@ describe('formFromSchema', () => {
       })
       .build();
     const titleField = form.fields.find((f) => f.name === 'title');
-    expect(titleField?.tooltip).toBe('The 3-digit code on the back of your card');
+    expect(titleField?.tooltip).toBe(
+      'The 3-digit code on the back of your card',
+    );
   });
 
   it('tooltip survives FormSchema.parse() after build', () => {

@@ -109,7 +109,10 @@ function TooltipIcon(props: { tip: string }) {
       <sl-icon-button
         name="question-circle"
         label="Help"
-        style={{ 'vertical-align': 'middle', 'font-size': 'var(--sl-font-size-small)' }}
+        style={{
+          'vertical-align': 'middle',
+          'font-size': 'var(--sl-font-size-small)',
+        }}
       />
     </sl-tooltip>
   );
@@ -364,7 +367,9 @@ function FormEditor(props: FormEditorProps) {
               <div>
                 <Show when={isTextarea()}>
                   <sl-textarea
-                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
+                    label={
+                      !hideLabel() && !field.tooltip ? fieldLabel() : undefined
+                    }
                     aria-label={fieldLabel()}
                     placeholder={field.placeholder}
                     help-text={
@@ -394,7 +399,9 @@ function FormEditor(props: FormEditorProps) {
                 </Show>
                 <Show when={field.type === 'select'}>
                   <sl-select
-                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
+                    label={
+                      !hideLabel() && !field.tooltip ? fieldLabel() : undefined
+                    }
                     aria-label={fieldLabel()}
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}
@@ -426,7 +433,9 @@ function FormEditor(props: FormEditorProps) {
                 </Show>
                 <Show when={field.type === 'radio-group'}>
                   <sl-radio-group
-                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
+                    label={
+                      !hideLabel() && !field.tooltip ? fieldLabel() : undefined
+                    }
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}
                     prop:value={strVal()}
@@ -455,7 +464,13 @@ function FormEditor(props: FormEditorProps) {
                   </sl-radio-group>
                 </Show>
                 <Show when={field.type === 'checkbox'}>
-                  <div style={{ display: 'flex', 'align-items': 'center', gap: 'var(--sl-spacing-x-small)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      'align-items': 'center',
+                      gap: 'var(--sl-spacing-x-small)',
+                    }}
+                  >
                     <sl-checkbox
                       disabled={field.readOnly || undefined}
                       prop:checked={!!values()[field.name]}
@@ -476,7 +491,13 @@ function FormEditor(props: FormEditorProps) {
                   </div>
                 </Show>
                 <Show when={field.type === 'switch'}>
-                  <div style={{ display: 'flex', 'align-items': 'center', gap: 'var(--sl-spacing-x-small)' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      'align-items': 'center',
+                      gap: 'var(--sl-spacing-x-small)',
+                    }}
+                  >
                     <sl-switch
                       disabled={field.readOnly || undefined}
                       prop:checked={!!values()[field.name]}
@@ -614,7 +635,9 @@ function FormEditor(props: FormEditorProps) {
                   }
                 >
                   <sl-input
-                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
+                    label={
+                      !hideLabel() && !field.tooltip ? fieldLabel() : undefined
+                    }
                     aria-label={fieldLabel()}
                     type={field.type}
                     placeholder={field.placeholder}

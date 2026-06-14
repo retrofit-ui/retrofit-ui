@@ -166,8 +166,19 @@ declare module 'solid-js' {
       };
       'sl-tooltip': JSX.HTMLAttributes<HTMLElement> & {
         content?: string;
-        placement?: 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end'
-          | 'right' | 'right-start' | 'right-end' | 'left' | 'left-start' | 'left-end';
+        placement?:
+          | 'top'
+          | 'top-start'
+          | 'top-end'
+          | 'bottom'
+          | 'bottom-start'
+          | 'bottom-end'
+          | 'right'
+          | 'right-start'
+          | 'right-end'
+          | 'left'
+          | 'left-start'
+          | 'left-end';
         disabled?: boolean;
         distance?: number;
         open?: boolean;

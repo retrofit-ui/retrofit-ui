@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { StatViewBuilder } from '../stat-view-builder';
+import { StatView, StatViewBuilder } from '../stat-view-builder';
 
 describe('StatViewBuilder', () => {
   it('builds a StatSpec with stats', () => {
@@ -55,9 +55,21 @@ describe('StatViewBuilder', () => {
 
   it('supports all format types', () => {
     const spec = new StatViewBuilder()
-      .stat({ label: 'A', endpoint: { method: 'GET', url: '/a' }, format: 'number' })
-      .stat({ label: 'B', endpoint: { method: 'GET', url: '/b' }, format: 'percent' })
-      .stat({ label: 'C', endpoint: { method: 'GET', url: '/c' }, format: 'bytes' })
+      .stat({
+        label: 'A',
+        endpoint: { method: 'GET', url: '/a' },
+        format: 'number',
+      })
+      .stat({
+        label: 'B',
+        endpoint: { method: 'GET', url: '/b' },
+        format: 'percent',
+      })
+      .stat({
+        label: 'C',
+        endpoint: { method: 'GET', url: '/c' },
+        format: 'bytes',
+      })
       .build();
 
     expect(spec.stats[0]?.format).toBe('number');
@@ -66,7 +78,6 @@ describe('StatViewBuilder', () => {
   });
 
   it('StatView alias points to StatViewBuilder', () => {
-    const { StatView } = require('../stat-view-builder');
     expect(StatView).toBe(StatViewBuilder);
   });
 });

@@ -33,8 +33,8 @@ export {
 } from './page-builder';
 export { TimelineView, TimelineViewBuilder } from './timeline-builder';
 export { TreeView, TreeViewBuilder } from './tree-builder';
-export type { RetrofitTheme } from './types';
 export { StatView, StatViewBuilder } from './stat-view-builder';
+export type { RetrofitTheme } from './types';
 export { TableView, TableViewBuilder } from './view-builder';
 export {
   TableFormWorkflowBundle,

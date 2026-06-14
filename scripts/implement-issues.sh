@@ -12,7 +12,7 @@ set -euo pipefail
 REPO="retrofit-ui/retrofit-ui"
 LIMIT=50
 MAX=${1:-1}
-WORKTREE_BASE=".claude/worktrees"
+WORKTREE_BASE="$(pwd)/.claude/worktrees"
 LOG_BASE="$(pwd)/.claude/logs"
 PLAN_DIR="docs/github_issues/plans"
 

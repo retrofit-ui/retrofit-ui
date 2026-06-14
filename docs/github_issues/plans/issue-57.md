@@ -417,6 +417,296 @@ Steps 2 and 4 are independent once step 1 is done and can proceed in parallel.
 
 ---
 
+## Example: `examples/js/products` _(new example, required by issue comment)_
+
+The issue comment explicitly requests a new `examples/js/products` example that demonstrates:
+
+1. **Category tree view** — categories stored as a hierarchy (parent → child), browsed via `sl-tree`
+2. **Category table view** — same data browsed as a flat sortable table
+3. **Product table view** — products with a `categoryId` column enriched with the resolved category name
+4. **Product form** — `categoryId` field rendered as a `<sl-select>` populated with live category options from the store
+
+This example is the canonical end-to-end demo of the `TreeView` builder.
+
+---
+
+### Domain model
+
+**Categories** are hierarchical. A category with `parentId: null` (or `parentId` absent) is a root category; otherwise it is a child of another category. IDs are integers.
+
+**Products** are flat; each belongs to exactly one category via `categoryId`.
+
+---
+
+### Files to create
+
+```
+examples/js/products/
+  package.json
+  tsconfig.json
+  playwright.config.ts
+  src/
+    schemas.ts
+    store.ts
+    server.ts
+  e2e/
+    products.spec.ts
+```
+
+---
+
+### `src/schemas.ts`
+
+```typescript
+import { z } from 'zod';
+
+export const CategorySchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  parentId: z.number().nullable().optional(),
+});
+export const CreateCategorySchema = z.object({
+  name: z.string(),
+  parentId: z.number().nullable().optional(),
+});
+
+export const ProductSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  sku: z.string(),
+  price: z.number(),
+  categoryId: z.number(),
+});
+export const CreateProductSchema = z.object({
+  name: z.string(),
+  sku: z.string(),
+  price: z.number(),
+  categoryId: z.number(),
+});
+
+export type Category = z.infer<typeof CategorySchema>;
+export type Product = z.infer<typeof ProductSchema>;
+```
+
+---
+
+### `src/store.ts`
+
+Two independent in-memory stores following the same pattern as other examples.
+
+**Category seed** — two root categories with child subcategories:
+
+```
+Electronics (id:1, parentId:null)
+  Phones     (id:3, parentId:1)
+  Laptops    (id:4, parentId:1)
+Clothing   (id:2, parentId:null)
+  Tops       (id:5, parentId:2)
+  Footwear   (id:6, parentId:2)
+```
+
+**Product seed** — four products spread across leaf categories:
+
+```
+{ id:1, name:'Galaxy S25',      sku:'GAL-S25', price:899, categoryId:3 }
+{ id:2, name:'ThinkPad X1',     sku:'TP-X1',   price:1299, categoryId:4 }
+{ id:3, name:'Classic T-Shirt', sku:'TS-001',  price:29,   categoryId:5 }
+{ id:4, name:'Running Shoes',   sku:'RS-001',  price:89,   categoryId:6 }
+```
+
+Both stores expose `all()`, `find(id)`, `create(data)`, `update(id, data)`, `delete(id)`, `reset()`. Category store also exposes `allAsOptions()` which returns `{ label: string; value: number }[]` for use in the product form select.
+
+---
+
+### `src/server.ts` — REST endpoints
+
+```
+GET    /categories          → all categories (flat list — tree built in-browser)
+GET    /categories/:id      → single category
+POST   /categories          → create category
+PUT    /categories/:id      → update category
+DELETE /categories/:id      → delete category
+
+GET    /products            → all products
+GET    /products/:id        → single product
+POST   /products            → create product
+PUT    /products/:id        → update product
+DELETE /products/:id        → delete product
+
+POST   /test/reset          → reset both stores (used by e2e beforeAll)
+```
+
+---
+
+### `src/server.ts` — UI spec endpoints
+
+**`GET /api/ui/categories/tree`** → `TreeSpec`
+
+```typescript
+app.get('/api/ui/categories/tree', (_req, res) => {
+  res.json(
+    retrofit(
+      new TreeView()
+        .endpoint({ method: 'GET', url: '/categories' })
+        .idField('id')
+        .parentField('parentId')
+        .labelField('name')
+        .selection('single')
+        .create({ method: 'POST', url: '/categories' })
+        .update({ method: 'PUT', url: '/categories/{id}' })
+        .delete({ method: 'DELETE', url: '/categories/{id}' })
+        .metadata({ title: 'Category Tree' })
+        .build(),
+    ),
+  );
+});
+```
+
+**`GET /api/ui/categories`** → `TableSpec` (standard table, demonstrating same data two ways)
+
+```typescript
+app.get('/api/ui/categories', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.forRows(CategorySchema, categoryStore.all())
+        .columnOverride('parentId', { label: 'Parent ID' })
+        .find({ method: 'GET', url: '/categories/{id}' })
+        .create({ method: 'POST', url: '/categories' })
+        .build(),
+    ),
+  );
+});
+```
+
+**`GET /api/ui/categories/:id`** → `FormSpec`
+
+```typescript
+app.get('/api/ui/categories/:id', (req, res) => {
+  const { id } = req.params;
+  const entity = id !== 'new' ? categoryStore.find(id) : null;
+  const builder = formSpec(CategorySchema, CreateCategorySchema)
+    .fieldOverride('parentId', {
+      type: 'select',
+      label: 'Parent Category',
+      placeholder: 'None (root category)',
+      options: categoryStore.allAsOptions(),
+    })
+    .create({ method: 'POST', url: '/categories' })
+    .update({ method: 'PUT', url: '/categories/{id}' })
+    .delete({ method: 'DELETE', url: '/categories/{id}' });
+  if (entity) builder.values(entity as Record<string, unknown>);
+  res.json(retrofit(builder.build()));
+});
+```
+
+**`GET /api/ui/products`** → `TableSpec` with enriched rows
+
+```typescript
+app.get('/api/ui/products', (_req, res) => {
+  // Denormalize: join categoryName so the table shows a human-readable column
+  const rows = productStore.all().map((p) => ({
+    ...p,
+    categoryName: categoryStore.find(String(p.categoryId))?.name ?? String(p.categoryId),
+  }));
+  res.json(
+    retrofit(
+      TableView.forRows(
+        ProductSchema.extend({ categoryName: z.string().optional() }),
+        rows,
+      )
+        .visibleColumns(['name', 'sku', 'price', 'categoryName'])
+        .columnOverride('categoryName', { label: 'Category' })
+        .find({ method: 'GET', url: '/products/{id}' })
+        .create({ method: 'POST', url: '/products' })
+        .build(),
+    ),
+  );
+});
+```
+
+**`GET /api/ui/products/:id`** → `FormSpec`
+
+```typescript
+app.get('/api/ui/products/:id', (req, res) => {
+  const { id } = req.params;
+  const entity = id !== 'new' ? productStore.find(id) : null;
+  const builder = formSpec(ProductSchema, CreateProductSchema)
+    .fieldOverride('categoryId', {
+      type: 'select',
+      label: 'Category',
+      options: categoryStore.allAsOptions(),
+    })
+    .fieldOverride('price', { validation: { min: 0 } })
+    .create({ method: 'POST', url: '/products' })
+    .update({ method: 'PUT', url: '/products/{id}' })
+    .delete({ method: 'DELETE', url: '/products/{id}' });
+  if (entity) builder.values(entity as Record<string, unknown>);
+  res.json(retrofit(builder.build()));
+});
+```
+
+---
+
+### `package.json`
+
+Same structure as other JS examples. Name: `@retrofit-ui-examples/products`. Port: `3005`.
+
+---
+
+### `playwright.config.ts`
+
+Port `3005`, `baseURL: 'http://localhost:3005'`, `webServer.command: 'PORT=3005 pnpm dev'`.
+
+---
+
+### `e2e/products.spec.ts`
+
+```
+beforeAll: POST /test/reset
+
+Category tree view (/#/categories/tree):
+- renders sl-tree with root nodes "Electronics" and "Clothing"
+- expanding "Electronics" reveals child nodes "Phones" and "Laptops"
+- clicking a node selects it (sl-tree-item has selected state)
+- Edit button is disabled when nothing selected, enabled when one node selected
+- New button navigates to /#/categories/new
+- clicking Edit with "Phones" selected navigates to /#/categories/3
+
+Category table view (/#/categories):
+- renders table with all 6 categories
+- clicking New navigates to /#/categories/new
+- clicking a row navigates to /#/categories/:id
+
+Category form (/#/categories/new and /#/categories/:id):
+- new form has parentId select with all category names as options
+- can create a new root category (parentId blank)
+- can create a child category by selecting a parent from the select
+- can edit an existing category
+- Delete button removes the category
+
+Product table view (/#/products):
+- renders table with 4 seed products
+- Category column shows category name, not raw categoryId number
+- clicking New navigates to /#/products/new
+- clicking a row navigates to /#/products/:id
+
+Product form (/#/products/:id):
+- categoryId field renders as a select with category names
+- can create a new product with a category assigned
+- can edit a product's category
+- price field enforces min:0
+```
+
+---
+
+### Key demo point for the example
+
+**Comment at top of `server.ts`:**
+
+> _Key demo: the same hierarchical category data is served two ways — as a `TreeSpec` (browse by structure at `/#/categories/tree`) and as a `TableSpec` (browse flat at `/#/categories`). Products reference categories via a live select whose options are loaded from the category store, with no client-side coupling — add a new category on the server and it appears in the product form immediately._
+
+---
+
 ## Open question for implementor
 
 The `defineConfig` function in `packages/server-solid-shoelace/src/config.ts` currently accepts `forms` and `resources` keys. To serve a `TreeSpec` via the adapter, a `trees` config key is likely needed. Check whether the Express adapter's routing (`GET /api/ui/:resource`) can handle a tree resource, or whether tree resources need a dedicated route pattern (e.g., `GET /api/ui/:resource/tree` served separately from `GET /api/ui/:resource`). The recommended approach is a separate `GET /api/ui/:resource/tree` endpoint so existing table resources aren't disrupted.

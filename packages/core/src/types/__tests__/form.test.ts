@@ -112,6 +112,33 @@ describe('FieldSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts 'datetime' field type", () => {
+    const result = FieldSchema.safeParse({
+      name: 'createdAt',
+      label: 'Created At',
+      type: 'datetime',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts 'time' field type", () => {
+    const result = FieldSchema.safeParse({
+      name: 'startTime',
+      label: 'Start Time',
+      type: 'time',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects 'datetime-local' as field type", () => {
+    const result = FieldSchema.safeParse({
+      name: 'ts',
+      label: 'Timestamp',
+      type: 'datetime-local',
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('rejects unknown field type', () => {
     const result = FieldSchema.safeParse({
       name: 'x',

@@ -6,6 +6,7 @@ import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type {
+  Column,
   FilterFormSpec,
   FormSpec,
   LayoutConfig,
@@ -26,6 +27,40 @@ import {
   Switch,
   useContext,
 } from 'solid-js';
+
+// ── Datetime helpers ─────────────────────────────────────────────────────────
+
+function isoToDatetimeLocal(iso: string): string {
+  return iso ? iso.slice(0, 16) : '';
+}
+function datetimeLocalToIso(local: string): string {
+  if (!local) return '';
+  const d = new Date(local);
+  return isNaN(d.getTime()) ? '' : d.toISOString();
+}
+
+// ── Cell formatting ──────────────────────────────────────────────────────────
+
+function formatCellValue(col: Column, row: Record<string, unknown>): string {
+  const raw = row[col.key];
+  if (raw == null) return '';
+  if (col.type === 'boolean') return raw ? '✓' : '✗';
+  if (col.type === 'date') {
+    const d = new Date(`${String(raw)}T00:00:00`);
+    return isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
+  }
+  if (col.type === 'datetime') {
+    const d = new Date(String(raw));
+    return isNaN(d.getTime())
+      ? String(raw)
+      : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }
+  if (col.type === 'time') {
+    const parts = String(raw).split(':');
+    return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : String(raw);
+  }
+  return String(raw);
+}
 
 // ── Shared refresh mechanism ────────────────────────────────────────────────
 
@@ -98,7 +133,22 @@ function FilterFormPane(props: { spec: FilterFormSpec }) {
                   </For>
                 </sl-select>
               </Match>
-              <Match when={field.type === 'text' || field.type === 'date'}>
+              <Match when={field.type === 'datetime'}>
+                <sl-input
+                  type="datetime-local"
+                  label={field.label}
+                  placeholder={field.placeholder}
+                  prop:value={isoToDatetimeLocal(firstParam(searchParams[field.name]))}
+                  on:sl-change={(e: Event) => {
+                    setSearchParams({
+                      [field.name]: datetimeLocalToIso(
+                        (e.target as EventTarget & { value: string }).value,
+                      ),
+                    });
+                  }}
+                />
+              </Match>
+              <Match when={field.type === 'text' || field.type === 'date' || field.type === 'time'}>
                 <sl-input
                   type={field.type}
                   label={field.label}
@@ -317,11 +367,26 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
                     {fieldLabel()}
                   </sl-checkbox>
                 </Show>
+                <Show when={field.type === 'datetime'}>
+                  <sl-input
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
+                    type="datetime-local"
+                    help-text={field.helpText ?? undefined}
+                    prop:value={isoToDatetimeLocal(strVal())}
+                    invalid={!!err() || undefined}
+                    on:sl-change={(e: Event) => {
+                      const raw = (e.target as EventTarget & { value: string }).value;
+                      setValue(field.name, datetimeLocalToIso(raw));
+                    }}
+                  />
+                </Show>
                 <Show
                   when={
                     !isTextarea() &&
                     field.type !== 'select' &&
-                    field.type !== 'checkbox'
+                    field.type !== 'checkbox' &&
+                    field.type !== 'datetime'
                   }
                 >
                   <sl-input
@@ -448,11 +513,7 @@ function TablePane(props: { spec: TableSpec }) {
                           class="retrofit-td"
                           style={{ 'text-align': col.alignment }}
                         >
-                          {col.type === 'boolean'
-                            ? row[col.key]
-                              ? '✓'
-                              : '✗'
-                            : String(row[col.key] ?? '')}
+                          {formatCellValue(col, row)}
                         </td>
                       )}
                     </For>

@@ -5,6 +5,8 @@ export const ColumnTypeSchema = z.enum([
   'string',
   'number',
   'date',
+  'datetime',
+  'time',
   'boolean',
   'enum',
   'custom',

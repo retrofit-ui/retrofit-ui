@@ -1,5 +1,6 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/color-picker/color-picker.js';
 import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
@@ -354,13 +355,60 @@ function FormEditor(props: FormEditorProps) {
                     {fieldLabel()}
                   </sl-switch>
                 </Show>
+                <Show when={field.type === 'color'}>
+                  <div>
+                    <Show when={!hideLabel()}>
+                      <label
+                        for={field.name}
+                        style={{
+                          display: 'block',
+                          'margin-bottom': 'var(--sl-spacing-2x-small)',
+                          'font-size': 'var(--sl-font-size-medium)',
+                          'font-weight': 'var(--sl-font-weight-semibold)',
+                        }}
+                      >
+                        {fieldLabel()}
+                      </label>
+                    </Show>
+                    <sl-color-picker
+                      id={field.name}
+                      aria-label={fieldLabel()}
+                      format={field.colorFormat ?? 'hex'}
+                      swatches={
+                        field.colorSwatches
+                          ? field.colorSwatches.join('; ')
+                          : undefined
+                      }
+                      disabled={field.readOnly || undefined}
+                      prop:value={strVal() || '#000000'}
+                      on:sl-change={(e: Event) =>
+                        setValue(
+                          field.name,
+                          (e.target as EventTarget & { value: string }).value,
+                        )
+                      }
+                    />
+                    <Show when={field.helpText}>
+                      <p
+                        style={{
+                          margin: 'var(--sl-spacing-2x-small) 0 0',
+                          'font-size': 'var(--sl-font-size-small)',
+                          color: 'var(--sl-color-neutral-500)',
+                        }}
+                      >
+                        {field.helpText}
+                      </p>
+                    </Show>
+                  </div>
+                </Show>
                 <Show
                   when={
                     !isTextarea() &&
                     field.type !== 'select' &&
                     field.type !== 'radio-group' &&
                     field.type !== 'checkbox' &&
-                    field.type !== 'switch'
+                    field.type !== 'switch' &&
+                    field.type !== 'color'
                   }
                 >
                   <sl-input

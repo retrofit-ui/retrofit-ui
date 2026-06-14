@@ -15,6 +15,7 @@ export const FieldTypeSchema = z.enum([
   'textarea',
   'markdown',
   'file',
+  'color',
 ]);
 export type FieldType = z.infer<typeof FieldTypeSchema>;
 
@@ -43,6 +44,8 @@ export const FieldSchema = z.object({
   helpText: z.string().optional(),
   options: z.array(FieldOptionSchema).optional(),
   value: z.unknown().optional(),
+  colorFormat: z.enum(['hex', 'rgb', 'hsl']).optional(),
+  colorSwatches: z.array(z.string()).optional(),
 });
 export type Field = z.infer<typeof FieldSchema>;
 

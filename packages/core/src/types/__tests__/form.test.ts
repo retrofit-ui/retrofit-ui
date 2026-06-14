@@ -64,11 +64,50 @@ describe('FieldSchema', () => {
     }
   });
 
+  it('accepts color field type', () => {
+    const result = FieldSchema.safeParse({
+      name: 'brand',
+      label: 'Brand colour',
+      type: 'color',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts colorFormat on a color field', () => {
+    const result = FieldSchema.safeParse({
+      name: 'brand',
+      label: 'Brand colour',
+      type: 'color',
+      colorFormat: 'hsl',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects invalid colorFormat value', () => {
+    const result = FieldSchema.safeParse({
+      name: 'brand',
+      label: 'Brand colour',
+      type: 'color',
+      colorFormat: 'cmyk',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts colorSwatches array', () => {
+    const result = FieldSchema.safeParse({
+      name: 'brand',
+      label: 'Brand colour',
+      type: 'color',
+      colorSwatches: ['#ff0000', '#00ff00', '#0000ff'],
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('rejects unknown field type', () => {
     const result = FieldSchema.safeParse({
       name: 'x',
       label: 'X',
-      type: 'color',
+      type: 'unknowntype',
     });
     expect(result.success).toBe(false);
   });

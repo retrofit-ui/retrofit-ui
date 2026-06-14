@@ -124,6 +124,18 @@ declare module 'solid-js' {
       'sl-skeleton': JSX.HTMLAttributes<HTMLElement> & {
         effect?: 'none' | 'sheen' | 'pulse';
       };
+      'sl-color-picker': JSX.HTMLAttributes<HTMLElement> & {
+        format?: 'hex' | 'rgb' | 'hsl' | 'hsv';
+        value?: string;
+        'prop:value'?: string;
+        swatches?: string;
+        inline?: boolean;
+        disabled?: boolean;
+        'no-format-toggle'?: boolean;
+        'on:sl-change'?: SlEventHandler;
+        'on:sl-input'?: SlEventHandler;
+        'aria-label'?: string;
+      };
     }
   }
 }

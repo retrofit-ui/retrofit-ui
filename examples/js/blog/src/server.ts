@@ -10,6 +10,7 @@ import {
   pageSpec,
   retrofitUi,
   TableView,
+  TimelineView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
 import type { Review } from './schemas';
@@ -95,6 +96,7 @@ app.get('/api/ui/posts', (_req, res) => {
           },
         })
         .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
+        .rowAction({ label: 'History', routePattern: '/{id}/timeline' })
         .find({ method: 'GET', url: '/posts/{id}' })
         .create({ method: 'POST', url: '/posts' })
         .build(),
@@ -136,6 +138,49 @@ app.get('/api/ui/posts/:id/render', (_req, res) => {
       field: 'body',
       metadata: { title: 'Preview' },
     } satisfies MarkdownViewSpec),
+  );
+});
+
+// Demo event history — derived from post data
+app.get('/posts/:id/events', (req, res) => {
+  const post = store.find(req.params.id);
+  if (!post) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  const variantMap: Record<string, string> = {
+    published: 'success',
+    draft: 'primary',
+    archived: 'neutral',
+  };
+  res.json([
+    {
+      timestamp: post.updatedAt,
+      event: `Marked as ${post.status}`,
+      detail: `Status changed to '${post.status}'.`,
+      status: variantMap[post.status as string] ?? 'neutral',
+    },
+    {
+      timestamp: '2026-01-01T00:00:00Z',
+      event: 'Created',
+      detail: 'Post was created.',
+      status: 'neutral',
+    },
+  ]);
+});
+
+// Timeline spec route
+app.get('/api/ui/posts/:id/timeline', (_req, res) => {
+  res.json(
+    retrofit(
+      TimelineView.endpoint({ method: 'GET', url: '/posts/{id}/events' })
+        .timestampField('timestamp')
+        .titleField('event')
+        .descriptionField('detail')
+        .variantField('status')
+        .title('Post History')
+        .build(),
+    ),
   );
 });
 

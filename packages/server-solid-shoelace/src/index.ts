@@ -10,6 +10,7 @@ export type {
   Pane,
   RowAction,
   TableSpec,
+  TimelineSpec,
   TreeSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
@@ -30,6 +31,7 @@ export {
 export { TreeView, TreeViewBuilder } from './tree-builder';
 export type { RetrofitTheme } from './types';
 export { TableView, TableViewBuilder } from './view-builder';
+export { TimelineView, TimelineViewBuilder } from './timeline-builder';
 export {
   TableFormWorkflowBundle,
   WorkflowBundle,

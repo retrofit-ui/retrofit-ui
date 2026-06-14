@@ -78,3 +78,16 @@ export interface TreeSpec {
   };
   metadata?: { title?: string };
 }
+
+/** Returned by GET /api/ui/{resource}/timeline or GET /api/ui/{resource}/:id/timeline */
+export interface TimelineSpec {
+  endpoint: EndpointDirective;
+  fields: {
+    timestamp: string;
+    title: string;
+    description?: string;
+    variant?: string;
+    icon?: string;
+  };
+  metadata?: { title?: string };
+}

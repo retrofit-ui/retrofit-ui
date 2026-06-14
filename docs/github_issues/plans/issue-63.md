@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add `TimelineSpec` as the fourth core view type alongside table, form, and markdown. A `TimelineSpec` drives a vertical chronological event feed — audit logs, order history, activity streams — fetched from a single endpoint and rendered in the SPA without a Shoelace native component.
+Add `TimelineSpec` as the fourth core view type alongside table, form, and markdown. A `TimelineSpec` drives a vertical chronological event feed — audit logs, order history, activity streams — with event data **fully populated server-side** before it reaches the SPA, consistent with how `TableSpec` includes pre-populated `rows` and `FormSpec` includes pre-populated field values.
 
 ---
 
@@ -15,21 +15,23 @@ Add `TimelineSpec` as the fourth core view type alongside table, form, and markd
 Add after `MarkdownViewSpec`:
 
 ```typescript
-/** Returned by GET /api/ui/{resource}/timeline or GET /api/ui/{resource}/:id/timeline */
+export interface TimelineEvent {
+  timestamp: string;   // ISO-8601 date/time
+  title: string;       // event label
+  description?: string;
+  variant?: 'success' | 'warning' | 'danger' | 'neutral' | 'primary';
+  icon?: string;       // Bootstrap icon name (sl-icon)
+}
+
 export interface TimelineSpec {
-  endpoint: EndpointDirective;
-  fields: {
-    timestamp: string;       // field name for the ISO-8601 date/time value
-    title: string;           // field name for the event label
-    description?: string;    // field name for body text
-    variant?: string;        // field name for colour variant ('success' | 'warning' | 'danger' | 'neutral' | 'primary')
-    icon?: string;           // field name for Bootstrap icon name (sl-icon)
-  };
+  events: TimelineEvent[];
   metadata?: { title?: string };
 }
 ```
 
-`TimelineSpec` uses plain TypeScript interface, consistent with every other type in this file. No Zod dependency.
+No `endpoint` directive. The server populates `events` with fully-resolved data before responding — the same philosophy as `TableSpec.rows` and the field values in `FormSpec`. The SPA renders what it receives; it does not make a second data fetch.
+
+`TimelineSpec` uses plain TypeScript interfaces, consistent with every other type in this file. No Zod dependency.
 
 ---
 
@@ -37,44 +39,25 @@ export interface TimelineSpec {
 
 **Why:** `TableViewBuilder` lives in `view-builder.ts`, `FormSpecBuilder` in `form-builder.ts`. Following the same naming convention, `TimelineViewBuilder` goes in `timeline-builder.ts`.
 
-The builder is simpler than `TableViewBuilder` — it needs no Zod schema (events are untyped JSON from the API) and no schema-builder-zod dependency.
+The builder accepts a ready-made event array (populated by the server handler) and optionally a metadata title.
 
 ```typescript
-import type { EndpointDirective, TimelineSpec } from '@retrofit-ui/core';
+import type { TimelineEvent, TimelineSpec } from '@retrofit-ui/core';
 
 export class TimelineViewBuilder {
-  private _timestampField: string | undefined;
-  private _titleField: string | undefined;
-  private _descriptionField: string | undefined;
-  private _variantField: string | undefined;
-  private _iconField: string | undefined;
   private _metadataTitle: string | undefined;
 
-  private constructor(private readonly _endpoint: EndpointDirective) {}
+  private constructor(private readonly _events: TimelineEvent[]) {}
 
-  static endpoint(directive: EndpointDirective): TimelineViewBuilder {
-    return new TimelineViewBuilder(directive);
+  static events(events: TimelineEvent[]): TimelineViewBuilder {
+    return new TimelineViewBuilder(events);
   }
 
-  timestampField(name: string): this { this._timestampField = name; return this; }
-  titleField(name: string): this { this._titleField = name; return this; }
-  descriptionField(name: string): this { this._descriptionField = name; return this; }
-  variantField(name: string): this { this._variantField = name; return this; }
-  iconField(name: string): this { this._iconField = name; return this; }
   title(t: string): this { this._metadataTitle = t; return this; }
 
   build(): TimelineSpec {
-    if (!this._timestampField) throw new Error('TimelineViewBuilder: timestampField() is required');
-    if (!this._titleField) throw new Error('TimelineViewBuilder: titleField() is required');
     return {
-      endpoint: this._endpoint,
-      fields: {
-        timestamp: this._timestampField,
-        title: this._titleField,
-        ...(this._descriptionField && { description: this._descriptionField }),
-        ...(this._variantField && { variant: this._variantField }),
-        ...(this._iconField && { icon: this._iconField }),
-      },
+      events: this._events,
       ...(this._metadataTitle && { metadata: { title: this._metadataTitle } }),
     };
   }
@@ -83,7 +66,7 @@ export class TimelineViewBuilder {
 export const TimelineView = TimelineViewBuilder;
 ```
 
-`endpoint()` is a static factory method — the same entry-point pattern as `TableViewBuilder.schema()`. `TimelineView` is the re-exported alias so server code reads `TimelineView.endpoint(...)`.
+`events()` is a static factory method — entry-point pattern consistent with `TableViewBuilder.schema()`. `TimelineView` is the re-exported alias so server code reads `TimelineView.events(...)`.
 
 ---
 
@@ -92,33 +75,25 @@ export const TimelineView = TimelineViewBuilder;
 **Why:** All public builders and types are exported from here. Add:
 
 ```typescript
-export type { TimelineSpec } from '@retrofit-ui/core';
+export type { TimelineSpec, TimelineEvent } from '@retrofit-ui/core';
 export { TimelineView, TimelineViewBuilder } from './timeline-builder';
 ```
 
-The `TimelineSpec` type re-export follows the pattern of `TableSpec`, `FormSpec`, etc. that are already re-exported from `@retrofit-ui/core`.
+The `TimelineSpec` and `TimelineEvent` type re-exports follow the pattern of `TableSpec`, `FormSpec`, etc. already re-exported from `@retrofit-ui/core`.
 
 ---
 
 ### 4. `packages/spa-solid-shoelace/ui/TimelineView.tsx` *(new file)*
 
-**Why:** Every view type has its own SPA component. `MarkdownView.tsx` is the closest structural analog — fetch a spec from the API, make a second data fetch using a URL from the spec, render.
+**Why:** Every view type has its own SPA component. Because event data is embedded in the spec, the component makes a single fetch — the same as every other view type.
 
-**Fetching pattern:**
+**Fetching pattern (single fetch):**
 
 ```typescript
-async function fetchTimelineView(specUrl: string, id: string | undefined) {
-  const specRes = await fetch(specUrl);
-  if (!specRes.ok) throw new Error(`Failed to fetch timeline spec`);
-  const spec = (await specRes.json()) as TimelineSpec;
-
-  const eventsUrl = id
-    ? spec.endpoint.url.replace('{id}', id)
-    : spec.endpoint.url;
-  const eventsRes = await fetch(eventsUrl);
-  if (!eventsRes.ok) throw new Error(`Failed to fetch timeline events`);
-  const events = (await eventsRes.json()) as Record<string, unknown>[];
-  return { spec, events };
+async function fetchTimelineSpec(specUrl: string) {
+  const res = await fetch(specUrl);
+  if (!res.ok) throw new Error(`Failed to fetch timeline spec`);
+  return (await res.json()) as TimelineSpec;
 }
 ```
 
@@ -135,10 +110,7 @@ export function TimelineView() {
       ? `${apiBase}/${params.resource}/${params.id}/timeline`
       : `${apiBase}/${params.resource}/timeline`;
 
-  const [data] = createResource(
-    () => ({ url: specUrl(), id: params.id }),
-    ({ url, id }) => fetchTimelineView(url, id),
-  );
+  const [spec] = createResource(specUrl, fetchTimelineSpec);
 
   // ... loading skeleton, error, and event list render
 }
@@ -146,13 +118,13 @@ export function TimelineView() {
 
 **Rendering an event:**
 
-Each event is rendered with:
-- A circle node whose colour comes from `variant` field → CSS class `retrofit-timeline-event--{variant}`
-- `sl-icon` if `fields.icon` is set and the event has that field
-- Title text from `fields.title`
-- `sl-badge` showing the variant string (e.g. "success") if `fields.variant` is set
-- `sl-relative-time` for the `fields.timestamp` value
-- `<p>` for `fields.description`
+Each `TimelineEvent` in `spec().events` is rendered with:
+- A circle node whose colour comes from `event.variant` → CSS class `retrofit-timeline-event--{variant}`
+- `sl-icon` if `event.icon` is set
+- Title text from `event.title`
+- `sl-badge` showing the variant string (e.g. "success") if `event.variant` is set
+- `sl-relative-time` for `event.timestamp`
+- `<p>` for `event.description`
 
 **Loading state:** 3–5 `sl-skeleton` rows at full width, matching the pattern in `MarkdownView`.
 
@@ -292,57 +264,48 @@ The `date` attribute accepts an ISO-8601 string. Using `string` rather than `str
 
 ### 8. `examples/js/blog/src/server.ts`
 
-**Why:** The existing blog example is where all new features are demonstrated with e2e tests. It needs a timeline endpoint and a "History" row action on the posts table.
+**Why:** The existing blog example is where all new features are demonstrated with e2e tests. It needs a timeline spec route that assembles event data server-side and a "History" row action on the posts table.
 
-**Add to the existing post routes:**
-
-```typescript
-// Demo event history — derived from post data
-app.get('/posts/:id/events', (req, res) => {
-  const post = store.find(req.params.id);
-  if (!post) { res.status(404).json({ error: 'Not found' }); return; }
-  const variantMap: Record<string, string> = {
-    published: 'success',
-    draft: 'primary',
-    archived: 'neutral',
-  };
-  res.json([
-    {
-      timestamp: post.updatedAt,
-      event: `Marked as ${post.status}`,
-      detail: `Status changed to '${post.status}'.`,
-      status: variantMap[post.status] ?? 'neutral',
-    },
-    {
-      timestamp: '2026-01-01T00:00:00Z',
-      event: 'Created',
-      detail: 'Post was created.',
-      status: 'neutral',
-    },
-  ]);
-});
-```
-
-**Add timeline spec route:**
+**Add timeline spec route** (events are populated inline, not delegated to a separate endpoint):
 
 ```typescript
 import { TimelineView } from '@retrofit-ui/server-solid-shoelace';
 
-app.get('/api/ui/posts/:id/timeline', (_req, res) => {
+app.get('/api/ui/posts/:id/timeline', (req, res) => {
+  const post = store.find(req.params.id);
+  if (!post) { res.status(404).json({ error: 'Not found' }); return; }
+
+  const variantMap: Record<string, 'success' | 'primary' | 'neutral'> = {
+    published: 'success',
+    draft: 'primary',
+    archived: 'neutral',
+  };
+
   res.json(
     retrofit(
       TimelineView
-        .endpoint({ method: 'GET', url: '/posts/{id}/events' })
-        .timestampField('timestamp')
-        .titleField('event')
-        .descriptionField('detail')
-        .variantField('status')
+        .events([
+          {
+            timestamp: post.updatedAt,
+            title: `Marked as ${post.status}`,
+            description: `Status changed to '${post.status}'.`,
+            variant: variantMap[post.status] ?? 'neutral',
+          },
+          {
+            timestamp: post.createdAt,
+            title: 'Created',
+            description: 'Post was created.',
+            variant: 'neutral',
+          },
+        ])
         .title('Post History')
         .build(),
     ),
   );
 });
 ```
+
+No separate `/posts/:id/events` data endpoint is needed — the spec handler gathers and embeds the event data directly.
 
 **Add row action to the posts table** (`/api/ui/posts`):
 
@@ -359,9 +322,19 @@ The `routePattern` value `'/{id}/timeline'` is appended to `/#/posts`, yielding 
 
 ## Implementation approach
 
+### Server-side data population — same philosophy as `TableSpec` and `FormSpec`
+
+`TableSpec` includes `rows` with all cell values already resolved. `FormSpec` includes all field values already populated. `TimelineSpec` follows the same pattern: the server handler fetches (or derives) event data, maps it to `TimelineEvent[]`, and embeds the array in the spec response. The SPA makes **one** HTTP request and renders what it receives — no second data fetch, no field-name indirection.
+
+This design keeps the SPA dumb and the server authoritative. The server controls what events are shown, their ordering, labeling, and variant mapping. The UI is a pure renderer.
+
+### Why no `endpoint` field
+
+The previous design had `TimelineSpec.endpoint` pointing to a data URL plus a `fields` mapping that told the SPA which JSON keys to read. The reviewer explicitly rejected this: it pushed data-fetching decisions into the UI and required the SPA to understand field mappings — responsibilities that belong server-side, where `TableSpec` and `FormSpec` already handle them. Removing `endpoint` and `fields` makes `TimelineSpec` simpler and consistent.
+
 ### Why no schema for `TimelineSpec`
 
-`TableSpec` and `FormSpec` are schema-driven because they describe UI structure (column types, field validation). `TimelineSpec` only describes how to read already-fetched event data — which JSON field holds the timestamp, title, etc. There is nothing to validate at build time beyond requiring `timestamp` and `title` field names. A Zod schema would add ceremony without benefit.
+Unlike `TableSpec` (which is schema-driven to define column types and validation), `TimelineSpec` needs no schema introspection. Events arrive as typed `TimelineEvent[]` objects. A Zod schema would add ceremony without benefit.
 
 ### Why two routes instead of one
 
@@ -369,11 +342,11 @@ The `routePattern` value `'/{id}/timeline'` is appended to `/#/posts`, yielding 
 
 ### `sl-relative-time` vs formatted date string
 
-`sl-relative-time` automatically formats and live-updates ("3 minutes ago" → "4 minutes ago") without any JavaScript. The alternative — formatting dates as strings on the server — produces stale output as soon as the spec is cached. Timestamps are ISO-8601 strings; `sl-relative-time`'s `date` attribute accepts them directly.
+`sl-relative-time` automatically formats and live-updates ("3 minutes ago" → "4 minutes ago") without any JavaScript. Formatting dates as strings server-side produces stale output as soon as the spec is cached. Timestamps are ISO-8601 strings; `sl-relative-time`'s `date` attribute accepts them directly.
 
 ### `sl-badge` for variant labels
 
-Showing the variant text (e.g. "success") as a `<sl-badge>` next to the event title makes the variant double-coded (both the circle colour and the badge label). This matches Retool / GitHub patterns where status is visible even without colour distinguishing. It's opt-in via `fields.variant` — if the field is omitted from the spec, no badge renders.
+Showing the variant text (e.g. "success") as a `<sl-badge>` next to the event title makes the variant double-coded (both the circle colour and the badge label). This matches Retool / GitHub patterns where status is visible even without colour distinguishing. It's opt-in via `event.variant` — if the field is omitted from an event, no badge renders.
 
 ### CSS circle node approach
 
@@ -385,12 +358,11 @@ The vertical line and circles are `::before` pseudo-elements rather than extra D
 
 | Edge case | How to handle |
 |-----------|---------------|
-| Events list is empty | Render a `.retrofit-empty` paragraph: "No events." (consistent with table's empty state) |
+| `events` array is empty | Render a `.retrofit-empty` paragraph: "No events." (consistent with table's empty state) |
 | `variant` value not in the known CSS modifier set | The modifier class `retrofit-timeline-event--{value}` is applied but no matching CSS rule exists; node falls back to the default `primary` colour. No crash. |
-| `variant` field is present in spec but absent from an individual event object | `event[spec.fields.variant]` is `undefined`; no class modifier is added and no `sl-badge` renders for that event. |
-| `icon` field present but Bootstrap icon name is invalid | `sl-icon` loads icons async and silently renders nothing if the name is not found. No crash. |
-| `endpoint.url` has `{id}` but params.id is undefined (global timeline) | The `{id}` token is not replaced and the fetch URL will be malformed. This is a server-side bug (serving a per-entity URL in a global timeline spec). The subsequent 404/error is shown via the error `Show` block. |
-| `timestamp` field value is missing from an event | `String(event[spec.fields.timestamp] ?? '')` produces `''`; `sl-relative-time` with an empty `date` renders as "Invalid Date" but does not crash. |
+| `event.variant` is absent for an individual event | No class modifier is added and no `sl-badge` renders for that event. |
+| `event.icon` is an invalid Bootstrap icon name | `sl-icon` loads icons async and silently renders nothing if the name is not found. No crash. |
+| `event.timestamp` is missing or empty | `sl-relative-time` with an empty `date` renders as "Invalid Date" but does not crash. |
 | Very large event list | No pagination in this implementation. The list scrolls vertically. This is acceptable for typical audit logs; pagination can be a follow-up issue. |
 | `/:resource/timeline` conflicts with `/:resource/:id` for `id='timeline'` | Resolved by route ordering in `App.tsx`: `/:resource/timeline` (literal segment) appears before `/:resource/:id` (dynamic segment). SolidJS router matches in declaration order. |
 
@@ -400,12 +372,12 @@ The vertical line and circles are `::before` pseudo-elements rather than extra D
 
 ### Unit — `packages/server-solid-shoelace/src/__tests__/timeline-builder.test.ts` *(new file)*
 
-1. **Basic build**: `.endpoint({...}).timestampField('ts').titleField('ev').build()` → assert `spec.fields.timestamp === 'ts'` and `spec.fields.title === 'ev'`.
-2. **Optional fields round-trip**: Add `.descriptionField('d').variantField('v').iconField('i')` → assert all three appear in `spec.fields`.
-3. **`metadata.title`**: `.title('Order History').build()` → assert `spec.metadata?.title === 'Order History'`.
-4. **Missing `timestampField` throws**: Call `.build()` without `timestampField` → assert an `Error` is thrown.
-5. **Missing `titleField` throws**: Call `.build()` without `titleField` → assert an `Error` is thrown.
-6. **Omitted optional fields absent from spec**: Build with only required fields → assert `spec.fields.description === undefined`, `spec.fields.variant === undefined`, `spec.fields.icon === undefined`, `spec.metadata === undefined`.
+1. **Basic build**: `TimelineView.events([]).build()` → assert `spec.events` is an empty array.
+2. **Events round-trip**: Pass two `TimelineEvent` objects → assert they appear verbatim in `spec.events`.
+3. **`metadata.title`**: `.events([...]).title('Order History').build()` → assert `spec.metadata?.title === 'Order History'`.
+4. **No title omits metadata**: Build without `.title()` → assert `spec.metadata === undefined`.
+5. **All `TimelineEvent` fields preserved**: Pass an event with all optional fields set (`description`, `variant`, `icon`) → assert all fields are present in `spec.events[0]`.
+6. **Partial `TimelineEvent` preserved**: Pass an event with only `timestamp` and `title` → assert `spec.events[0].description === undefined`, `.variant === undefined`, `.icon === undefined`.
 7. **`TimelineView` is an alias for `TimelineViewBuilder`**: `assert.strictEqual(TimelineView, TimelineViewBuilder)`.
 
 ### Integration — `packages/server-solid-shoelace/src/__tests__/express.test.ts`
@@ -445,13 +417,13 @@ The `spa-solid-shoelace` package is not published independently (it is bundled i
 
 | File | Change |
 |------|--------|
-| `packages/core/src/types/resource-spec.ts` | Add `TimelineSpec` interface |
-| `packages/server-solid-shoelace/src/timeline-builder.ts` | New file: `TimelineViewBuilder` class + `TimelineView` alias |
-| `packages/server-solid-shoelace/src/index.ts` | Export `TimelineView`, `TimelineViewBuilder`, re-export `TimelineSpec` type |
-| `packages/spa-solid-shoelace/ui/TimelineView.tsx` | New file: SolidJS component — fetches spec + events, renders vertical timeline |
+| `packages/core/src/types/resource-spec.ts` | Add `TimelineEvent` interface and `TimelineSpec` interface (events array, no endpoint) |
+| `packages/server-solid-shoelace/src/timeline-builder.ts` | New file: `TimelineViewBuilder` class + `TimelineView` alias; accepts pre-populated `TimelineEvent[]` |
+| `packages/server-solid-shoelace/src/index.ts` | Export `TimelineView`, `TimelineViewBuilder`, re-export `TimelineSpec` and `TimelineEvent` types |
+| `packages/spa-solid-shoelace/ui/TimelineView.tsx` | New file: SolidJS component — single fetch for spec, renders `spec.events` directly |
 | `packages/spa-solid-shoelace/ui/App.tsx` | Add two `<Route>` entries; import `TimelineView` |
 | `packages/spa-solid-shoelace/ui/layout.css` | New `.retrofit-timeline*` CSS classes using Shoelace tokens |
 | `packages/spa-solid-shoelace/ui/shoelace-types.d.ts` | Add `sl-relative-time` intrinsic element declaration |
-| `examples/js/blog/src/server.ts` | Add `/posts/:id/events` data route, `/api/ui/posts/:id/timeline` spec route, "History" `rowAction` on posts table; import `TimelineView` |
+| `examples/js/blog/src/server.ts` | Add `/api/ui/posts/:id/timeline` spec route with inline events; add "History" `rowAction` on posts table; import `TimelineView` |
 | `examples/js/blog/e2e/blog.spec.ts` | New `describe('Timeline view')` block with 9 test cases |
 | `packages/server-solid-shoelace/src/__tests__/timeline-builder.test.ts` | New file: 7 unit tests for `TimelineViewBuilder` |

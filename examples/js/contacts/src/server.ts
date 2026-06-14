@@ -3,6 +3,7 @@ import {
   formSpec,
   pageSpec,
   retrofitUi,
+  StatViewBuilder,
   TableFormWorkflowBundle,
   TableView,
 } from '@retrofit-ui/server-solid-shoelace';
@@ -116,6 +117,29 @@ app.get('/api/ui/contacts-by-type', (_req, res) => {
         )
         .build(),
     ),
+  );
+});
+
+app.get('/api/metrics/contact-count', (_req, res) =>
+  res.json({ value: store.all().length }),
+);
+
+app.get('/api/ui/dashboard/stats', (_req, res) => {
+  res.json(
+    new StatViewBuilder()
+      .title('Contacts Dashboard')
+      .stat({
+        label: 'Total Contacts',
+        endpoint: { method: 'GET', url: '/api/metrics/contact-count' },
+        format: 'number',
+      })
+      .stat({
+        label: 'Non-existent Metric',
+        endpoint: { method: 'GET', url: '/api/metrics/does-not-exist' },
+        format: 'number',
+        description: 'This endpoint does not exist',
+      })
+      .build(),
   );
 });
 

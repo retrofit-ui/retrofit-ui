@@ -475,3 +475,46 @@ test.describe('Delete contact', () => {
     );
   });
 });
+
+test.describe('Stats view', () => {
+  test('navigates to /#/dashboard/stats without error', async ({ page }) => {
+    await page.goto('/#/dashboard/stats');
+    await page.waitForSelector('.retrofit-stat-grid');
+  });
+
+  test('stat grid is visible', async ({ page }) => {
+    await page.goto('/#/dashboard/stats');
+    await expect(page.locator('.retrofit-stat-grid')).toBeVisible();
+  });
+
+  test('title "Contacts Dashboard" is displayed', async ({ page }) => {
+    await page.goto('/#/dashboard/stats');
+    await expect(
+      page.getByRole('heading', { name: 'Contacts Dashboard' }),
+    ).toBeVisible();
+  });
+
+  test('stat card renders with label "Total Contacts"', async ({ page }) => {
+    await page.goto('/#/dashboard/stats');
+    await page.waitForSelector('.retrofit-stat-grid');
+    await expect(page.getByText('Total Contacts')).toBeVisible();
+  });
+
+  test('stat value is a non-empty string', async ({ page }) => {
+    await page.goto('/#/dashboard/stats');
+    await page.waitForSelector('.retrofit-stat-value');
+    const valueEl = page.locator('.retrofit-stat-value').first();
+    await expect(valueEl).toBeVisible();
+    const text = await valueEl.textContent();
+    expect(text?.trim().length).toBeGreaterThan(0);
+  });
+
+  test('stat card for failed endpoint shows em-dash', async ({ page }) => {
+    await page.goto('/#/dashboard/stats');
+    await page.waitForSelector('.retrofit-stat-grid');
+    const cards = page.locator('.retrofit-stat-card');
+    await expect(cards).toHaveCount(2);
+    const errorCard = cards.nth(1);
+    await expect(errorCard.locator('.retrofit-stat-value')).toHaveText('—');
+  });
+});

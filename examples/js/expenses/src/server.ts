@@ -65,6 +65,7 @@ app.get('/api/ui/expenses', (_req, res) => {
     retrofit(
       TableView.forRows(ExpenseSchema, store.all())
         .visibleColumns(['description', 'amount', 'date'])
+        .columnOverride('amount', { format: 'currency', currency: 'USD' })
         .find({ method: 'GET', url: '/expenses/{id}' })
         .create({ method: 'POST', url: '/expenses' })
         .build(),

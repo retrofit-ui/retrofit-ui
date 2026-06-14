@@ -1,5 +1,5 @@
 import type { Field } from './form';
-import type { Column } from './table';
+import type { Cell, Column } from './table';
 
 export interface EndpointDirective {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -16,7 +16,7 @@ export interface RowAction {
 /** Returned by GET /api/ui/{resource} — drives the table view. */
 export interface TableSpec {
   columns: Column[];
-  rows?: Record<string, unknown>[];
+  rows?: Record<string, Cell>[];
   endpoints: {
     list?: EndpointDirective; // used by PageView filter-tables
     find?: EndpointDirective; // enables row clicks + ID extraction

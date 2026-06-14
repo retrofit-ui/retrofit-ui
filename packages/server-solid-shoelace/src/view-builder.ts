@@ -1,4 +1,5 @@
 import type {
+  Cell,
   Column,
   EndpointDirective,
   FieldOption,
@@ -32,6 +33,7 @@ function deriveEnumOptions(schema: ZodTypeAny): FieldOption[] | undefined {
 export class TableViewBuilder<S extends ZodRawShape> {
   private _updateSchema?: ZodObject<ZodRawShape>;
   private _columnOverrides: Record<string, Partial<Column>> = {};
+  private _formatters = new Map<string, (v: unknown) => string>();
   private _rowActions: RowAction[] = [];
   private _visibleKeys?: string[];
   private _endpoints: TableSpec['endpoints'] = {};
@@ -64,8 +66,25 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return this;
   }
 
-  columnOverride(key: string, override: Partial<Column>): this {
-    this._columnOverrides[key] = { ...this._columnOverrides[key], ...override };
+  columnOverride(
+    key: string,
+    override: Omit<Partial<Column>, 'format'> & {
+      format?: NonNullable<Column['format']> | ((v: unknown) => string);
+    },
+  ): this {
+    const { format, ...rest } = override;
+    const colOverride: Partial<Column> = rest as Partial<Column>;
+    if (typeof format === 'function') {
+      this._formatters.set(key, format);
+    } else if (format !== undefined) {
+      colOverride.format = format;
+    }
+    if (Object.keys(colOverride).length > 0) {
+      this._columnOverrides[key] = {
+        ...this._columnOverrides[key],
+        ...colOverride,
+      };
+    }
     return this;
   }
 
@@ -131,10 +150,26 @@ export class TableViewBuilder<S extends ZodRawShape> {
       columns = columns.filter((c) => keySet.has(c.key));
     }
 
+    const rows =
+      this._rows !== undefined
+        ? this._rows.map((row) =>
+            Object.fromEntries(
+              columns.map((col) => {
+                const value = row[col.key];
+                const formatter = this._formatters.get(col.key);
+                const cell: Cell = formatter
+                  ? { value, formatted: formatter(value) }
+                  : { value };
+                return [col.key, cell];
+              }),
+            ),
+          )
+        : undefined;
+
     return {
       columns,
       endpoints: this._endpoints,
-      ...(this._rows !== undefined && { rows: this._rows }),
+      ...(rows !== undefined && { rows }),
       ...(this._rowActions.length > 0 && { rowActions: this._rowActions }),
       ...(this._metadata !== undefined && { metadata: this._metadata }),
     };

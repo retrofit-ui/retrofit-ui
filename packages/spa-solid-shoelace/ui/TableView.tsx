@@ -147,7 +147,11 @@ function CellDisplay(props: { col: Column; value: unknown }) {
         <sl-format-number value={numVal()} type="percent" />
       </Match>
       <Match when={props.col.format === 'currency'}>
-        <sl-format-number value={numVal()} type="currency" currency={props.col.currency ?? 'USD'} />
+        <sl-format-number
+          value={numVal()}
+          type="currency"
+          currency={props.col.currency ?? 'USD'}
+        />
       </Match>
       <Match when={props.col.format === 'decimal'}>
         <sl-format-number value={numVal()} />

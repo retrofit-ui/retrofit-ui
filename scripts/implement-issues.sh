@@ -82,8 +82,20 @@ pr_ci_status() {
 
 pr_has_conflicts() {
   local pr_number="$1"
-  gh pr view "$pr_number" --repo "$REPO" --json mergeable,mergeStateStatus \
-    --jq '.mergeable == "CONFLICTING" or .mergeStateStatus == "DIRTY"' 2>/dev/null || echo "false"
+  local status
+  # gh api --cache 0s bypasses gh's HTTP response cache.
+  # GitHub computes mergeability lazily: the first request may return null while
+  # computation is queued, so we retry once after a short wait.
+  for _attempt in 1 2; do
+    status=$(gh api --cache 0s "repos/$REPO/pulls/$pr_number" \
+      --jq 'if .mergeable == null then "unknown"
+            elif (.mergeable == false) or (.mergeable_state == "dirty") then "true"
+            else "false" end' 2>/dev/null || echo "unknown")
+    [ "$status" != "unknown" ] && break
+    log "  → mergeable=null (GitHub still computing), retrying in 5s..."
+    sleep 5
+  done
+  echo "${status:-false}"
 }
 
 pr_new_comments() {

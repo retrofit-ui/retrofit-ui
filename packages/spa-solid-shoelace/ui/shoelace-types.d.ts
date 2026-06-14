@@ -154,6 +154,12 @@ declare module 'solid-js' {
         'on:sl-change'?: SlEventHandler;
         'on:sl-hover'?: SlEventHandler;
       };
+      'sl-badge': JSX.HTMLAttributes<HTMLElement> & {
+        variant?: 'primary' | 'success' | 'neutral' | 'warning' | 'danger';
+        pill?: boolean;
+        pulse?: boolean;
+        children?: JSX.Element;
+      };
     }
   }
 }

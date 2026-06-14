@@ -86,7 +86,14 @@ app.get('/api/ui/posts', (_req, res) => {
     retrofit(
       TableView.forRows(PostSchema, store.all())
         .columnOverride('title', { sortable: true })
-        .columnOverride('status', { filterable: true })
+        .columnOverride('status', {
+          filterable: true,
+          badgeVariants: {
+            draft: 'neutral',
+            published: 'success',
+            archived: 'warning',
+          },
+        })
         .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
         .find({ method: 'GET', url: '/posts/{id}' })
         .create({ method: 'POST', url: '/posts' })

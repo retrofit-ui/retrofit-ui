@@ -14,7 +14,14 @@ import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type { FormSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
-import { createResource, createSignal, For, Show, useContext } from 'solid-js';
+import {
+  createResource,
+  createSignal,
+  createUniqueId,
+  For,
+  Show,
+  useContext,
+} from 'solid-js';
 import { ApiBaseContext } from './App';
 import { showToast } from './toast';
 
@@ -105,6 +112,7 @@ interface TagsInputProps {
 
 function TagsInput(props: TagsInputProps) {
   const [draft, setDraft] = createSignal('');
+  const inputId = createUniqueId();
 
   function addTag(raw: string) {
     const tag = raw.trim();
@@ -132,9 +140,11 @@ function TagsInput(props: TagsInputProps) {
   return (
     <div class="retrofit-tags-input">
       <Show when={props.label}>
-        <label class="retrofit-tags-label">{props.label}</label>
+        <label class="retrofit-tags-label" for={inputId}>
+          {props.label}
+        </label>
       </Show>
-      <div class="retrofit-tags-field" aria-label={props.label}>
+      <fieldset class="retrofit-tags-field" aria-label={props.label}>
         <For each={props.value}>
           {(tag) => (
             <sl-tag
@@ -146,6 +156,7 @@ function TagsInput(props: TagsInputProps) {
           )}
         </For>
         <sl-input
+          id={inputId}
           placeholder={props.value.length === 0 ? props.placeholder : undefined}
           disabled={props.disabled || undefined}
           prop:value={draft()}
@@ -155,7 +166,7 @@ function TagsInput(props: TagsInputProps) {
           }
           on:keydown={handleKeydown}
         />
-      </div>
+      </fieldset>
       <Show when={props.helpText}>
         <p class="retrofit-tags-help">{props.helpText}</p>
       </Show>

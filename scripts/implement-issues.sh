@@ -230,7 +230,8 @@ The plan so far is at \`${plan_file}\`. It may be incomplete or missing sections
 
   (
     cd "$worktree"
-    git pull origin main --no-edit 2>/dev/null || true
+    git fetch origin main
+    git rebase origin/main
     claude --dangerously-skip-permissions --verbose --max-turns 40 \
       -p "You are implementing a GitHub issue for the retrofit-ui TypeScript monorepo.
 
@@ -263,8 +264,9 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
     fi
 
     # Push with retry loop — if pre-push CI fails, ask Claude to fix and try again
+    # --force-with-lease because the rebase above rewrites the plan commit's SHA
     push_attempts=0
-    while ! git push origin "$branch" 2>&1 | tee -a "$log_file"; do
+    while ! git push --force-with-lease origin "$branch" 2>&1 | tee -a "$log_file"; do
       push_attempts=$(( push_attempts + 1 ))
       if [ "$push_attempts" -ge 3 ]; then
         log "  ✗ push failed after ${push_attempts} attempts — giving up"

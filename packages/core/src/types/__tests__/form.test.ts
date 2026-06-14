@@ -179,6 +179,59 @@ describe('FieldSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('tooltip is optional', () => {
+    const result = FieldSchema.safeParse({
+      name: 'cvv',
+      label: 'CVV',
+      type: 'text',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.tooltip).toBeUndefined();
+  });
+
+  it('tooltip accepts a string', () => {
+    const result = FieldSchema.safeParse({
+      name: 'cvv',
+      label: 'CVV',
+      type: 'text',
+      tooltip: 'The 3-digit code on the back of your card',
+    });
+    expect(result.success).toBe(true);
+    if (result.success)
+      expect(result.data.tooltip).toBe(
+        'The 3-digit code on the back of your card',
+      );
+  });
+
+  it('tooltip and helpText can coexist', () => {
+    const result = FieldSchema.safeParse({
+      name: 'cvv',
+      label: 'CVV',
+      type: 'text',
+      tooltip: 'tip',
+      helpText: 'help',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.tooltip).toBe('tip');
+      expect(result.data.helpText).toBe('help');
+    }
+  });
+
+  it('tooltip survives round-trip through FormSchema.parse()', () => {
+    const form = {
+      fields: [
+        {
+          name: 'cvv',
+          label: 'CVV',
+          type: 'text',
+          tooltip: 'The 3-digit code',
+        },
+      ],
+    };
+    expect(FormSchema.safeParse(form).success).toBe(true);
+  });
 });
 
 describe('FormSchema', () => {

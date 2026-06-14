@@ -83,11 +83,25 @@ formSpec(PostSchema, UpdatePostSchema)
 | `label` | `string` | Override the auto-derived label |
 | `placeholder` | `string` | Input placeholder text |
 | `helpText` | `string` | Helper text shown below the field |
+| `tooltip` | `string` | Renders a `?` icon button next to the field label; hovering or focusing the button shows the tooltip text |
 | `required` | `boolean` | Override required state |
 | `readOnly` | `boolean` | Force the field read-only |
 | `validation.min` | `number` | Minimum value (numbers) or length (strings) |
 | `validation.max` | `number` | Maximum value or length |
 | `validation.pattern` | `string` | Regex pattern (string inputs) |
+
+`tooltip` and `helpText` are independent and can coexist on the same field:
+
+```typescript
+formSpec(PaymentSchema)
+  .fieldOverride('cvv', {
+    tooltip: 'The 3-digit code on the back of your card (4 digits for Amex)',
+  })
+  .fieldOverride('routingNumber', {
+    tooltip: 'Found at the bottom-left of your check',
+    helpText: '9-digit ABA number',
+  })
+```
 
 ## Read-only fields
 

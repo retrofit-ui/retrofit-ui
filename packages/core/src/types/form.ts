@@ -44,6 +44,7 @@ export const FieldSchema = z.object({
   validation: FieldValidationSchema.optional(),
   placeholder: z.string().optional(),
   helpText: z.string().optional(),
+  tooltip: z.string().optional(),
   options: z.array(FieldOptionSchema).optional(),
   value: z.unknown().optional(),
   colorFormat: z.enum(['hex', 'rgb', 'hsl']).optional(),

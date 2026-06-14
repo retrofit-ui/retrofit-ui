@@ -290,3 +290,63 @@
   color: var(--sl-color-neutral-500);
   margin-top: var(--sl-spacing-2x-small);
 }
+
+/* Calendar view */
+.retrofit-calendar {
+  font-family: var(--sl-font-sans);
+}
+
+.retrofit-calendar .fc-toolbar-title {
+  font-size: var(--sl-font-size-x-large);
+  font-weight: var(--sl-font-weight-semibold);
+  color: var(--sl-color-neutral-900);
+}
+
+.retrofit-calendar .fc-button {
+  background-color: var(--sl-color-neutral-0);
+  border-color: var(--sl-color-neutral-300);
+  color: var(--sl-color-neutral-700);
+  font-family: var(--sl-font-sans);
+  font-size: var(--sl-font-size-small);
+  border-radius: var(--sl-border-radius-medium);
+}
+
+.retrofit-calendar .fc-button:hover {
+  background-color: var(--sl-color-neutral-50);
+  border-color: var(--sl-color-neutral-400);
+}
+
+.retrofit-calendar .fc-button-primary:not(:disabled).fc-button-active,
+.retrofit-calendar .fc-button-primary:not(:disabled):active {
+  background-color: var(--sl-color-primary-600);
+  border-color: var(--sl-color-primary-600);
+  color: var(--sl-color-neutral-0);
+}
+
+.retrofit-calendar .fc-today-button {
+  background-color: var(--sl-color-primary-600);
+  border-color: var(--sl-color-primary-600);
+  color: var(--sl-color-neutral-0);
+}
+
+.retrofit-calendar .fc-daygrid-day.fc-day-today {
+  background-color: var(--sl-color-primary-50);
+}
+
+.retrofit-calendar .fc-col-header-cell {
+  background-color: var(--sl-color-neutral-50);
+  font-size: var(--sl-font-size-small);
+  font-weight: var(--sl-font-weight-semibold);
+  color: var(--sl-color-neutral-600);
+}
+
+.retrofit-calendar .fc-event {
+  border-radius: var(--sl-border-radius-small);
+  font-size: var(--sl-font-size-small);
+  font-family: var(--sl-font-sans);
+}
+
+.retrofit-calendar td,
+.retrofit-calendar th {
+  border-color: var(--sl-color-neutral-200);
+}

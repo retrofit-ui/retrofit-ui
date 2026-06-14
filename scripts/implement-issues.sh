@@ -16,6 +16,31 @@ WORKTREE_BASE="$(pwd)/.claude/worktrees"
 LOG_BASE="$(pwd)/.claude/logs"
 PLAN_DIR="docs/github_issues/plans"
 
+# ── Dependencies ──────────────────────────────────────────────────────────────
+
+# Ensure act (local GitHub Actions runner) is installed — required by the
+# lefthook pre-push hook. Installs to ~/.local/bin if not already in PATH.
+if ! command -v act &>/dev/null; then
+  echo "Installing act (GitHub Actions local runner)..."
+  mkdir -p "$HOME/.local/bin"
+  curl -sSL https://raw.githubusercontent.com/nektos/act/master/install.sh \
+    | bash -s -- -b "$HOME/.local/bin"
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Ensure lefthook is in PATH so the git hook can find it outside pnpm scripts.
+# pnpm installs it under node_modules/.bin; we re-export it to a stable location.
+if ! command -v lefthook &>/dev/null; then
+  local_lh="$(pwd)/node_modules/.bin/lefthook"
+  if [ -x "$local_lh" ]; then
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$local_lh" "$HOME/.local/bin/lefthook"
+    export PATH="$HOME/.local/bin:$PATH"
+  else
+    echo "WARNING: lefthook not found — pre-push hooks may fail"
+  fi
+fi
+
 # ── Gather issues ─────────────────────────────────────────────────────────────
 
 git checkout main

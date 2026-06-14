@@ -9,6 +9,8 @@ export type {
   PageSpec,
   Pane,
   RowAction,
+  Stat,
+  StatSpec,
   TableSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
@@ -27,6 +29,7 @@ export {
   row,
 } from './page-builder';
 export type { RetrofitTheme } from './types';
+export { StatView, StatViewBuilder } from './stat-view-builder';
 export { TableView, TableViewBuilder } from './view-builder';
 export {
   TableFormWorkflowBundle,

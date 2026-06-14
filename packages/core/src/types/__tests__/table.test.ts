@@ -67,7 +67,76 @@ describe('ColumnSchema', () => {
     });
     expect(result.success).toBe(false);
   });
-});
+
+  it('format is optional and defaults to undefined', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'amount',
+      label: 'Amount',
+      type: 'number',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.format).toBeUndefined();
+    }
+  });
+
+  it('accepts valid format values', () => {
+    for (const format of ['decimal', 'currency', 'percent', 'bytes'] as const) {
+      const result = ColumnSchema.safeParse({
+        key: 'amount',
+        label: 'Amount',
+        type: 'number',
+        format,
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.format).toBe(format);
+      }
+    }
+  });
+
+  it('rejects an unknown format value', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'amount',
+      label: 'Amount',
+      type: 'number',
+      format: 'hex',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('currency is optional', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'amount',
+      label: 'Amount',
+      type: 'number',
+      format: 'currency',
+      currency: 'USD',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.currency).toBe('USD');
+    }
+  });
+
+  it('format and currency survive a TableSchema round-trip', () => {
+    const result = TableSchema.safeParse({
+      columns: [
+        { key: 'price', label: 'Price', type: 'number', format: 'currency', currency: 'EUR' },
+        { key: 'size', label: 'Size', type: 'number', format: 'bytes' },
+        { key: 'pct', label: 'Pct', type: 'number', format: 'percent' },
+      ],
+      data: [{ price: 10, size: 1024, pct: 0.5 }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.columns[0]?.format).toBe('currency');
+      expect(result.data.columns[0]?.currency).toBe('EUR');
+      expect(result.data.columns[1]?.format).toBe('bytes');
+      expect(result.data.columns[2]?.format).toBe('percent');
+    }
+  });
+}); // end ColumnSchema
 
 describe('TableSchema', () => {
   it('parses a valid table', () => {

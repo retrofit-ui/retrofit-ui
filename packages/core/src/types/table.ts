@@ -30,6 +30,8 @@ export const ColumnSchema = z.object({
   alignment: z.enum(['left', 'center', 'right']).default('left'),
   options: z.array(FieldOptionSchema).optional(),
   badgeVariants: z.record(z.string(), BadgeVariantSchema).optional(),
+  format: z.enum(['decimal', 'currency', 'percent', 'bytes']).optional(),
+  currency: z.string().optional(),
 });
 export type Column = z.infer<typeof ColumnSchema>;
 

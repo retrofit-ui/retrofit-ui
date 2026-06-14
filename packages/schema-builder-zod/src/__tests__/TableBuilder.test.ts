@@ -94,4 +94,38 @@ describe('tableFromSchema', () => {
       high: 'danger',
     });
   });
+
+  it('withColumnOverrides accepts format: bytes', () => {
+    const table = tableFromSchema(TodoSchema, data)
+      .withColumnOverrides({ id: { format: 'bytes' } })
+      .build();
+    const idCol = table.columns.find((c) => c.key === 'id');
+    expect(idCol?.format).toBe('bytes');
+  });
+
+  it('withColumnOverrides accepts format: currency with currency code', () => {
+    const table = tableFromSchema(TodoSchema, data)
+      .withColumnOverrides({ id: { format: 'currency', currency: 'USD' } })
+      .build();
+    const idCol = table.columns.find((c) => c.key === 'id');
+    expect(idCol?.format).toBe('currency');
+    expect(idCol?.currency).toBe('USD');
+  });
+
+  it('withColumnOverrides accepts format: percent', () => {
+    const table = tableFromSchema(TodoSchema, data)
+      .withColumnOverrides({ id: { format: 'percent' } })
+      .build();
+    const idCol = table.columns.find((c) => c.key === 'id');
+    expect(idCol?.format).toBe('percent');
+  });
+
+  it('format survives a TableSchema round-trip', () => {
+    const table = tableFromSchema(TodoSchema, data)
+      .withColumnOverrides({ id: { format: 'decimal' } })
+      .build();
+    expect(() => TableSchema.parse(table)).not.toThrow();
+    const idCol = table.columns.find((c) => c.key === 'id');
+    expect(idCol?.format).toBe('decimal');
+  });
 });

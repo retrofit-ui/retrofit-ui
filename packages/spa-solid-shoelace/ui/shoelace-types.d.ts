@@ -160,6 +160,25 @@ declare module 'solid-js' {
         pulse?: boolean;
         children?: JSX.Element;
       };
+      'sl-format-number': JSX.HTMLAttributes<HTMLElement> & {
+        value?: number;
+        type?: 'currency' | 'decimal' | 'percent';
+        currency?: string;
+        'currency-display'?: 'symbol' | 'narrowSymbol' | 'code' | 'name';
+        'no-grouping'?: boolean;
+        lang?: string;
+        'minimum-integer-digits'?: number;
+        'minimum-fraction-digits'?: number;
+        'maximum-fraction-digits'?: number;
+        'minimum-significant-digits'?: number;
+        'maximum-significant-digits'?: number;
+      };
+      'sl-format-bytes': JSX.HTMLAttributes<HTMLElement> & {
+        value?: number;
+        unit?: 'byte' | 'bit';
+        display?: 'long' | 'short' | 'narrow';
+        lang?: string;
+      };
     }
   }
 }

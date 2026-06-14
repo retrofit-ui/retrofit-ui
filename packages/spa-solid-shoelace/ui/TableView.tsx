@@ -2,6 +2,8 @@ import '@shoelace-style/shoelace/dist/components/badge/badge.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
+import '@shoelace-style/shoelace/dist/components/format-bytes/format-bytes.js';
+import '@shoelace-style/shoelace/dist/components/format-number/format-number.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
@@ -122,11 +124,28 @@ function CellInput(props: {
 function CellDisplay(props: { col: Column; value: unknown }) {
   const strVal = () => String(props.value ?? '');
   const badgeVariant = () => props.col.badgeVariants?.[strVal()];
+  const numVal = () => Number(props.value);
 
   return (
     <Switch fallback={<span>{strVal()}</span>}>
       <Match when={props.col.type === 'boolean'}>
         <span>{props.value ? '✓' : '✗'}</span>
+      </Match>
+      <Match when={props.col.format === 'bytes'}>
+        <sl-format-bytes value={numVal()} />
+      </Match>
+      <Match when={props.col.format === 'currency'}>
+        <sl-format-number
+          value={numVal()}
+          type="currency"
+          currency={props.col.currency ?? 'USD'}
+        />
+      </Match>
+      <Match when={props.col.format === 'percent'}>
+        <sl-format-number value={numVal()} type="percent" />
+      </Match>
+      <Match when={props.col.format === 'decimal'}>
+        <sl-format-number value={numVal()} type="decimal" />
       </Match>
       <Match when={badgeVariant()}>
         {(variant) => <sl-badge variant={variant()}>{strVal()}</sl-badge>}

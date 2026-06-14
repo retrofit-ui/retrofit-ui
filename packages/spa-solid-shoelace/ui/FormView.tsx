@@ -7,6 +7,7 @@ import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
 import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
+import '@shoelace-style/shoelace/dist/components/rating/rating.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import '@shoelace-style/shoelace/dist/components/tag/tag.js';
@@ -239,6 +240,7 @@ function FormEditor(props: FormEditorProps) {
         if (f.type === 'checkbox' || f.type === 'switch')
           return [f.name, false];
         if (f.type === 'tags') return [f.name, []];
+        if (f.type === 'rating') return [f.name, 0];
         return [f.name, ''];
       }),
     );
@@ -500,6 +502,46 @@ function FormEditor(props: FormEditorProps) {
                     onChange={(v) => setValue(field.name, v)}
                   />
                 </Show>
+                <Show when={field.type === 'rating'}>
+                  <div>
+                    <Show when={!hideLabel()}>
+                      <label
+                        style={{
+                          display: 'block',
+                          'margin-bottom': 'var(--sl-spacing-2x-small)',
+                          'font-size': 'var(--sl-font-size-small)',
+                          'font-weight': 'var(--sl-font-weight-semibold)',
+                        }}
+                      >
+                        {fieldLabel()}
+                      </label>
+                    </Show>
+                    <sl-rating
+                      label={fieldLabel()}
+                      prop:value={Number(values()[field.name] ?? 0)}
+                      max={field.ratingMax ?? 5}
+                      precision={field.ratingPrecision ?? 1}
+                      readonly={field.readOnly || undefined}
+                      on:sl-change={(e: Event) =>
+                        setValue(
+                          field.name,
+                          (e.target as EventTarget & { value: number }).value,
+                        )
+                      }
+                    />
+                    <Show when={field.helpText}>
+                      <p
+                        style={{
+                          margin: 'var(--sl-spacing-2x-small) 0 0',
+                          'font-size': 'var(--sl-font-size-small)',
+                          color: 'var(--sl-color-neutral-600)',
+                        }}
+                      >
+                        {field.helpText}
+                      </p>
+                    </Show>
+                  </div>
+                </Show>
                 <Show
                   when={
                     !isTextarea() &&
@@ -508,7 +550,8 @@ function FormEditor(props: FormEditorProps) {
                     field.type !== 'checkbox' &&
                     field.type !== 'switch' &&
                     field.type !== 'color' &&
-                    field.type !== 'tags'
+                    field.type !== 'tags' &&
+                    field.type !== 'rating'
                   }
                 >
                   <sl-input

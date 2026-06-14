@@ -17,6 +17,7 @@ export const FieldTypeSchema = z.enum([
   'file',
   'color',
   'tags',
+  'rating',
 ]);
 export type FieldType = z.infer<typeof FieldTypeSchema>;
 
@@ -47,6 +48,8 @@ export const FieldSchema = z.object({
   value: z.unknown().optional(),
   colorFormat: z.enum(['hex', 'rgb', 'hsl']).optional(),
   colorSwatches: z.array(z.string()).optional(),
+  ratingMax: z.number().int().positive().optional(),
+  ratingPrecision: z.number().positive().optional(),
 });
 export type Field = z.infer<typeof FieldSchema>;
 

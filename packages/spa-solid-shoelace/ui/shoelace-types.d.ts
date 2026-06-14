@@ -144,6 +144,16 @@ declare module 'solid-js' {
         'on:sl-remove'?: SlEventHandler;
         children?: JSX.Element;
       };
+      'sl-rating': JSX.HTMLAttributes<HTMLElement> & {
+        label?: string;
+        value?: number;
+        'prop:value'?: number;
+        max?: number;
+        precision?: number;
+        readonly?: boolean;
+        'on:sl-change'?: SlEventHandler;
+        'on:sl-hover'?: SlEventHandler;
+      };
     }
   }
 }

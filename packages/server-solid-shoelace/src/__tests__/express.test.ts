@@ -20,6 +20,8 @@ const deleteFn = vi.fn().mockResolvedValue(undefined);
 const ItemSchema = z.object({ id: z.number(), name: z.string() });
 const UpdateItemSchema = z.object({ name: z.string() });
 
+const ReviewSchema = z.object({ id: z.number(), score: z.number() });
+
 const config = defineConfig({
   forms: {
     contact: {
@@ -42,6 +44,12 @@ const config = defineConfig({
       create: createFn,
       update: updateFn,
       delete: deleteFn,
+    },
+    reviews: {
+      schema: ReviewSchema,
+      fieldOverrides: {
+        score: { type: 'rating', ratingMax: 10, ratingPrecision: 0.5 },
+      },
     },
   },
 });
@@ -274,6 +282,20 @@ describe('resource routes – items', () => {
     deleteFn.mockRejectedValueOnce(new Error('db error'));
     const res = await fetch(`${baseUrl}/api/ui/items/1`, { method: 'DELETE' });
     expect(res.status).toBe(500);
+  });
+});
+
+describe('resource routes – rating field', () => {
+  it('GET /api/ui/reviews/new includes rating field with ratingMax and ratingPrecision', async () => {
+    const res = await fetch(`${baseUrl}/api/ui/reviews/new`);
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as {
+      fields: { name: string; type: string; ratingMax?: number; ratingPrecision?: number }[];
+    };
+    const scoreField = data.fields.find((f) => f.name === 'score');
+    expect(scoreField?.type).toBe('rating');
+    expect(scoreField?.ratingMax).toBe(10);
+    expect(scoreField?.ratingPrecision).toBe(0.5);
   });
 });
 

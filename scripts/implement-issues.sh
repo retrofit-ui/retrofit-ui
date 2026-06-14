@@ -151,9 +151,12 @@ while IFS= read -r issue; do
     plan_committed=true
   fi
 
-  if [ "$plan_committed" = false ]; then
-    log "  → step 1: creating plan"
-    plan_prompt="You are creating an implementation plan for a GitHub issue in the retrofit-ui TypeScript monorepo.
+  if [ "$plan_committed" = true ] && [ "$new_comment_count" -eq 0 ]; then
+    log "  → plan already committed, skipping plan step"
+  else
+    if [ "$plan_committed" = false ]; then
+      log "  → step 1: creating plan"
+      plan_prompt="You are creating an implementation plan for a GitHub issue in the retrofit-ui TypeScript monorepo.
 
 ## Issue #${number}: ${title}
 
@@ -170,10 +173,10 @@ ${body}
   - Tests to write (unit, integration, e2e)
 - Be concrete and specific — this plan will be handed to a separate implementation step.
 - Do not start implementing. Only produce the plan file."
-  elif [ "$new_comment_count" -gt 0 ]; then
-    log "  → step 1: updating plan based on ${new_comment_count} review comment(s)"
-    formatted_comments=$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
-    plan_prompt="You are updating an implementation plan based on pull request review feedback.
+    else
+      log "  → step 1: updating plan based on ${new_comment_count} review comment(s)"
+      formatted_comments=$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
+      plan_prompt="You are updating an implementation plan based on pull request review feedback.
 
 ## Issue #${number}: ${title}
 ## PR: #${pr_number} (branch \`${branch}\`)
@@ -188,38 +191,25 @@ ${formatted_comments}
 - Update it to address the review feedback. Add, remove, or revise sections as needed.
 - If a comment is addressed by the existing plan already, note that explicitly.
 - Do not start implementing. Only update the plan file."
-  else
-    log "  → step 1: resuming/completing plan"
-    plan_prompt="You are reviewing and completing an implementation plan for a GitHub issue.
-
-## Issue #${number}: ${title}
-
-The plan so far is at \`${plan_file}\`. It may be incomplete or missing sections.
-
-## Task
-
-- Read the current plan at \`${plan_file}\`.
-- Fill in any missing or shallow sections (files to change, approach, edge cases, tests).
-- If the plan is already complete, make no changes.
-- Do not start implementing. Only update the plan file if needed."
-  fi
-
-  (cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 20 \
-    -p "$plan_prompt" 2>&1 | tee "$log_file")
-
-  # Commit plan if new or changed
-  (
-    cd "$worktree"
-    mkdir -p "$PLAN_DIR"
-    git add "$plan_file"
-    if ! git diff --cached --quiet; then
-      git commit -m "plan: #${number} ${title}"
-      git push origin "$branch"
-      log "  → plan committed and pushed"
-    else
-      log "  → plan unchanged, skipping commit"
     fi
-  )
+
+    (cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 20 \
+      -p "$plan_prompt" 2>&1 | tee "$log_file")
+
+    # Commit plan if new or changed
+    (
+      cd "$worktree"
+      mkdir -p "$PLAN_DIR"
+      git add "$plan_file"
+      if ! git diff --cached --quiet; then
+        git commit -m "plan: #${number} ${title}"
+        git push origin "$branch"
+        log "  → plan committed and pushed"
+      else
+        log "  → plan unchanged, skipping commit"
+      fi
+    )
+  fi
 
   # ── Step 2: Implementation ──────────────────────────────────────────────────
   log "  → step 2: implementing"

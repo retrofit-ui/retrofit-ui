@@ -122,7 +122,13 @@ describe('ColumnSchema', () => {
   it('format and currency survive a TableSchema round-trip', () => {
     const result = TableSchema.safeParse({
       columns: [
-        { key: 'price', label: 'Price', type: 'number', format: 'currency', currency: 'EUR' },
+        {
+          key: 'price',
+          label: 'Price',
+          type: 'number',
+          format: 'currency',
+          currency: 'EUR',
+        },
         { key: 'size', label: 'Size', type: 'number', format: 'bytes' },
         { key: 'pct', label: 'Pct', type: 'number', format: 'percent' },
       ],

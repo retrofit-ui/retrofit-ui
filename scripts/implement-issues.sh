@@ -12,7 +12,7 @@ set -euo pipefail
 REPO="retrofit-ui/retrofit-ui"
 LIMIT=50
 MAX=${1:-1}
-WORKTREE_BASE="$(pwd)/.claude/worktrees"
+WORKTREE_BASE="$(pwd)/../.retrofit-worktrees"
 LOG_BASE="$(pwd)/.claude/logs"
 PLAN_DIR="docs/github_issues/plans"
 
@@ -100,9 +100,7 @@ pr_has_conflicts() {
 
 pr_new_comments() {
   local pr_number="$1"
-  local last_push
-  last_push=$(gh pr view "$pr_number" --repo "$REPO" \
-    --json commits --jq '.commits[-1].committedDate' 2>/dev/null || echo "")
+  local last_push="$2"   # ISO date of last push, computed by caller
   [ -z "$last_push" ] && { echo "[]"; return; }
 
   local timeline review inline
@@ -122,6 +120,13 @@ pr_new_comments() {
     || echo "[]")
 
   jq -n --argjson a "$timeline" --argjson b "$review" --argjson c "$inline" '$a + $b + $c'
+}
+
+issue_comments() {
+  local issue_number="$1"
+  gh api --cache 0s "repos/$REPO/issues/$issue_number/comments" \
+    2>/dev/null | jq '[.[] | {author: .user.login, body: .body, createdAt: .created_at}]' \
+    || echo "[]"
 }
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
@@ -147,6 +152,17 @@ while IFS= read -r issue; do
     continue
   fi
 
+  # Fetch all issue comments upfront — used in every prompt and in the skip check
+  all_issue_comments=$(issue_comments "$number")
+  issue_comment_count=$(echo "$all_issue_comments" | jq length)
+  issue_context=""
+  if [ "$issue_comment_count" -gt 0 ]; then
+    issue_context="## Issue comments
+
+$(echo "$all_issue_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
+"
+  fi
+
   t0=$(date +%s)
   pr_number=$(find_pr "$number")
   log "PR lookup done  pr=${pr_number:-none}"
@@ -156,20 +172,30 @@ while IFS= read -r issue; do
   conflicts="false"
   new_comments="[]"
   new_comment_count=0
+  new_issue_comment_count=0
+  last_push=""
 
   if [ -n "$pr_number" ]; then
     ci_status=$(pr_ci_status "$pr_number")
     conflicts=$(pr_has_conflicts "$pr_number")
-    new_comments=$(pr_new_comments "$pr_number")
+    last_push=$(gh pr view "$pr_number" --repo "$REPO" \
+      --json commits --jq '.commits[-1].committedDate' 2>/dev/null || echo "")
+    new_comments=$(pr_new_comments "$pr_number" "$last_push")
     new_comment_count=$(echo "$new_comments" | jq length)
+
+    # Issue comments posted after the last push also need to be addressed
+    if [ -n "$last_push" ]; then
+      new_issue_comment_count=$(echo "$all_issue_comments" | jq --arg s "$last_push" \
+        '[.[] | select(.createdAt > $s)] | length')
+    fi
 
     impl_commits=$(gh pr view "$pr_number" --repo "$REPO" --json commits \
       --jq '[.commits[] | select(.messageHeadline | startswith("plan:") | not)] | length' \
       2>/dev/null || echo "0")
 
-    log "  → PR #${pr_number}  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}  impl_commits=${impl_commits}"
+    log "  → PR #${pr_number}  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}  new_issue_comments=${new_issue_comment_count}  impl_commits=${impl_commits}"
 
-    if [ "$impl_commits" -gt 0 ] && [ "$ci_status" != "failure" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ]; then
+    if [ "$impl_commits" -gt 0 ] && [ "$ci_status" != "failure" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ] && [ "$new_issue_comment_count" -eq 0 ]; then
       log "  → healthy, skipping  (elapsed: $(elapsed $t0))"
       continue
     fi
@@ -201,7 +227,7 @@ while IFS= read -r issue; do
 
 ${body}
 
-## Task
+${issue_context}## Task
 
 - Read CLAUDE.md for project conventions.
 - Explore the codebase to understand where changes belong.
@@ -212,23 +238,23 @@ ${body}
   - Tests to write (unit, integration, e2e)
 - Be concrete and specific — this plan will be handed to a separate implementation step.
 - Do not start implementing. Only produce the plan file."
-    elif [ "$new_comment_count" -gt 0 ]; then
-      log "  → step 1: updating plan based on ${new_comment_count} review comment(s)"
-      formatted_comments=$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
-      plan_prompt="You are updating an implementation plan based on pull request review feedback.
+    elif [ "$new_comment_count" -gt 0 ] || [ "$new_issue_comment_count" -gt 0 ]; then
+      log "  → step 1: updating plan based on ${new_comment_count} PR comment(s) and ${new_issue_comment_count} issue comment(s)"
+      formatted_pr_comments=$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
+      formatted_new_issue_comments=$(echo "$all_issue_comments" | jq --arg s "$last_push" \
+        '[.[] | select(.createdAt > $s)] | .[] | "  [\(.author)]: \(.body)"' -r 2>/dev/null || echo "")
+      plan_prompt="You are updating an implementation plan based on new feedback.
 
 ## Issue #${number}: ${title}
 ## PR: #${pr_number} (branch \`${branch}\`)
 
-The current plan is at \`${plan_file}\`. Review comments since the last push:
+The current plan is at \`${plan_file}\`.
 
-${formatted_comments}
-
-## Task
+$([ "$new_comment_count" -gt 0 ] && printf "### PR review comments since last push\n\n%s\n\n" "$formatted_pr_comments")$([ "$new_issue_comment_count" -gt 0 ] && printf "### Issue comments since last push\n\n%s\n\n" "$formatted_new_issue_comments")## Task
 
 - Read the current plan at \`${plan_file}\`.
-- Update it to address the review feedback. Add, remove, or revise sections as needed.
-- If a comment is addressed by the existing plan already, note that explicitly.
+- Update it to address all feedback above. Add, remove, or revise sections as needed.
+- If a comment is already addressed by the existing plan, note that explicitly.
 - Do not start implementing. Only update the plan file."
     else
       log "  → step 1: verifying plan is complete"
@@ -236,7 +262,7 @@ ${formatted_comments}
 
 ## Issue #${number}: ${title}
 
-The plan is at \`${plan_file}\`. It was committed but may have been interrupted before it was finished.
+${issue_context}The plan is at \`${plan_file}\`. It was committed but may have been interrupted before it was finished.
 
 ## Task
 
@@ -278,12 +304,13 @@ The plan is at \`${plan_file}\`. It was committed but may have been interrupted 
 ## Issue #${number}: ${title}
 $([ -n "$pr_number" ] && echo "## PR: #${pr_number} (branch \`${branch}\`)")
 
-Your implementation plan is at \`${plan_file}\`. Read it before writing any code.
+${issue_context}Your implementation plan is at \`${plan_file}\`. Read it before writing any code.
 
 $([ -n "$fix_context" ] && printf "## Problems to fix\n\n${fix_context}")
 ## Instructions
 
 - Follow the plan in \`${plan_file}\`.
+- Ensure your implementation reflects any decisions expressed in the issue comments above.
 - Write tests first (unit, integration, e2e per the plan), then implement to make them pass.
 - Run \`pnpm build\` and \`pnpm test\` to confirm everything is green.
 - Do not commit, push, or open a PR — the script handles that.

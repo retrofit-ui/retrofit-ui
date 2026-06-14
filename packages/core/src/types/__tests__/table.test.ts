@@ -99,7 +99,11 @@ describe('TableSchema', () => {
           key: 'status',
           label: 'Status',
           type: 'enum',
-          badgeVariants: { draft: 'neutral', published: 'success', archived: 'warning' },
+          badgeVariants: {
+            draft: 'neutral',
+            published: 'success',
+            archived: 'warning',
+          },
         },
       ],
       data: [{ status: 'published' }],

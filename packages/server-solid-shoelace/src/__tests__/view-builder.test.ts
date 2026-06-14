@@ -18,6 +18,9 @@ describe('TableViewBuilder.columnOverride', () => {
       .build();
 
     const priorityCol = spec.columns.find((c) => c.key === 'priority');
-    expect(priorityCol?.badgeVariants).toEqual({ low: 'neutral', high: 'danger' });
+    expect(priorityCol?.badgeVariants).toEqual({
+      low: 'neutral',
+      high: 'danger',
+    });
   });
 });

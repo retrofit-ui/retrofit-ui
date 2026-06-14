@@ -89,6 +89,9 @@ describe('tableFromSchema', () => {
       })
       .build();
     const priorityCol = table.columns.find((c) => c.key === 'priority');
-    expect(priorityCol?.badgeVariants).toEqual({ low: 'neutral', high: 'danger' });
+    expect(priorityCol?.badgeVariants).toEqual({
+      low: 'neutral',
+      high: 'danger',
+    });
   });
 });

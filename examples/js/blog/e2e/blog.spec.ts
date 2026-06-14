@@ -220,7 +220,9 @@ test.describe('Badge variants on enum column', () => {
   test('badge renders for known status values', async ({ page }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
-    const badges = page.locator('sl-badge[variant="success"], sl-badge[variant="neutral"], sl-badge[variant="warning"]');
+    const badges = page.locator(
+      'sl-badge[variant="success"], sl-badge[variant="neutral"], sl-badge[variant="warning"]',
+    );
     await expect(badges.first()).toBeVisible();
   });
 
@@ -235,11 +237,17 @@ test.describe('Badge variants on enum column', () => {
   test('published status renders as success badge', async ({ page }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
-    const publishedBadge = page.locator('sl-badge[variant="success"]').filter({ hasText: 'published' }).first();
+    const publishedBadge = page
+      .locator('sl-badge[variant="success"]')
+      .filter({ hasText: 'published' })
+      .first();
     await expect(publishedBadge).toBeVisible();
   });
 
-  test('value not in map renders as plain text without sl-badge', async ({ page, request }) => {
+  test('value not in map renders as plain text without sl-badge', async ({
+    page,
+    request,
+  }) => {
     await request.post('/test/reset');
     await page.goto(TABLE_URL);
     await waitForTable(page);

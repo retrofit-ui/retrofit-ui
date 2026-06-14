@@ -210,7 +210,7 @@ The plan is at \`${plan_file}\`. It was committed but may have been interrupted 
     fi
 
     cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 20 \
-      -p "$plan_prompt" 2>&1 | tee "$log_file"
+      -p "$plan_prompt" </dev/null 2>&1 | tee "$log_file"
 
     # Commit plan if new or changed
     mkdir -p "$PLAN_DIR"
@@ -247,7 +247,7 @@ $([ -n "$fix_context" ] && printf "## Problems to fix\n\n${fix_context}")
 - Write tests first (unit, integration, e2e per the plan), then implement to make them pass.
 - Run \`pnpm build\` and \`pnpm test\` to confirm everything is green.
 - Do not commit, push, or open a PR — the script handles that.
-- Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee -a "$log_file"
+- Do not ask for confirmation. Work autonomously to completion." </dev/null 2>&1 | tee -a "$log_file"
 
     # Commit implementation (everything except the plan file, which is already committed)
     git -C "$worktree" add -A
@@ -276,7 +276,7 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 Look at the CI output above in the terminal (check recent log output or run \`pnpm build && pnpm test && pnpm typecheck && pnpm lint\` to reproduce).
 
 Fix all failing build, test, typecheck, and lint errors. Do not commit — the script will handle that." \
-        2>&1 | tee -a "$log_file"
+        </dev/null 2>&1 | tee -a "$log_file"
       git -C "$worktree" add -A
       git -C "$worktree" restore --staged "$plan_file" 2>/dev/null || true
       if ! git -C "$worktree" diff --cached --quiet; then

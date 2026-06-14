@@ -19,6 +19,7 @@ export type {
 } from '@retrofit-ui/core';
 export { createExpressRouter, retrofitUi } from './adapters/express';
 export { serveUiShell } from './adapters/ui-shell';
+export { defineConfig, defineRetrofitConfig } from './config';
 export { FormSpecBuilder, formSpec } from './form-builder';
 export {
   col,

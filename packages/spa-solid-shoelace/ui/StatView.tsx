@@ -27,62 +27,31 @@ function formatValue(value: number | string, stat: Stat): string {
 }
 
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (bytes <= 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   const val = bytes / 1024 ** i;
   return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(val)} ${units[i]}`;
 }
 
-interface StatCardData {
-  stat: Stat;
-  value: number | string | null;
-  error?: string;
-}
-
-async function fetchStatValues(spec: StatSpec): Promise<StatCardData[]> {
-  return Promise.all(
-    spec.stats.map(async (stat) => {
-      try {
-        const res = await fetch(stat.endpoint.url, {
-          method: stat.endpoint.method,
-        });
-        if (!res.ok) return { stat, value: null, error: `HTTP ${res.status}` };
-        const json = (await res.json()) as { value: number | string };
-        return { stat, value: json.value };
-      } catch (e) {
-        return { stat, value: null, error: String(e) };
-      }
-    }),
-  );
-}
-
 async function fetchStatView(
   resource: string,
   apiBase: string,
-): Promise<{ spec: StatSpec; cards: StatCardData[] }> {
+): Promise<StatSpec> {
   const res = await fetch(`${apiBase}/${resource}/stats`);
   if (!res.ok) throw new Error(`Failed to fetch stats spec for ${resource}`);
-  const spec = (await res.json()) as StatSpec;
-  const cards = await fetchStatValues(spec);
-  return { spec, cards };
+  return res.json() as Promise<StatSpec>;
 }
 
-function StatCard(props: { data: StatCardData }) {
-  const displayValue = () => {
-    if (props.data.error) return '—';
-    if (props.data.value === null) return '—';
-    return formatValue(props.data.value, props.data.stat);
-  };
+function StatCard(props: { stat: Stat }) {
+  const displayValue = () => formatValue(props.stat.value, props.stat);
 
   return (
     <div class="retrofit-stat-card">
       <div class="retrofit-stat-value">{displayValue()}</div>
-      <div class="retrofit-stat-label">{props.data.stat.label}</div>
-      <Show when={props.data.stat.description}>
-        <div class="retrofit-stat-description">
-          {props.data.stat.description}
-        </div>
+      <div class="retrofit-stat-label">{props.stat.label}</div>
+      <Show when={props.stat.description}>
+        <div class="retrofit-stat-description">{props.stat.description}</div>
       </Show>
     </div>
   );
@@ -118,13 +87,15 @@ export function StatView() {
         <p class="retrofit-error-message">Error: {String(view.error)}</p>
       </Show>
       <Show when={view()}>
-        {(v) => (
+        {(spec) => (
           <>
-            <Show when={v().spec.metadata?.title}>
-              <h1 class="retrofit-page-title">{v().spec.metadata?.title}</h1>
+            <Show when={spec().metadata?.title}>
+              <h1 class="retrofit-page-title">{spec().metadata?.title}</h1>
             </Show>
             <div class="retrofit-stat-grid">
-              <For each={v().cards}>{(card) => <StatCard data={card} />}</For>
+              <For each={spec().stats}>
+                {(stat) => <StatCard stat={stat} />}
+              </For>
             </div>
           </>
         )}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TableSpec } from '../resource-spec';
+import type { Stat, StatSpec, TableSpec } from '../resource-spec';
 
 const idColumn = {
   key: 'id',
@@ -44,5 +44,43 @@ describe('TableSpec.metadata.pagination', () => {
       },
     };
     expect(spec.metadata?.pagination?.pageSizeOptions).toHaveLength(3);
+  });
+});
+
+describe('StatSpec', () => {
+  it('empty stats array is valid', () => {
+    const spec: StatSpec = { stats: [] };
+    expect(spec.stats).toHaveLength(0);
+  });
+
+  it('all Stat fields round-trip correctly', () => {
+    const stat: Stat = {
+      label: 'Revenue',
+      value: 9800.5,
+      format: 'currency',
+      currency: 'EUR',
+      description: 'vs last month',
+    };
+    const spec: StatSpec = { stats: [stat] };
+    expect(spec.stats[0]?.label).toBe('Revenue');
+    expect(spec.stats[0]?.value).toBe(9800.5);
+    expect(spec.stats[0]?.format).toBe('currency');
+    expect(spec.stats[0]?.currency).toBe('EUR');
+    expect(spec.stats[0]?.description).toBe('vs last month');
+  });
+
+  it('format is optional on Stat', () => {
+    const stat: Stat = { label: 'Count', value: 42 };
+    expect(stat.format).toBeUndefined();
+  });
+
+  it('metadata is optional on StatSpec', () => {
+    const spec: StatSpec = { stats: [] };
+    expect(spec.metadata).toBeUndefined();
+  });
+
+  it('metadata.title is optional', () => {
+    const spec: StatSpec = { stats: [], metadata: {} };
+    expect(spec.metadata?.title).toBeUndefined();
   });
 });

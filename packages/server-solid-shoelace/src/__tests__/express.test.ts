@@ -1,11 +1,12 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import type { TreeSpec } from '@retrofit-ui/core';
+import type { StatSpec, TreeSpec } from '@retrofit-ui/core';
 import express from 'express';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { createExpressRouter } from '../adapters/express';
 import { defineConfig } from '../config';
+import { StatViewBuilder } from '../stat-view-builder';
 
 const onSubmit = vi.fn().mockResolvedValue(undefined);
 const listFn = vi.fn().mockResolvedValue([{ id: 1, name: 'Foo' }]);
@@ -462,5 +463,103 @@ describe('tree resource routes – categories', () => {
     const data = (await res.json()) as { ok: boolean };
     expect(data.ok).toBe(true);
     expect(treeDeleteFn).toHaveBeenCalledWith('1');
+  });
+});
+
+// ── Stats route tests ─────────────────────────────────────────────────────────
+
+const staticStatSpec = new StatViewBuilder()
+  .title('KPIs')
+  .stat({ label: 'Total Users', value: 500, format: 'number' })
+  .build();
+
+const dynamicStatFn = vi
+  .fn()
+  .mockResolvedValue(
+    new StatViewBuilder()
+      .stat({ label: 'Revenue', value: 9800, format: 'currency' })
+      .build(),
+  );
+
+const throwingStatFn = vi.fn().mockRejectedValue(new Error('db error'));
+
+const statsConfig = defineConfig({
+  resources: {
+    dashboard: {
+      schema: z.object({}),
+      stats: staticStatSpec,
+    },
+    metrics: {
+      schema: z.object({}),
+      stats: dynamicStatFn,
+    },
+    broken: {
+      schema: z.object({}),
+      stats: throwingStatFn,
+    },
+    items2: {
+      schema: ItemSchema,
+      list: listFn,
+      find: findFn,
+    },
+  },
+});
+
+let statsUrl: string;
+let statsServer: ReturnType<typeof createServer>;
+
+beforeAll(async () => {
+  const app = express();
+  app.use(express.json());
+  app.use(createExpressRouter(statsConfig));
+  statsServer = createServer(app);
+  await new Promise<void>((resolve) => statsServer.listen(0, resolve));
+  const port = (statsServer.address() as AddressInfo).port;
+  statsUrl = `http://localhost:${port}`;
+});
+
+afterAll(
+  async () =>
+    new Promise<void>((resolve, reject) =>
+      statsServer.close((err) => (err ? reject(err) : resolve())),
+    ),
+);
+
+describe('resource routes – stats', () => {
+  it('GET /api/ui/dashboard/stats returns 200 with StatSpec (static)', async () => {
+    const res = await fetch(`${statsUrl}/api/ui/dashboard/stats`);
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as StatSpec;
+    expect(Array.isArray(data.stats)).toBe(true);
+    expect(data.metadata?.title).toBe('KPIs');
+    expect(data.stats[0]?.label).toBe('Total Users');
+    expect(data.stats[0]?.value).toBe(500);
+  });
+
+  it('GET /api/ui/metrics/stats calls dynamic function and returns result', async () => {
+    dynamicStatFn.mockClear();
+    const res = await fetch(`${statsUrl}/api/ui/metrics/stats`);
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as StatSpec;
+    expect(dynamicStatFn).toHaveBeenCalledOnce();
+    expect(data.stats[0]?.label).toBe('Revenue');
+    expect(data.stats[0]?.value).toBe(9800);
+  });
+
+  it('GET /api/ui/broken/stats returns 500 when stats function throws', async () => {
+    const res = await fetch(`${statsUrl}/api/ui/broken/stats`);
+    expect(res.status).toBe(500);
+    const data = (await res.json()) as { error: string };
+    expect(data.error).toBe('Internal server error');
+  });
+
+  it('GET /api/ui/items2/stats returns 404 when no stats field', async () => {
+    const res = await fetch(`${statsUrl}/api/ui/items2/stats`);
+    expect(res.status).toBe(404);
+  });
+
+  it('GET /api/ui/items2/:id is not affected by stats route registration', async () => {
+    const res = await fetch(`${statsUrl}/api/ui/items2/1`);
+    expect(res.status).toBe(200);
   });
 });

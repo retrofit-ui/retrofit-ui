@@ -93,10 +93,10 @@ export interface TimelineSpec {
   metadata?: { title?: string };
 }
 
-/** A single KPI/statistic card. The SPA fetches endpoint to get { value: number | string }. */
+/** A single KPI/statistic card. Value is computed server-side and embedded in the spec. */
 export interface Stat {
   label: string;
-  endpoint: EndpointDirective;
+  value: number | string;
   format?: 'number' | 'currency' | 'percent' | 'bytes';
   currency?: string;
   description?: string;

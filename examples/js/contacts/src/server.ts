@@ -1,4 +1,6 @@
 import {
+  createExpressRouter,
+  defineConfig,
   filterForm,
   formSpec,
   pageSpec,
@@ -8,6 +10,7 @@ import {
   TableView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
+import { z } from 'zod';
 import { ContactSchema, UpdateContactSchema } from './schemas';
 import { store } from './store';
 
@@ -120,28 +123,26 @@ app.get('/api/ui/contacts-by-type', (_req, res) => {
   );
 });
 
-app.get('/api/metrics/contact-count', (_req, res) =>
-  res.json({ value: store.all().length }),
+app.use(
+  createExpressRouter(
+    defineConfig({
+      resources: {
+        dashboard: {
+          schema: z.object({}),
+          stats: () =>
+            new StatViewBuilder()
+              .title('Contacts Dashboard')
+              .stat({
+                label: 'Total Contacts',
+                value: store.all().length,
+                format: 'number',
+              })
+              .build(),
+        },
+      },
+    }),
+  ),
 );
-
-app.get('/api/ui/dashboard/stats', (_req, res) => {
-  res.json(
-    new StatViewBuilder()
-      .title('Contacts Dashboard')
-      .stat({
-        label: 'Total Contacts',
-        endpoint: { method: 'GET', url: '/api/metrics/contact-count' },
-        format: 'number',
-      })
-      .stat({
-        label: 'Non-existent Metric',
-        endpoint: { method: 'GET', url: '/api/metrics/does-not-exist' },
-        format: 'number',
-        description: 'This endpoint does not exist',
-      })
-      .build(),
-  );
-});
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

@@ -75,12 +75,8 @@ TableFormWorkflowBundle.schema(ContactSchema)
   .update({ method: 'PUT', url: '/contacts/{id}' })
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build()
-  .register(
-    app,
-    retrofit,
-    '/api/ui/contacts',
-    undefined,
-    (id) => store.find(id),
+  .register(app, retrofit, '/api/ui/contacts', undefined, (id) =>
+    store.find(id),
   );
 
 // Stacked layout: filter → new-contact form (type pre-filled) → table

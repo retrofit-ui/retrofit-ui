@@ -399,7 +399,9 @@ export function TableView() {
   const apiBase = useContext(ApiBaseContext);
 
   const [currentPage, setCurrentPage] = createSignal(1);
-  const [currentPageSize, setCurrentPageSize] = createSignal<number | null>(null);
+  const [currentPageSize, setCurrentPageSize] = createSignal<number | null>(
+    null,
+  );
 
   createEffect(() => {
     params.resource;
@@ -559,7 +561,9 @@ export function TableView() {
                             <sl-icon-button
                               name="chevron-right"
                               label="Next page"
-                              disabled={currentPage() >= totalPages() || undefined}
+                              disabled={
+                                currentPage() >= totalPages() || undefined
+                              }
                               on:click={() => setCurrentPage((p) => p + 1)}
                             />
                           </sl-button-group>
@@ -567,7 +571,9 @@ export function TableView() {
                             Page {currentPage()} of {totalPages()}
                           </span>
                           <Show
-                            when={(pagination().pageSizeOptions?.length ?? 0) > 0}
+                            when={
+                              (pagination().pageSizeOptions?.length ?? 0) > 0
+                            }
                           >
                             <sl-select
                               size="small"

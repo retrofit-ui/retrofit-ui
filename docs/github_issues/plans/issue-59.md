@@ -9,29 +9,24 @@ them; the SPA renders a responsive grid of value cards with labels.
 
 ---
 
-## Design decision: client-side stat fetches vs. embedded values
+## Design decision: server-embedded values (not client-side fetches)
 
-Tables follow the "fully populated server response" rule — the spec and row data
-arrive in one payload. Stats raise a different question: each metric may come
-from a distinct endpoint, possibly owned by a different service, and may need
-independent cache/refresh semantics.
-
-**Decision: client-side parallel fetches are acceptable for stats.**
+**Decision: stat values are embedded directly in the `StatSpec` payload.**
 
 Justification:
-- Each `Stat` has its own `EndpointDirective`. The retrofit spec endpoint cannot
-  make N outbound HTTP calls server-side per spec request without adding network
-  latency, retry logic, and timeout handling that belong to the caller.
-- KPI cards are displayed alongside (not replacing) tables. Independent fetches
-  let each card render or error independently.
-- Stat values are typically small (`{ value: number | string }`), so N parallel
-  requests is not a concern.
+- This is consistent with the retrofit-ui contract for all other view types:
+  tables return fully-populated rows, forms return fully-populated field values.
+  Stats must follow the same rule — one request, all data.
+- The SPA should not need a second round-trip (or N round-trips) to render a
+  view. Passing endpoints to the frontend for follow-up fetches breaks the
+  "server owns the data" model.
+- Embedding values in the spec keeps the `stats()` callback on `ResourceConfig`
+  as the single place where data is fetched and assembled. Server authors already
+  have access to databases, caches, and internal services there.
 
-The alternative — having the `stats()` function on `ResourceConfig` pre-fetch
-and embed values — is possible and keeps all data server-side, but requires the
-developer to write the fetch plumbing inside their `stats()` callback. Passing
-`endpoint` in the spec offloads that to the SPA and keeps the server config
-declarative.
+The previous design (each `Stat` carries an `EndpointDirective`; the SPA
+fetches each stat independently) was rejected by PR review as inconsistent with
+the retrofit-ui contract. It is not pursued further.
 
 ## Design decision: `format` enum on the wire
 
@@ -58,10 +53,10 @@ here alongside `TableSpec` and `FormSpec`.
 **What to add** (after `MarkdownViewSpec`):
 
 ```typescript
-/** A single KPI/statistic card. The SPA fetches `endpoint` to get { value: number | string }. */
+/** A single KPI/statistic card. Value is computed server-side and embedded in the spec. */
 export interface Stat {
   label: string;
-  endpoint: EndpointDirective;
+  value: number | string;
   format?: 'number' | 'currency' | 'percent' | 'bytes';
   currency?: string;
   description?: string;
@@ -74,9 +69,9 @@ export interface StatSpec {
 }
 ```
 
-`format` is optional. When absent, the raw value is stringified. `currency`
-defaults to `'USD'` in the SPA when `format === 'currency'` and `currency` is
-omitted.
+`value` is required — the server embeds it directly. `format` is optional; when
+absent, the raw value is stringified. `currency` defaults to `'USD'` in the SPA
+when `format === 'currency'` and `currency` is omitted.
 
 ### 2. `packages/core/src/types/index.ts`
 
@@ -101,6 +96,7 @@ export class StatViewBuilder {
   private _title?: string;
 
   stat(stat: Stat): this {
+    // Stat.value is required — the server computes and embeds it here
     this._stats.push(stat);
     return this;
   }
@@ -185,13 +181,12 @@ other type re-exports at the top of `index.ts`).
 ### 7. `packages/spa-solid-shoelace/ui/StatView.tsx` _(new file)_
 
 **Why:** SPA component that renders the stat grid. Fetches the spec from
-`/api/ui/{resource}/stats`, then fetches each stat's endpoint in parallel.
+`/api/ui/{resource}/stats`; the spec already contains all stat values.
 
 Key implementation points:
 
-- `createResource` with `params.resource` as source; fetches spec then values
-- Parallel `Promise.all` for stat value fetches — each can fail independently
-- Failed or null values render as `—` (em-dash); the error is not re-thrown
+- `createResource` with `params.resource` as source; fetches `GET /api/ui/{resource}/stats`
+- The spec response already contains each stat's `value` — no follow-up fetches
 - `formatValue(value, stat)` switch on `stat.format`:
   - `'currency'` → `Intl.NumberFormat` with `style: 'currency'`
   - `'percent'` → `Intl.NumberFormat` with `style: 'percent'`
@@ -314,7 +309,7 @@ function.
 
 `stats?: StatSpec | (() => StatSpec | Promise<StatSpec>)` supports both:
 - Static: built once at app startup with a `StatViewBuilder`, served from
-  memory. Appropriate when stat endpoints are declared statically.
+  memory. Appropriate when stat values are fixed (e.g. version numbers, config).
 - Dynamic: called per request. Appropriate when the list of stats is
   data-driven (e.g., different stats per tenant).
 
@@ -324,8 +319,6 @@ function.
 
 | Case | Handling |
 |------|----------|
-| Stat endpoint returns non-2xx | Catch in per-stat fetch; set `error` on card; display `—` |
-| Stat endpoint throws (network error) | `catch (e)` in per-stat fetch; set `error = String(e)`; display `—` |
 | `value: 0` | `value === null` check is explicit; `0` renders as `"0"` or `"0 B"` etc. |
 | `value: ""` (empty string) | Returned as-is for string values; renders as blank |
 | `stats: []` (empty array) | Grid renders with no cards; no crash |
@@ -335,10 +328,10 @@ function.
 | `format: 'currency'`, no `currency` field | Default to `'USD'` |
 | `format: undefined` on a number | `Intl.NumberFormat().format(value)` — locale-appropriate number format |
 | String value with `format` set | String values bypass `formatValue` numeric formatting; returned as-is |
-| Spec fetch fails (non-2xx) | `view.error` is set; error message rendered; no stat fetches attempted |
-| SPA navigates away during fetches | SolidJS `createResource` tracks dependencies; if `params.resource` changes before fetch completes, a new resource request supersedes the old one |
+| Spec fetch fails (non-2xx) | `view.error` is set; error message rendered |
+| SPA navigates away during fetch | SolidJS `createResource` tracks dependencies; if `params.resource` changes, a new request supersedes the in-flight one |
 | `resource.stats` is a function that throws | Express `try/catch` around the call; returns 500 |
-| `resource.stats` not set | No `/stats` route registered for that resource; `GET /stats` returns 404 from the default Express handler |
+| `resource.stats` not set | No `/stats` route registered; `GET /stats` returns 404 from the default Express handler |
 
 ---
 
@@ -350,7 +343,7 @@ Add a `describe('StatSpec')` block (the file already tests `TableSpec`):
 
 1. **StatSpec with no stats**: assign `{ stats: [] }` and assert `spec.stats` has
    length 0.
-2. **StatSpec with all Stat fields**: construct a `Stat` with `label`, `endpoint`,
+2. **StatSpec with all Stat fields**: construct a `Stat` with `label`, `value`,
    `format: 'currency'`, `currency: 'EUR'`, `description`. Assert all fields
    round-trip through the interface (compile-time + runtime value check).
 3. **format is optional**: a `Stat` without `format` compiles and
@@ -392,26 +385,28 @@ Add a `describe('resource routes – stats')` block using a resource with a
 
 ### E2E — add a stats view to an existing JS example
 
-Add a stats endpoint to `examples/js/contacts/src/server.ts`:
+Add a stats resource to `examples/js/contacts/src/server.ts`. Because values
+are embedded server-side, the `stats` field must be a function that reads live
+data at request time:
 
 ```typescript
-app.get('/api/metrics/contact-count', (_req, res) =>
-  res.json({ value: store.all().length }),
-);
-
 // In defineConfig resources:
 dashboard: {
   schema: z.object({}),
-  stats: new StatViewBuilder()
-    .title('Contacts Dashboard')
-    .stat({
-      label: 'Total Contacts',
-      endpoint: { method: 'GET', url: '/api/metrics/contact-count' },
-      format: 'number',
-    })
-    .build(),
+  stats: () =>
+    new StatViewBuilder()
+      .title('Contacts Dashboard')
+      .stat({
+        label: 'Total Contacts',
+        value: store.all().length,
+        format: 'number',
+      })
+      .build(),
 },
 ```
+
+No separate `/api/metrics/*` endpoint is needed — the value is computed inside
+the `stats()` callback and embedded in the `StatSpec` response.
 
 Then add a `describe('Stats view')` block in
 `examples/js/contacts/e2e/contacts.spec.ts`:
@@ -424,8 +419,6 @@ Then add a `describe('Stats view')` block in
     has non-empty text content (value may vary with store state).
 23. **Skeleton loading state** — hard to test reliably; skip or test via network
     throttle if CI supports it.
-24. **Stat endpoint error** — mount a second stat pointing to a non-existent URL
-    and assert the card shows `—` rather than crashing.
 
 ---
 
@@ -451,12 +444,12 @@ Summary: `Add stat/KPI grid view (StatSpec, StatViewBuilder, StatView component)
 | `packages/server-solid-shoelace/src/types.ts` | Add `stats?` field to `ResourceConfig` |
 | `packages/server-solid-shoelace/src/adapters/express.ts` | Register `GET /{prefix}/stats` before `GET /{prefix}/:id` |
 | `packages/server-solid-shoelace/src/index.ts` | Export `StatView`, `StatViewBuilder`, `Stat`, `StatSpec` |
-| `packages/spa-solid-shoelace/ui/StatView.tsx` | New file: stat grid component with parallel fetches, Intl formatting, skeleton loading |
+| `packages/spa-solid-shoelace/ui/StatView.tsx` | New file: stat grid component with Intl formatting, skeleton loading |
 | `packages/spa-solid-shoelace/ui/App.tsx` | Add `/:resource/stats` route before `/:resource/:id` |
 | `packages/spa-solid-shoelace/ui/layout.css` | Add `.retrofit-stat-grid`, `.retrofit-stat-card`, `.retrofit-stat-value`, `.retrofit-stat-label`, `.retrofit-stat-description` |
 | `packages/core/src/types/__tests__/resource-spec.test.ts` | 5 new unit tests for `StatSpec` type shape |
 | `packages/server-solid-shoelace/src/__tests__/stat-view-builder.test.ts` | New file: 6 unit tests for `StatViewBuilder` |
 | `packages/server-solid-shoelace/src/__tests__/express.test.ts` | 6 new integration tests for `/stats` route |
-| `examples/js/contacts/src/server.ts` | Add metrics endpoint + stats resource |
+| `examples/js/contacts/src/server.ts` | Add `dashboard` stats resource with embedded value |
 | `examples/js/contacts/e2e/contacts.spec.ts` | 5–7 new e2e tests for stats view |
 | Changeset | `pnpm changeset` for core + server + spa packages |

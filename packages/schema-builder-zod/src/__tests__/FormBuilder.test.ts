@@ -146,4 +146,23 @@ describe('formFromSchema', () => {
       .build();
     expect(() => FormSchema.parse(form)).not.toThrow();
   });
+
+  it('withFieldOverrides accepts tooltip', () => {
+    const form = formFromSchema(TodoSchema)
+      .withFieldOverrides({
+        title: { tooltip: 'The 3-digit code on the back of your card' },
+      })
+      .build();
+    const titleField = form.fields.find((f) => f.name === 'title');
+    expect(titleField?.tooltip).toBe('The 3-digit code on the back of your card');
+  });
+
+  it('tooltip survives FormSchema.parse() after build', () => {
+    const form = formFromSchema(TodoSchema)
+      .withFieldOverrides({
+        title: { tooltip: 'The 3-digit code on the back of your card' },
+      })
+      .build();
+    expect(() => FormSchema.parse(form)).not.toThrow();
+  });
 });

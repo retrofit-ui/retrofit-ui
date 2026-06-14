@@ -12,6 +12,8 @@ import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
+import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 
 import type { FormSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
@@ -101,11 +103,24 @@ export function FormView() {
   );
 }
 
+function TooltipIcon(props: { tip: string }) {
+  return (
+    <sl-tooltip content={props.tip}>
+      <sl-icon-button
+        name="question-circle"
+        label="Help"
+        style={{ 'vertical-align': 'middle', 'font-size': 'var(--sl-font-size-small)' }}
+      />
+    </sl-tooltip>
+  );
+}
+
 interface TagsInputProps {
   value: string[];
   onChange: (v: string[]) => void;
   label?: string;
   helpText?: string;
+  tooltip?: string;
   disabled?: boolean;
   invalid?: boolean;
   placeholder?: string;
@@ -143,6 +158,9 @@ function TagsInput(props: TagsInputProps) {
       <Show when={props.label}>
         <label class="retrofit-tags-label" for={inputId}>
           {props.label}
+          <Show when={props.tooltip}>
+            {(tip) => <TooltipIcon tip={tip()} />}
+          </Show>
         </label>
       </Show>
       <fieldset class="retrofit-tags-field" aria-label={props.label}>
@@ -346,7 +364,7 @@ function FormEditor(props: FormEditorProps) {
               <div>
                 <Show when={isTextarea()}>
                   <sl-textarea
-                    label={hideLabel() ? undefined : fieldLabel()}
+                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
                     aria-label={fieldLabel()}
                     placeholder={field.placeholder}
                     help-text={
@@ -364,11 +382,19 @@ function FormEditor(props: FormEditorProps) {
                         (e.target as EventTarget & { value: string }).value,
                       )
                     }
-                  />
+                  >
+                    <Show when={!hideLabel() && field.tooltip}>
+                      {(tip) => (
+                        <span slot="label">
+                          {fieldLabel()} <TooltipIcon tip={tip()} />
+                        </span>
+                      )}
+                    </Show>
+                  </sl-textarea>
                 </Show>
                 <Show when={field.type === 'select'}>
                   <sl-select
-                    label={hideLabel() ? undefined : fieldLabel()}
+                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
                     aria-label={fieldLabel()}
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}
@@ -381,6 +407,13 @@ function FormEditor(props: FormEditorProps) {
                       )
                     }
                   >
+                    <Show when={!hideLabel() && field.tooltip}>
+                      {(tip) => (
+                        <span slot="label">
+                          {fieldLabel()} <TooltipIcon tip={tip()} />
+                        </span>
+                      )}
+                    </Show>
                     <sl-option value="">-- select --</sl-option>
                     <For each={field.options}>
                       {(opt) => (
@@ -393,7 +426,7 @@ function FormEditor(props: FormEditorProps) {
                 </Show>
                 <Show when={field.type === 'radio-group'}>
                   <sl-radio-group
-                    label={hideLabel() ? undefined : fieldLabel()}
+                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}
                     prop:value={strVal()}
@@ -405,6 +438,13 @@ function FormEditor(props: FormEditorProps) {
                       )
                     }
                   >
+                    <Show when={!hideLabel() && field.tooltip}>
+                      {(tip) => (
+                        <span slot="label">
+                          {fieldLabel()} <TooltipIcon tip={tip()} />
+                        </span>
+                      )}
+                    </Show>
                     <For each={field.options}>
                       {(opt) => (
                         <sl-radio-button value={String(opt.value)}>
@@ -415,35 +455,45 @@ function FormEditor(props: FormEditorProps) {
                   </sl-radio-group>
                 </Show>
                 <Show when={field.type === 'checkbox'}>
-                  <sl-checkbox
-                    disabled={field.readOnly || undefined}
-                    prop:checked={!!values()[field.name]}
-                    invalid={!!err() || undefined}
-                    on:sl-change={(e: Event) =>
-                      setValue(
-                        field.name,
-                        (e.target as EventTarget & { checked: boolean })
-                          .checked,
-                      )
-                    }
-                  >
-                    {fieldLabel()}
-                  </sl-checkbox>
+                  <div style={{ display: 'flex', 'align-items': 'center', gap: 'var(--sl-spacing-x-small)' }}>
+                    <sl-checkbox
+                      disabled={field.readOnly || undefined}
+                      prop:checked={!!values()[field.name]}
+                      invalid={!!err() || undefined}
+                      on:sl-change={(e: Event) =>
+                        setValue(
+                          field.name,
+                          (e.target as EventTarget & { checked: boolean })
+                            .checked,
+                        )
+                      }
+                    >
+                      {fieldLabel()}
+                    </sl-checkbox>
+                    <Show when={field.tooltip}>
+                      {(tip) => <TooltipIcon tip={tip()} />}
+                    </Show>
+                  </div>
                 </Show>
                 <Show when={field.type === 'switch'}>
-                  <sl-switch
-                    disabled={field.readOnly || undefined}
-                    prop:checked={!!values()[field.name]}
-                    on:sl-change={(e: Event) =>
-                      setValue(
-                        field.name,
-                        (e.target as EventTarget & { checked: boolean })
-                          .checked,
-                      )
-                    }
-                  >
-                    {fieldLabel()}
-                  </sl-switch>
+                  <div style={{ display: 'flex', 'align-items': 'center', gap: 'var(--sl-spacing-x-small)' }}>
+                    <sl-switch
+                      disabled={field.readOnly || undefined}
+                      prop:checked={!!values()[field.name]}
+                      on:sl-change={(e: Event) =>
+                        setValue(
+                          field.name,
+                          (e.target as EventTarget & { checked: boolean })
+                            .checked,
+                        )
+                      }
+                    >
+                      {fieldLabel()}
+                    </sl-switch>
+                    <Show when={field.tooltip}>
+                      {(tip) => <TooltipIcon tip={tip()} />}
+                    </Show>
+                  </div>
                 </Show>
                 <Show when={field.type === 'color'}>
                   <div>
@@ -458,6 +508,9 @@ function FormEditor(props: FormEditorProps) {
                         }}
                       >
                         {fieldLabel()}
+                        <Show when={field.tooltip}>
+                          {(tip) => <TooltipIcon tip={tip()} />}
+                        </Show>
                       </label>
                     </Show>
                     <sl-color-picker
@@ -495,6 +548,7 @@ function FormEditor(props: FormEditorProps) {
                   <TagsInput
                     label={hideLabel() ? undefined : fieldLabel()}
                     helpText={field.helpText}
+                    tooltip={field.tooltip}
                     placeholder={field.placeholder}
                     disabled={field.readOnly || undefined}
                     invalid={!!err() || undefined}
@@ -515,6 +569,9 @@ function FormEditor(props: FormEditorProps) {
                         }}
                       >
                         {fieldLabel()}
+                        <Show when={field.tooltip}>
+                          {(tip) => <TooltipIcon tip={tip()} />}
+                        </Show>
                       </label>
                     </Show>
                     <sl-rating
@@ -557,7 +614,7 @@ function FormEditor(props: FormEditorProps) {
                   }
                 >
                   <sl-input
-                    label={hideLabel() ? undefined : fieldLabel()}
+                    label={(!hideLabel() && !field.tooltip) ? fieldLabel() : undefined}
                     aria-label={fieldLabel()}
                     type={field.type}
                     placeholder={field.placeholder}
@@ -575,7 +632,15 @@ function FormEditor(props: FormEditorProps) {
                           : raw,
                       );
                     }}
-                  />
+                  >
+                    <Show when={!hideLabel() && field.tooltip}>
+                      {(tip) => (
+                        <span slot="label">
+                          {fieldLabel()} <TooltipIcon tip={tip()} />
+                        </span>
+                      )}
+                    </Show>
+                  </sl-input>
                 </Show>
                 <Show when={err()}>
                   <p

@@ -164,8 +164,22 @@ declare module 'solid-js' {
         label?: string;
         children?: JSX.Element;
       };
+      'sl-tooltip': JSX.HTMLAttributes<HTMLElement> & {
+        content?: string;
+        placement?: 'top' | 'top-start' | 'top-end' | 'bottom' | 'bottom-start' | 'bottom-end'
+          | 'right' | 'right-start' | 'right-end' | 'left' | 'left-start' | 'left-end';
+        disabled?: boolean;
+        distance?: number;
+        open?: boolean;
+        skidding?: number;
+        trigger?: string;
+        hoist?: boolean;
+        children?: JSX.Element;
+      };
       'sl-icon-button': JSX.HTMLAttributes<HTMLElement> & {
         name?: string;
+        library?: string;
+        src?: string;
         label?: string;
         disabled?: boolean;
         href?: string;

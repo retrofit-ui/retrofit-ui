@@ -1,7 +1,9 @@
 import '@shoelace-style/shoelace/dist/components/badge/badge.js';
+import '@shoelace-style/shoelace/dist/components/button-group/button-group.js';
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
@@ -10,6 +12,7 @@ import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import type { Column, PageSpec, TableSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import {
+  createEffect,
   createResource,
   createSignal,
   For,
@@ -21,6 +24,7 @@ import {
 import { ApiBaseContext } from './App';
 import { PageView } from './PageView';
 import { showToast } from './toast';
+import { substitutePattern } from './utils';
 
 type ResourceData =
   | { kind: 'page'; spec: PageSpec }
@@ -29,6 +33,8 @@ type ResourceData =
 async function fetchTableView(
   resource: string,
   apiBase: string,
+  page: number,
+  pageSizeOverride: number | null,
 ): Promise<ResourceData> {
   const res = await fetch(`${apiBase}/${resource}`);
   if (!res.ok) throw new Error(`Failed to fetch spec for ${resource}`);
@@ -43,7 +49,16 @@ async function fetchTableView(
   if (spec.rows) {
     data = spec.rows;
   } else if (spec.endpoints?.list) {
-    const dataRes = await fetch(spec.endpoints.list.url);
+    const pagination = spec.metadata?.pagination;
+    let url = spec.endpoints.list.url;
+    if (pagination) {
+      const pageSize = pageSizeOverride ?? pagination.pageSize;
+      url = substitutePattern(url, {
+        page: String(page),
+        pageSize: String(pageSize),
+      });
+    }
+    const dataRes = await fetch(url);
     if (dataRes.ok) {
       data = (await dataRes.json()) as Record<string, unknown>[];
     }
@@ -55,15 +70,6 @@ async function fetchTableView(
 function extractIdField(findUrl: string): string {
   const match = findUrl.match(/\{(\w+)\}/);
   return match?.[1] ?? 'id';
-}
-
-function substitutePattern(
-  pattern: string,
-  row: Record<string, unknown>,
-): string {
-  return pattern.replace(/\{(\w+)\}/g, (_, key: string) =>
-    String(row[key] ?? ''),
-  );
 }
 
 function CellInput(props: {
@@ -392,9 +398,19 @@ export function TableView() {
   const navigate = useNavigate();
   const apiBase = useContext(ApiBaseContext);
 
+  const [currentPage, setCurrentPage] = createSignal(1);
+  const [currentPageSize, setCurrentPageSize] = createSignal<number | null>(null);
+
+  createEffect(() => {
+    params.resource;
+    setCurrentPage(1);
+    setCurrentPageSize(null);
+  });
+
   const [view, { refetch }] = createResource(
-    () => params.resource,
-    (resource) => fetchTableView(resource, apiBase),
+    () => [params.resource, currentPage(), currentPageSize()] as const,
+    ([resource, page, pageSizeOverride]) =>
+      fetchTableView(resource, apiBase, page, pageSizeOverride),
   );
 
   const tableData = () =>
@@ -521,6 +537,69 @@ export function TableView() {
                       </Show>
                     </tbody>
                   </table>
+                  <Show when={tableData()?.spec.metadata?.pagination}>
+                    {(pagination) => {
+                      const totalPages = () =>
+                        Math.max(
+                          1,
+                          Math.ceil(
+                            pagination().totalRows /
+                              (currentPageSize() ?? pagination().pageSize),
+                          ),
+                        );
+                      return (
+                        <div class="retrofit-pagination">
+                          <sl-button-group label="Page navigation">
+                            <sl-icon-button
+                              name="chevron-left"
+                              label="Previous page"
+                              disabled={currentPage() <= 1 || undefined}
+                              on:click={() => setCurrentPage((p) => p - 1)}
+                            />
+                            <sl-icon-button
+                              name="chevron-right"
+                              label="Next page"
+                              disabled={currentPage() >= totalPages() || undefined}
+                              on:click={() => setCurrentPage((p) => p + 1)}
+                            />
+                          </sl-button-group>
+                          <span class="retrofit-pagination-label">
+                            Page {currentPage()} of {totalPages()}
+                          </span>
+                          <Show
+                            when={(pagination().pageSizeOptions?.length ?? 0) > 0}
+                          >
+                            <sl-select
+                              size="small"
+                              prop:value={String(
+                                currentPageSize() ?? pagination().pageSize,
+                              )}
+                              on:sl-change={(e: Event) => {
+                                setCurrentPageSize(
+                                  Number(
+                                    (
+                                      e.target as EventTarget & {
+                                        value: string;
+                                      }
+                                    ).value,
+                                  ),
+                                );
+                                setCurrentPage(1);
+                              }}
+                            >
+                              <For each={pagination().pageSizeOptions ?? []}>
+                                {(size) => (
+                                  <sl-option value={String(size)}>
+                                    {size} per page
+                                  </sl-option>
+                                )}
+                              </For>
+                            </sl-select>
+                          </Show>
+                        </div>
+                      );
+                    }}
+                  </Show>
                 </Show>
               </div>
             </Match>

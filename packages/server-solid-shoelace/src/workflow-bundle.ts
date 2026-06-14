@@ -12,9 +12,15 @@ import { TableViewBuilder } from './view-builder';
 
 export class TableCustomizer {
   readonly _columnOverrides: Record<string, Partial<Column>> = {};
+  _metadata?: TableSpec['metadata'];
 
   columnOverride(key: string, override: Partial<Column>): this {
     this._columnOverrides[key] = { ...this._columnOverrides[key], ...override };
+    return this;
+  }
+
+  metadata(meta: TableSpec['metadata']): this {
+    this._metadata = meta;
     return this;
   }
 }
@@ -132,6 +138,9 @@ export class WorkflowBundleBuilder<S extends ZodRawShape> {
       this._tableCustomizer._columnOverrides,
     )) {
       tableBuilder.columnOverride(key, override);
+    }
+    if (this._tableCustomizer._metadata) {
+      tableBuilder.metadata(this._tableCustomizer._metadata);
     }
     if (this._endpoints.list) tableBuilder.list(this._endpoints.list);
     if (this._endpoints.find) tableBuilder.find(this._endpoints.find);

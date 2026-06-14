@@ -25,7 +25,14 @@ export interface TableSpec {
     delete?: EndpointDirective; // enables row delete button
   };
   rowActions?: RowAction[];
-  metadata?: { title?: string };
+  metadata?: {
+    title?: string;
+    pagination?: {
+      pageSize: number;
+      totalRows: number;
+      pageSizeOptions?: number[];
+    };
+  };
 }
 
 export interface FormLayoutConfig {

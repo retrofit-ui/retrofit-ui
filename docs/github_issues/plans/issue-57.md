@@ -707,6 +707,8 @@ Product form (/#/products/:id):
 
 ---
 
-## Open question for implementor
+## Resolved: adapter config for tree resources
 
-The `defineConfig` function in `packages/server-solid-shoelace/src/config.ts` currently accepts `forms` and `resources` keys. To serve a `TreeSpec` via the adapter, a `trees` config key is likely needed. Check whether the Express adapter's routing (`GET /api/ui/:resource`) can handle a tree resource, or whether tree resources need a dedicated route pattern (e.g., `GET /api/ui/:resource/tree` served separately from `GET /api/ui/:resource`). The recommended approach is a separate `GET /api/ui/:resource/tree` endpoint so existing table resources aren't disrupted.
+`RetrofitConfig` in `packages/server-solid-shoelace/src/types.ts` already has `trees?: Record<string, TreeResourceConfig>`, alongside the existing `forms` and `resources` keys. `TreeResourceConfig` defines the same `list/create/update/delete` function contract as `ResourceConfig`, plus `idField/parentField/labelField/selection/metadata`.
+
+The Express adapter routes tree resources at `GET /api/ui/:resource/tree` (separate from `GET /api/ui/:resource` used by table resources), so existing table resources are not disrupted. The `products` example uses manual Express routes rather than the adapter's `trees` config key, which is also valid and keeps the example self-contained.

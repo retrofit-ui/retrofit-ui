@@ -20,6 +20,7 @@ export default defineConfig({
               text: 'What is retrofit-ui?',
               link: '/guide/what-is-retrofit-ui',
             },
+            { text: 'Design philosophy', link: '/guide/design-philosophy' },
             { text: 'JS Quickstart', link: '/guide/js-quickstart' },
             { text: 'Java Quickstart', link: '/guide/java-quickstart' },
           ],

@@ -116,54 +116,14 @@ gh run list --branch <branch>  # workflow runs
 
 The rule: if work is traceable to a GitHub issue, reference it. If no issue exists, create one.
 
-## Display formatting philosophy
+## Design philosophy
 
-**Server-side formatting wins.** For any value that needs locale-aware or language-specific display — numbers, currency, bytes, dates, timestamps, timezones — the server computes the formatted string and sends it alongside the raw value. The client renders the pre-formatted string; it does not re-format.
+When in doubt, do the work on the server. Read `docs/guide/design-philosophy.md` for the full rationale and the two concrete decisions already made:
 
-### Why
+1. **Fully populated server responses** — tables and forms are sent as a single JSON payload including data; the SPA makes no second fetch.
+2. **Server-side display formatting** — every cell is `{ value: unknown; formatted?: string }`; the server computes `formatted` via a `columnOverride` format function; the SPA renders `cell.formatted ?? String(cell.value)` and applies no `Intl` logic.
 
-- **Consistency over locale-adaptation.** Business tools need predictable output regardless of the user's browser locale. Client-side `Intl` gives different users different strings for the same data.
-- **Generalises to dates and times.** The cross-language formatting problem is worst for date/time/timezone handling, where Java, Python, Go, and JS all diverge. Server-side formatting eliminates that class of bugs entirely.
-- **No renderer dependency.** A plain string works in SSR, emails, PDFs, and CLI output — not just in a Shoelace-capable SPA.
-- **No enum proliferation.** You don't need to enumerate every possible format variant in the Zod schema. A developer-supplied function produces any string.
-
-### Wire format convention
-
-`build()` populates a `_formatted` key in each row alongside the raw values:
-
-```typescript
-// raw row
-{ id: 1, amount: 1234.56, createdAt: "2026-06-14T12:00:00Z" }
-
-// row sent over the wire
-{
-  id: 1, amount: 1234.56, createdAt: "2026-06-14T12:00:00Z",
-  _formatted: { amount: "$1,234.56", createdAt: "Jun 14, 2026" }
-}
-```
-
-The client prefers `row._formatted[col.key]` for display; falls back to `String(row[col.key])`. No changes to `ColumnSchema` are required — `_formatted` is just another key in the existing `Record<string, unknown>` row.
-
-### Developer API
-
-`columnOverride` accepts a server-side `format` function. It is never serialised to JSON.
-
-```typescript
-TableView.schema(ExpenseSchema)
-  .columnOverride('amount', {
-    format: (v) =>
-      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v)),
-  })
-  .columnOverride('createdAt', {
-    format: (v) =>
-      new Date(String(v)).toLocaleDateString('en-US', { dateStyle: 'medium' }),
-  })
-```
-
-### What NOT to do
-
-- Do not pass a `format` enum over the wire and let the client pick a Shoelace component. An enum requires schema changes for every new format type and couples the wire format to a specific renderer.
-- Do not use `<sl-format-number>` or `<sl-format-bytes>` as the primary formatting mechanism — the browser locale is non-deterministic from the server's perspective.
+Do not pass a format enum over the wire and delegate rendering to `<sl-format-number>` or similar. Do not have the SPA fetch row data from a separate endpoint.
 
 ## Code quality
 

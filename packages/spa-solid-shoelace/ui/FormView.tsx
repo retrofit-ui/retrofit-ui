@@ -359,6 +359,7 @@ function FormEditor(props: FormEditorProps) {
                   <div>
                     <Show when={!hideLabel()}>
                       <label
+                        for={field.name}
                         style={{
                           display: 'block',
                           'margin-bottom': 'var(--sl-spacing-2x-small)',
@@ -370,6 +371,7 @@ function FormEditor(props: FormEditorProps) {
                       </label>
                     </Show>
                     <sl-color-picker
+                      id={field.name}
                       aria-label={fieldLabel()}
                       format={field.colorFormat ?? 'hex'}
                       swatches={

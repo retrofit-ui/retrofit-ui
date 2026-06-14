@@ -24,3 +24,19 @@ export const UpdatePostSchema = z.object({
 
 export type Post = z.infer<typeof PostSchema>;
 export type UpdatePost = z.infer<typeof UpdatePostSchema>;
+
+export const ReviewSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  body: z.string(),
+  rating: z.number(),
+});
+
+export const UpdateReviewSchema = z.object({
+  title: z.string(),
+  body: z.string(),
+  rating: z.number(),
+});
+
+export type Review = z.infer<typeof ReviewSchema>;
+export type UpdateReview = z.infer<typeof UpdateReviewSchema>;

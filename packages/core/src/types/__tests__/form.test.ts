@@ -120,6 +120,65 @@ describe('FieldSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts rating field type', () => {
+    const result = FieldSchema.safeParse({
+      name: 'score',
+      label: 'Score',
+      type: 'rating',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts ratingMax on rating field', () => {
+    const field = FieldSchema.parse({
+      name: 'score',
+      label: 'Score',
+      type: 'rating',
+      ratingMax: 10,
+    });
+    expect(field.ratingMax).toBe(10);
+  });
+
+  it('accepts ratingPrecision on rating field', () => {
+    const field = FieldSchema.parse({
+      name: 'score',
+      label: 'Score',
+      type: 'rating',
+      ratingPrecision: 0.5,
+    });
+    expect(field.ratingPrecision).toBe(0.5);
+  });
+
+  it('rejects ratingMax of 0', () => {
+    const result = FieldSchema.safeParse({
+      name: 'score',
+      label: 'Score',
+      type: 'rating',
+      ratingMax: 0,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects negative ratingMax', () => {
+    const result = FieldSchema.safeParse({
+      name: 'score',
+      label: 'Score',
+      type: 'rating',
+      ratingMax: -1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('does not reject ratingMax on non-rating fields', () => {
+    const result = FieldSchema.safeParse({
+      name: 'x',
+      label: 'X',
+      type: 'text',
+      ratingMax: 5,
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe('FormSchema', () => {

@@ -102,7 +102,15 @@ return [f.name, ''];
 
 **Note on `disabled` vs `readonly`:** `sl-rating` does not have a `disabled` attribute; use `readonly` to prevent changes on read-only fields.
 
-### 3. `packages/spa-solid-shoelace/ui/shoelace-types.d.ts`
+### 3. Blog example server — `examples/blog/server.ts` (or equivalent)
+
+**Why:** Reviewer explicitly requested a `reviews` collection in the blog example so there is a working, demo-able integration of the `rating` field type.
+
+**Change:** Add a `reviews` resource with `title` (text), `body` (textarea), and `rating` (rating, ratingMax 5) fields. Wire it into the express app using the same in-memory adapter pattern as existing blog resources.
+
+---
+
+### 4. `packages/spa-solid-shoelace/ui/shoelace-types.d.ts`
 
 **Why:** TypeScript will error on the `sl-rating` JSX element without a declaration. Every Shoelace component used in the SPA is declared here.
 
@@ -135,6 +143,8 @@ return [f.name, ''];
 - `ratingMax` and `ratingPrecision` are optional — omitting them uses defaults of 5 and 1.
 - `pnpm typecheck` passes.
 - `pnpm lint` exits zero.
+- The blog example's `reviews` collection is reachable and renders `sl-rating` for the `rating` field.
+- E2e tests for reviews: create with rating, value stored as number, rating pre-filled on edit, default max 5 — all pass.
 
 ---
 
@@ -198,20 +208,51 @@ it('does not reject ratingMax on non-rating fields (stored but ignored)', () => 
 
 Add a resource (or standalone form) with a `rating` field and verify the JSON spec returned by the server includes `type: 'rating'`, `ratingMax`, and `ratingPrecision`. The existing test structure (spin up express, fetch `/api/...`) can be extended.
 
-### E2E / browser (manual or Playwright)
+### E2E — blog example (`examples/blog`)
 
-No automated browser tests exist in the repo currently. Manual verification steps:
+**Reviewer requested:** create a `reviews` collection in the blog example server and write automated e2e tests that add reviews and set star ratings. This replaces the earlier manual verification steps.
 
-1. Add a `rating` field to one of the example apps (e.g. `examples/js/expenses` — add a `satisfaction` field).
-2. Run `pnpm dev` for that example.
-3. Open the form in a browser.
-4. Verify `sl-rating` renders with 5 stars (default max).
-5. Click a star — verify the value updates.
-6. Submit the form — verify the body includes `"satisfaction": 3` (number, not string).
-7. Navigate back, reopen the same record — verify the rating is pre-filled.
-8. Add `ratingMax: 10` override — verify 10 stars render.
-9. Add `ratingPrecision: 0.5` — verify half-star selection works.
-10. Add `readOnly: true` — verify stars are not interactive.
+#### 4a. Blog example server — add reviews collection
+
+In the blog example server (e.g. `examples/blog/server.ts` or equivalent), add a `reviews` collection with at least:
+
+```typescript
+{
+  name: 'reviews',
+  label: 'Reviews',
+  fields: [
+    { name: 'title',  label: 'Title',  type: 'text' },
+    { name: 'body',   label: 'Body',   type: 'textarea' },
+    { name: 'rating', label: 'Rating', type: 'rating', ratingMax: 5 },
+  ],
+}
+```
+
+The in-memory store pattern used by the other blog collections (posts, comments, etc.) applies here unchanged.
+
+#### 4b. E2E tests — `examples/blog/e2e/reviews.spec.ts` (or nearest existing e2e location)
+
+Write Playwright tests (matching the project's existing e2e setup and file conventions) covering:
+
+1. **Create a review with a star rating**
+   - Navigate to the reviews list.
+   - Open the "New review" form.
+   - Fill in `title` and `body`.
+   - Click the 3rd star on the `sl-rating` component.
+   - Submit and assert the new review appears in the list.
+
+2. **Stored rating value is a number**
+   - After creating a review, intercept or inspect the POST body (or a subsequent GET) and assert `rating` is the number `3`, not the string `"3"`.
+
+3. **Rating is pre-filled when editing**
+   - Navigate to edit the review created above.
+   - Assert the `sl-rating` element has `value="3"` (i.e. the correct star is highlighted).
+   - Change the rating to 5 stars, save, and re-open — assert the updated value persists.
+
+4. **Default max (5 stars)**
+   - Assert the rendered `sl-rating` has `max="5"` (or that exactly 5 star symbols are present).
+
+Playwright selectors for `sl-rating`: use `page.locator('sl-rating[name="rating"]')` and interact via `.click()` on its shadow-DOM parts, or use Shoelace's imperative API (`evaluate`) to set value directly if shadow-DOM clicking is unreliable in CI.
 
 ---
 

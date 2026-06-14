@@ -12,7 +12,13 @@ import {
   TableView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
-import { PostSchema, UpdatePostSchema } from './schemas';
+import type { Review } from './schemas';
+import {
+  PostSchema,
+  ReviewSchema,
+  UpdatePostSchema,
+  UpdateReviewSchema,
+} from './schemas';
 import { store } from './store';
 
 const AUTHORS = [
@@ -155,6 +161,71 @@ app.get('/api/ui/posts-by-status', (_req, res) => {
         .build(),
     ),
   );
+});
+
+// In-memory reviews store
+let reviewNextId = 1;
+const reviews: Review[] = [];
+
+app.get('/reviews', (_req, res) => res.json(reviews));
+app.get('/reviews/:id', (req, res) => {
+  const review = reviews.find((r) => r.id === Number(req.params.id));
+  if (!review) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  res.json(review);
+});
+app.post('/reviews', (req, res) => {
+  const review = { ...(req.body as Omit<Review, 'id'>), id: reviewNextId++ };
+  reviews.push(review);
+  res.status(201).json(review);
+});
+app.put('/reviews/:id', (req, res) => {
+  const idx = reviews.findIndex((r) => r.id === Number(req.params.id));
+  if (idx === -1) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  reviews[idx] = {
+    ...(reviews[idx] as Review),
+    ...(req.body as Partial<Review>),
+  };
+  res.json(reviews[idx]);
+});
+app.delete('/reviews/:id', (req, res) => {
+  const idx = reviews.findIndex((r) => r.id === Number(req.params.id));
+  if (idx !== -1) reviews.splice(idx, 1);
+  res.json({ ok: true });
+});
+app.post('/test/reset-reviews', (_req, res) => {
+  reviews.length = 0;
+  reviewNextId = 1;
+  res.json({ ok: true });
+});
+
+app.get('/api/ui/reviews', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.forRows(ReviewSchema, reviews)
+        .find({ method: 'GET', url: '/reviews/{id}' })
+        .create({ method: 'POST', url: '/reviews' })
+        .build(),
+    ),
+  );
+});
+
+app.get('/api/ui/reviews/:id', (req, res) => {
+  const { id } = req.params;
+  const entity = id !== 'new' ? reviews.find((r) => r.id === Number(id)) : null;
+  const builder = formSpec(ReviewSchema, UpdateReviewSchema)
+    .fieldOverride('body', { type: 'textarea' })
+    .fieldOverride('rating', { type: 'rating', ratingMax: 5 })
+    .create({ method: 'POST', url: '/reviews' })
+    .update({ method: 'PUT', url: '/reviews/{id}' })
+    .delete({ method: 'DELETE', url: '/reviews/{id}' });
+  if (entity) builder.values(entity as Record<string, unknown>);
+  res.json(retrofit(builder.build()));
 });
 
 const PORT = process.env.PORT ?? 3000;

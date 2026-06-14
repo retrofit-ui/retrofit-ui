@@ -46,9 +46,7 @@ export function TimelineView() {
   );
 
   const backPath = () =>
-    params.id
-      ? `/${params.resource}/${params.id}`
-      : `/${params.resource}`;
+    params.id ? `/${params.resource}/${params.id}` : `/${params.resource}`;
 
   return (
     <div class="retrofit-view">
@@ -102,10 +100,9 @@ export function TimelineView() {
                         event[spec.fields.timestamp] ?? '',
                       );
                       const title = String(event[spec.fields.title] ?? '');
-                      const description =
-                        spec.fields.description
-                          ? String(event[spec.fields.description] ?? '')
-                          : undefined;
+                      const description = spec.fields.description
+                        ? String(event[spec.fields.description] ?? '')
+                        : undefined;
 
                       const eventClass = variant
                         ? `retrofit-timeline-event retrofit-timeline-event--${variant}`
@@ -119,7 +116,16 @@ export function TimelineView() {
                             </Show>
                             <span class="retrofit-timeline-title">{title}</span>
                             <Show when={variant && variant.length > 0}>
-                              <sl-badge variant={variant as 'primary' | 'success' | 'neutral' | 'warning' | 'danger'}>
+                              <sl-badge
+                                variant={
+                                  variant as
+                                    | 'primary'
+                                    | 'success'
+                                    | 'neutral'
+                                    | 'warning'
+                                    | 'danger'
+                                }
+                              >
                                 {variant}
                               </sl-badge>
                             </Show>

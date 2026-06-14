@@ -336,7 +336,9 @@ test.describe('Timeline view', () => {
     await page.goto('/#/posts/1/timeline');
     await page.waitForSelector('.retrofit-timeline');
     await expect(
-      page.locator('h1.retrofit-page-title').filter({ hasText: 'Post History' }),
+      page
+        .locator('h1.retrofit-page-title')
+        .filter({ hasText: 'Post History' }),
     ).toBeVisible();
   });
 

@@ -167,3 +167,15 @@
   font-size: var(--sl-font-size-small);
   color: var(--sl-color-neutral-500);
 }
+
+.retrofit-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--sl-spacing-medium);
+  padding: var(--sl-spacing-small) 0;
+}
+
+.retrofit-pagination-label {
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-neutral-600);
+}

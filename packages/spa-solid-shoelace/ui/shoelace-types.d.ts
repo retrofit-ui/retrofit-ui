@@ -160,6 +160,18 @@ declare module 'solid-js' {
         pulse?: boolean;
         children?: JSX.Element;
       };
+      'sl-button-group': JSX.HTMLAttributes<HTMLElement> & {
+        label?: string;
+        children?: JSX.Element;
+      };
+      'sl-icon-button': JSX.HTMLAttributes<HTMLElement> & {
+        name?: string;
+        label?: string;
+        disabled?: boolean;
+        href?: string;
+        size?: 'small' | 'medium' | 'large';
+        'on:click'?: SlEventHandler;
+      };
     }
   }
 }

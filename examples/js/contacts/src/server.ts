@@ -15,8 +15,15 @@ app.use(express.json());
 
 app.get('/contacts', (req, res) => {
   const type = req.query.type as string | undefined;
-  const results = type ? store.byType(type) : store.all();
-  res.json(results);
+  const all = type ? store.byType(type) : store.all();
+  if (req.query.page !== undefined || req.query.pageSize !== undefined) {
+    const page = Number(req.query.page ?? 1);
+    const pageSize = Number(req.query.pageSize ?? 2);
+    const start = (page - 1) * pageSize;
+    res.json(all.slice(start, start + pageSize));
+  } else {
+    res.json(all);
+  }
 });
 app.get('/contacts/:id', (req, res) => res.json(store.find(req.params.id)));
 app.post('/contacts', (req, res) => res.json(store.create(req.body)));
@@ -53,7 +60,8 @@ TableFormWorkflowBundle.schema(ContactSchema)
   .table((t) =>
     t
       .columnOverride('name', { sortable: true })
-      .columnOverride('email', { filterable: true }),
+      .columnOverride('email', { filterable: true })
+      .metadata({ pagination: { pageSize: 2, totalRows: store.all().length } }),
   )
   .form((f) =>
     f.fieldOverride('notes', { type: 'textarea' }).fieldOverride('phone', {
@@ -61,17 +69,14 @@ TableFormWorkflowBundle.schema(ContactSchema)
       validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
     }),
   )
+  .list({ method: 'GET', url: '/contacts?page={page}&pageSize={pageSize}' })
   .find({ method: 'GET', url: '/contacts/{id}' })
   .create({ method: 'POST', url: '/contacts' })
   .update({ method: 'PUT', url: '/contacts/{id}' })
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build()
-  .register(
-    app,
-    retrofit,
-    '/api/ui/contacts',
-    () => store.all(),
-    (id) => store.find(id),
+  .register(app, retrofit, '/api/ui/contacts', undefined, (id) =>
+    store.find(id),
   );
 
 // Stacked layout: filter → new-contact form (type pre-filled) → table

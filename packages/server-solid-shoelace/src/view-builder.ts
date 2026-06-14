@@ -36,6 +36,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
   private _visibleKeys?: string[];
   private _endpoints: TableSpec['endpoints'] = {};
   private _rows?: Record<string, unknown>[];
+  private _metadata?: TableSpec['metadata'];
 
   private constructor(private readonly _schema: ZodObject<S>) {}
 
@@ -70,6 +71,11 @@ export class TableViewBuilder<S extends ZodRawShape> {
 
   rowAction(action: RowAction): this {
     this._rowActions.push(action);
+    return this;
+  }
+
+  metadata(meta: TableSpec['metadata']): this {
+    this._metadata = meta;
     return this;
   }
 
@@ -130,6 +136,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
       endpoints: this._endpoints,
       ...(this._rows !== undefined && { rows: this._rows }),
       ...(this._rowActions.length > 0 && { rowActions: this._rowActions }),
+      ...(this._metadata !== undefined && { metadata: this._metadata }),
     };
   }
 }

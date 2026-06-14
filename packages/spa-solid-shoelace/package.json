@@ -25,6 +25,7 @@
   "scripts": {
     "build": "tsup && vite build",
     "dev": "vite",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src ui"
   },
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@retrofit-ui/core": "workspace:*",
+    "vitest": "^4.0.18",
     "@shoelace-style/shoelace": "^2.20.0",
     "@solidjs/router": "^0.15.0",
     "@types/node": "^20",

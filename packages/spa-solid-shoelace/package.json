@@ -34,6 +34,11 @@
     "@retrofit-ui/core": "workspace:*"
   },
   "devDependencies": {
+    "@fullcalendar/core": "^6.0.0",
+    "@fullcalendar/daygrid": "^6.0.0",
+    "@fullcalendar/interaction": "^6.0.0",
+    "@fullcalendar/list": "^6.0.0",
+    "@fullcalendar/timegrid": "^6.0.0",
     "@retrofit-ui/core": "workspace:*",
     "@shoelace-style/shoelace": "^2.20.0",
     "@solidjs/router": "^0.15.0",

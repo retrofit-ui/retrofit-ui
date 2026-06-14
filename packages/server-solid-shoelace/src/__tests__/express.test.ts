@@ -5,6 +5,7 @@ import express from 'express';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { createExpressRouter } from '../adapters/express';
+import { CalendarViewBuilder } from '../calendar-builder';
 import { defineConfig } from '../config';
 import { StatViewBuilder } from '../stat-view-builder';
 
@@ -63,6 +64,14 @@ beforeAll(async () => {
   const app = express();
   app.use(express.json());
   app.use(createExpressRouter(config));
+  app.get('/api/ui/events/calendar', (_req, res) => {
+    res.json(
+      CalendarViewBuilder
+        .events([{ id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' }])
+        .defaultView('month')
+        .build(),
+    );
+  });
   server = createServer(app);
   await new Promise<void>((resolve) => server.listen(0, resolve));
   const port = (server.address() as AddressInfo).port;
@@ -561,5 +570,17 @@ describe('resource routes – stats', () => {
   it('GET /api/ui/items2/:id is not affected by stats route registration', async () => {
     const res = await fetch(`${statsUrl}/api/ui/items2/1`);
     expect(res.status).toBe(200);
+  });
+});
+
+describe('CalendarViewBuilder – express integration', () => {
+  it('GET /api/ui/events/calendar returns a valid CalendarSpec with embedded events', async () => {
+    const res = await fetch(`${baseUrl}/api/ui/events/calendar`);
+    expect(res.status).toBe(200);
+    const data = await res.json() as { events: { id: string; title: string }[]; defaultView: string };
+    expect(data.defaultView).toBe('month');
+    expect(data.events).toHaveLength(1);
+    expect(data.events[0]?.id).toBe('1');
+    expect(data.events[0]?.title).toBe('Meeting');
   });
 });

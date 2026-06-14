@@ -107,3 +107,27 @@ export interface StatSpec {
   stats: Stat[];
   metadata?: { title?: string };
 }
+
+/** A single calendar event, fully populated server-side. */
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end?: string;
+  color?: string;
+  allDay?: boolean;
+}
+
+/** Returned by GET /api/ui/{resource}/calendar — drives the calendar view. */
+export interface CalendarSpec {
+  events: CalendarEvent[];
+  defaultView?: 'month' | 'week' | 'day' | 'list';
+  editable?: boolean;
+  endpoints?: {
+    find?:   EndpointDirective;
+    create?: EndpointDirective;
+    update?: EndpointDirective;
+    delete?: EndpointDirective;
+  };
+  metadata?: { title?: string };
+}

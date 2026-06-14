@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Stat, StatSpec, TableSpec } from '../resource-spec';
+import type { CalendarEvent, CalendarSpec, Stat, StatSpec, TableSpec } from '../resource-spec';
 
 const idColumn = {
   key: 'id',
@@ -82,5 +82,42 @@ describe('StatSpec', () => {
   it('metadata.title is optional', () => {
     const spec: StatSpec = { stats: [], metadata: {} };
     expect(spec.metadata?.title).toBeUndefined();
+  });
+});
+
+describe('CalendarSpec', () => {
+  it('minimal spec requires only events array', () => {
+    const spec: CalendarSpec = { events: [] };
+    expect(spec.events).toEqual([]);
+  });
+
+  it('CalendarEvent accepts a fully populated event', () => {
+    const ev: CalendarEvent = {
+      id: '1',
+      title: 'Meeting',
+      start: '2026-06-15T09:00:00',
+      end: '2026-06-15T10:00:00',
+      color: '#3b82f6',
+      allDay: false,
+    };
+    expect(ev.title).toBe('Meeting');
+  });
+
+  it('CalendarSpec accepts all optional fields', () => {
+    const spec: CalendarSpec = {
+      events: [{ id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' }],
+      defaultView: 'month',
+      editable: true,
+      endpoints: {
+        find:   { method: 'GET',    url: '/events/{id}' },
+        create: { method: 'POST',   url: '/events' },
+        update: { method: 'PUT',    url: '/events/{id}' },
+        delete: { method: 'DELETE', url: '/events/{id}' },
+      },
+      metadata: { title: 'Events' },
+    };
+    expect(spec.defaultView).toBe('month');
+    expect(spec.metadata?.title).toBe('Events');
+    expect(spec.endpoints?.find?.url).toBe('/events/{id}');
   });
 });

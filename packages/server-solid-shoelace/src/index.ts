@@ -1,4 +1,6 @@
 export type {
+  CalendarEvent,
+  CalendarSpec,
   EndpointDirective,
   FilterField,
   FilterFormSpec,
@@ -17,6 +19,7 @@ export type {
   TreeSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
+export { CalendarView, CalendarViewBuilder } from './calendar-builder';
 export { createExpressRouter, retrofitUi } from './adapters/express';
 export { serveUiShell } from './adapters/ui-shell';
 export { defineConfig, defineRetrofitConfig } from './config';

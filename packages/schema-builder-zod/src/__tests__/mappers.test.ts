@@ -146,7 +146,9 @@ describe('zodFieldToColumn', () => {
   });
 
   it('maps z.string().date().optional() to date column', () => {
-    expect(zodFieldToColumn('d', z.string().date().optional()).type).toBe('date');
+    expect(zodFieldToColumn('d', z.string().date().optional()).type).toBe(
+      'date',
+    );
   });
 });
 

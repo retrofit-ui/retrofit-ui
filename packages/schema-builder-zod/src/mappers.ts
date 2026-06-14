@@ -39,7 +39,9 @@ function toFieldType(def: ZodDef): FieldType {
     const checks = getChecks(def);
     if (checks.some((c) => c.check === 'string_format' && c.format === 'email'))
       return 'email';
-    if (checks.some((c) => c.check === 'string_format' && c.format === 'datetime'))
+    if (
+      checks.some((c) => c.check === 'string_format' && c.format === 'datetime')
+    )
       return 'datetime';
     if (checks.some((c) => c.check === 'string_format' && c.format === 'date'))
       return 'date';
@@ -58,7 +60,9 @@ function toColumnType(def: ZodDef): Column['type'] {
   const type = def.type as string;
   if (type === 'string') {
     const checks = getChecks(def);
-    if (checks.some((c) => c.check === 'string_format' && c.format === 'datetime'))
+    if (
+      checks.some((c) => c.check === 'string_format' && c.format === 'datetime')
+    )
       return 'datetime';
     if (checks.some((c) => c.check === 'string_format' && c.format === 'date'))
       return 'date';

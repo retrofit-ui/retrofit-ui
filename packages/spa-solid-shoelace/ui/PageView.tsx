@@ -36,7 +36,7 @@ function isoToDatetimeLocal(iso: string): string {
 function datetimeLocalToIso(local: string): string {
   if (!local) return '';
   const d = new Date(local);
-  return isNaN(d.getTime()) ? '' : d.toISOString();
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString();
 }
 
 // ── Cell formatting ──────────────────────────────────────────────────────────
@@ -47,13 +47,16 @@ function formatCellValue(col: Column, row: Record<string, unknown>): string {
   if (col.type === 'boolean') return raw ? '✓' : '✗';
   if (col.type === 'date') {
     const d = new Date(`${String(raw)}T00:00:00`);
-    return isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
+    return Number.isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
   }
   if (col.type === 'datetime') {
     const d = new Date(String(raw));
-    return isNaN(d.getTime())
+    return Number.isNaN(d.getTime())
       ? String(raw)
-      : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+      : d.toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        });
   }
   if (col.type === 'time') {
     const parts = String(raw).split(':');
@@ -138,7 +141,9 @@ function FilterFormPane(props: { spec: FilterFormSpec }) {
                   type="datetime-local"
                   label={field.label}
                   placeholder={field.placeholder}
-                  prop:value={isoToDatetimeLocal(firstParam(searchParams[field.name]))}
+                  prop:value={isoToDatetimeLocal(
+                    firstParam(searchParams[field.name]),
+                  )}
                   on:sl-change={(e: Event) => {
                     setSearchParams({
                       [field.name]: datetimeLocalToIso(
@@ -148,7 +153,13 @@ function FilterFormPane(props: { spec: FilterFormSpec }) {
                   }}
                 />
               </Match>
-              <Match when={field.type === 'text' || field.type === 'date' || field.type === 'time'}>
+              <Match
+                when={
+                  field.type === 'text' ||
+                  field.type === 'date' ||
+                  field.type === 'time'
+                }
+              >
                 <sl-input
                   type={field.type}
                   label={field.label}
@@ -376,7 +387,8 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
                     prop:value={isoToDatetimeLocal(strVal())}
                     invalid={!!err() || undefined}
                     on:sl-change={(e: Event) => {
-                      const raw = (e.target as EventTarget & { value: string }).value;
+                      const raw = (e.target as EventTarget & { value: string })
+                        .value;
                       setValue(field.name, datetimeLocalToIso(raw));
                     }}
                   />

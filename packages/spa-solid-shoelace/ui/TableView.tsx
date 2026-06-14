@@ -19,7 +19,7 @@ function isoToDatetimeLocal(iso: string): string {
 function datetimeLocalToIso(local: string): string {
   if (!local) return '';
   const d = new Date(local);
-  return isNaN(d.getTime()) ? '' : d.toISOString();
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString();
 }
 
 function formatCellValue(col: Column, row: Record<string, unknown>): string {
@@ -28,13 +28,16 @@ function formatCellValue(col: Column, row: Record<string, unknown>): string {
   if (col.type === 'boolean') return raw ? '✓' : '✗';
   if (col.type === 'date') {
     const d = new Date(`${String(raw)}T00:00:00`);
-    return isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
+    return Number.isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
   }
   if (col.type === 'datetime') {
     const d = new Date(String(raw));
-    return isNaN(d.getTime())
+    return Number.isNaN(d.getTime())
       ? String(raw)
-      : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+      : d.toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        });
   }
   if (col.type === 'time') {
     const parts = String(raw).split(':');
@@ -42,6 +45,7 @@ function formatCellValue(col: Column, row: Record<string, unknown>): string {
   }
   return String(raw);
 }
+
 import { useNavigate, useParams } from '@solidjs/router';
 import {
   createEffect,
@@ -155,7 +159,9 @@ function CellInput(props: {
         style={{ 'min-width': '160px' }}
         on:sl-change={(e: Event) => {
           props.onChange(
-            datetimeLocalToIso((e.target as EventTarget & { value: string }).value),
+            datetimeLocalToIso(
+              (e.target as EventTarget & { value: string }).value,
+            ),
           );
         }}
       />
@@ -186,7 +192,8 @@ function CellInput(props: {
 }
 
 function CellDisplay(props: { col: Column; value: unknown }) {
-  const display = () => formatCellValue(props.col, { [props.col.key]: props.value });
+  const display = () =>
+    formatCellValue(props.col, { [props.col.key]: props.value });
   const strVal = () => String(props.value ?? '');
   const badgeVariant = () => props.col.badgeVariants?.[strVal()];
   const numVal = () => Number(props.value ?? 0);

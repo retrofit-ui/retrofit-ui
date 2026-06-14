@@ -34,7 +34,7 @@ function isoToDatetimeLocal(iso: string): string {
 function datetimeLocalToIso(local: string): string {
   if (!local) return '';
   const d = new Date(local);
-  return isNaN(d.getTime()) ? '' : d.toISOString();
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString();
 }
 
 interface FormViewData {
@@ -643,7 +643,8 @@ function FormEditor(props: FormEditorProps) {
                     prop:value={isoToDatetimeLocal(strVal())}
                     invalid={!!err() || undefined}
                     on:sl-change={(e: Event) => {
-                      const raw = (e.target as EventTarget & { value: string }).value;
+                      const raw = (e.target as EventTarget & { value: string })
+                        .value;
                       setValue(field.name, datetimeLocalToIso(raw));
                     }}
                   />

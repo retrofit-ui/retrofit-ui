@@ -51,7 +51,12 @@ Override the inferred type with `fieldOverride`:
 formSpec(PostSchema, UpdatePostSchema)
   .fieldOverride('body', { type: 'markdown' })   // renders a textarea with "Markdown supported" hint
   .fieldOverride('notes', { type: 'textarea' })
+  .fieldOverride('status', { type: 'radio-group' })  // renders a segmented button control
 ```
+
+| Override type | Input |
+|---|---|
+| `radio-group` | `<sl-radio-group>` with `<sl-radio-button>` children (segmented control) |
 
 ## Field overrides
 

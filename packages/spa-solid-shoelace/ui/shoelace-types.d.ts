@@ -90,6 +90,13 @@ declare module 'solid-js' {
         value?: string;
         children?: JSX.Element;
       };
+      'sl-radio-button': JSX.HTMLAttributes<HTMLElement> & {
+        value?: string;
+        disabled?: boolean;
+        size?: 'small' | 'medium' | 'large';
+        pill?: boolean;
+        children?: JSX.Element;
+      };
       'sl-divider': JSX.HTMLAttributes<HTMLElement> & { vertical?: boolean };
       'sl-alert': JSX.HTMLAttributes<HTMLElement> & {
         variant?: 'primary' | 'success' | 'neutral' | 'warning' | 'danger';

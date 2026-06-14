@@ -114,6 +114,16 @@ describe('formFromSchema', () => {
     expect(form.metadata?.title).toBe('Edit Todo');
   });
 
+  it("withFieldOverrides accepts 'radio-group' type", () => {
+    const form = formFromSchema(TodoSchema)
+      .withFieldOverrides({
+        priority: { type: 'radio-group' },
+      })
+      .build();
+    const priorityField = form.fields.find((f) => f.name === 'priority');
+    expect(priorityField?.type).toBe('radio-group');
+  });
+
   it('build() output passes FormSchema.parse()', () => {
     const form = formFromSchema(TodoSchema)
       .withMutability(UpdateTodoSchema)

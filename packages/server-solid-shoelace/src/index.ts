@@ -10,6 +10,8 @@ export type {
   Pane,
   RowAction,
   TableSpec,
+  TimelineEvent,
+  TimelineSpec,
   TreeSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
@@ -27,6 +29,7 @@ export {
   pageSpec,
   row,
 } from './page-builder';
+export { TimelineView, TimelineViewBuilder } from './timeline-builder';
 export { TreeView, TreeViewBuilder } from './tree-builder';
 export type { RetrofitTheme } from './types';
 export { TableView, TableViewBuilder } from './view-builder';

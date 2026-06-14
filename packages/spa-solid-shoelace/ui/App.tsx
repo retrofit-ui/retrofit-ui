@@ -3,6 +3,7 @@ import { createContext } from 'solid-js';
 import { FormView } from './FormView';
 import { MarkdownView } from './MarkdownView';
 import { TableView } from './TableView';
+import { TimelineView } from './TimelineView';
 import { TreeView } from './TreeView';
 import { ToastContainer } from './toast';
 
@@ -27,7 +28,9 @@ export function App(props: { apiBase?: string }) {
         <Route path="/:resource" component={TableView} />
         <Route path="/:resource/tree" component={TreeView} />
         <Route path="/:resource/new" component={FormView} />
+        <Route path="/:resource/timeline" component={TimelineView} />
         <Route path="/:resource/:id/render" component={MarkdownView} />
+        <Route path="/:resource/:id/timeline" component={TimelineView} />
         <Route path="/:resource/:id" component={FormView} />
       </HashRouter>
       <ToastContainer />

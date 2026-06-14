@@ -273,6 +273,94 @@ test.describe('Badge variants on enum column', () => {
   });
 });
 
+test.describe('Timeline view', () => {
+  test.beforeEach(async ({ request }) => {
+    await request.post('/test/reset');
+  });
+
+  test('"History" button is visible on each row', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+    const rows = page.locator('tbody tr');
+    const count = await rows.count();
+    for (let i = 0; i < count; i++) {
+      await expect(
+        rows.nth(i).locator('sl-button').filter({ hasText: 'History' }),
+      ).toBeVisible();
+    }
+  });
+
+  test('clicking History navigates to timeline route', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+    const firstRow = page.locator('tbody tr').first();
+    await firstRow.locator('sl-button').filter({ hasText: 'History' }).click();
+    await page.waitForURL(/\/#\/posts\/\d+\/timeline/);
+  });
+
+  test('timeline renders events list', async ({ page }) => {
+    await page.goto('/#/posts/1/timeline');
+    await page.waitForSelector('.retrofit-timeline');
+    const events = page.locator('.retrofit-timeline-event');
+    await expect(events.first()).toBeVisible();
+  });
+
+  test('event title is shown', async ({ page }) => {
+    await page.goto('/#/posts/1/timeline');
+    await page.waitForSelector('.retrofit-timeline');
+    const titles = page.locator('.retrofit-timeline-title');
+    const count = await titles.count();
+    expect(count).toBeGreaterThan(0);
+    const firstTitle = await titles.first().textContent();
+    expect(firstTitle?.trim().length).toBeGreaterThan(0);
+  });
+
+  test('variant circle colour class is applied', async ({ page }) => {
+    await page.goto('/#/posts/1/timeline');
+    await page.waitForSelector('.retrofit-timeline');
+    const variantEvent = page.locator(
+      '.retrofit-timeline-event--success, .retrofit-timeline-event--neutral, .retrofit-timeline-event--primary, .retrofit-timeline-event--warning',
+    );
+    await expect(variantEvent.first()).toBeVisible();
+  });
+
+  test('sl-relative-time element is rendered', async ({ page }) => {
+    await page.goto('/#/posts/1/timeline');
+    await page.waitForSelector('.retrofit-timeline');
+    await expect(
+      page.locator('.retrofit-timeline-event sl-relative-time').first(),
+    ).toBeVisible();
+  });
+
+  test('page title from metadata is shown', async ({ page }) => {
+    await page.goto('/#/posts/1/timeline');
+    await page.waitForSelector('.retrofit-timeline');
+    await expect(
+      page
+        .locator('h1.retrofit-page-title')
+        .filter({ hasText: 'Post History' }),
+    ).toBeVisible();
+  });
+
+  test('Back button returns to the edit form', async ({ page }) => {
+    await page.goto('/#/posts/1/timeline');
+    await page.waitForSelector('.retrofit-timeline');
+    await page.locator('.retrofit-back-btn').click();
+    await page.waitForURL(/\/posts\/1$/);
+    await waitForForm(page);
+  });
+
+  test('loading skeleton shown while fetching', async ({ page }) => {
+    await page.route('**/api/ui/posts/1/timeline', async (route) => {
+      await new Promise<void>((r) => setTimeout(r, 600));
+      await route.continue();
+    });
+    await page.goto('/#/posts/1/timeline');
+    await expect(page.locator('sl-skeleton').first()).toBeVisible();
+    await page.waitForSelector('.retrofit-timeline');
+  });
+});
+
 test.describe('Blog markdown render view', () => {
   test('Preview button navigates to render view', async ({ page }) => {
     await page.goto(TABLE_URL);

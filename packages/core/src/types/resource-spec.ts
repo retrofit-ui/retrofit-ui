@@ -78,3 +78,17 @@ export interface TreeSpec {
   };
   metadata?: { title?: string };
 }
+
+export interface TimelineEvent {
+  timestamp: string;
+  title: string;
+  description?: string;
+  variant?: 'success' | 'warning' | 'danger' | 'neutral' | 'primary';
+  icon?: string;
+}
+
+/** Returned by GET /api/ui/{resource}/timeline or GET /api/ui/{resource}/:id/timeline */
+export interface TimelineSpec {
+  events: TimelineEvent[];
+  metadata?: { title?: string };
+}

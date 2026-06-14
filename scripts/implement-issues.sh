@@ -231,7 +231,10 @@ The plan is at \`${plan_file}\`. It was committed but may have been interrupted 
     [ "$ci_status" = "failure" ] && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
 
     git -C "$worktree" fetch origin main
-    git -C "$worktree" rebase origin/main
+    if ! git -C "$worktree" rebase origin/main; then
+      git -C "$worktree" rebase --abort 2>/dev/null || true
+      fix_context+="- The branch has MERGE CONFLICTS with main that the rebase could not resolve automatically. Manually rebase onto origin/main (\`git fetch origin main && git rebase origin/main\`), resolve all conflicts, then run \`git rebase --continue\`.\n"
+    fi
     cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 40 \
       -p "You are implementing a GitHub issue for the retrofit-ui TypeScript monorepo.
 

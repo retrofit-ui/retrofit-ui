@@ -235,7 +235,7 @@ export function createExpressRouter(config: RetrofitConfig): express.Router {
     if (tree.delete) {
       router.delete(`${prefix}/:id`, async (req, res) => {
         try {
-          await tree.delete!(req.params.id);
+          await tree.delete?.(req.params.id);
           res.json({ ok: true });
         } catch {
           res.status(500).json({ error: 'Internal server error' });

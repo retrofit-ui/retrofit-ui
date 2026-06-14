@@ -85,8 +85,7 @@ test.describe('Blog edit form', () => {
     await page
       .getByRole('textbox', { name: 'Body *' })
       .fill('# Hello\n\nTest.');
-    await page.locator('sl-select').click();
-    await page.locator('sl-option[value="draft"]').click();
+    await page.locator('sl-radio-button').filter({ hasText: 'draft' }).click();
     await page.locator('sl-button[type="submit"]').click();
     await expect(
       page.locator('sl-alert').filter({ hasText: 'Created successfully' }),
@@ -124,6 +123,58 @@ test.describe('Blog edit form', () => {
     await page.waitForURL(`**${TABLE_URL}`);
     await waitForTable(page);
     await expect(page.getByText('Building Forms with Zod')).toHaveCount(0);
+  });
+});
+
+test.describe('Radio-group segmented control', () => {
+  test('segmented control renders with all status buttons', async ({
+    page,
+  }) => {
+    await page.goto('/#/posts/1');
+    await waitForForm(page);
+    await expect(page.locator('sl-radio-group')).toBeVisible();
+    await expect(
+      page.locator('sl-radio-button').filter({ hasText: 'draft' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('sl-radio-button').filter({ hasText: 'published' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('sl-radio-button').filter({ hasText: 'archived' }),
+    ).toBeVisible();
+  });
+
+  test('selecting a radio button updates the stored value', async ({
+    page,
+  }) => {
+    await page.goto('/#/posts/2');
+    await waitForForm(page);
+    await page
+      .locator('sl-radio-button')
+      .filter({ hasText: 'published' })
+      .click();
+    await page.locator('sl-button[type="submit"]').click();
+    await expect(
+      page.locator('sl-alert').filter({ hasText: 'Saved successfully' }),
+    ).toBeVisible();
+    await page.waitForURL(`**${TABLE_URL}`);
+    await page.locator('tbody tr').nth(1).click();
+    await waitForForm(page);
+    const groupValue = await page
+      .locator('sl-radio-group')
+      .evaluate((el) => (el as HTMLElement & { value: string }).value);
+    expect(groupValue).toBe('published');
+  });
+
+  test('pre-populated value selects the correct radio button', async ({
+    page,
+  }) => {
+    await page.goto('/#/posts/1');
+    await waitForForm(page);
+    const groupValue = await page
+      .locator('sl-radio-group')
+      .evaluate((el) => (el as HTMLElement & { value: string }).value);
+    expect(groupValue).toBe('published');
   });
 });
 

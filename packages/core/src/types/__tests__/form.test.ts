@@ -38,6 +38,32 @@ describe('FieldSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts 'radio-group' field type", () => {
+    const result = FieldSchema.safeParse({
+      name: 'status',
+      label: 'Status',
+      type: 'radio-group',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts 'radio-group' with options", () => {
+    const result = FieldSchema.safeParse({
+      name: 'priority',
+      label: 'Priority',
+      type: 'radio-group',
+      options: [
+        { label: 'Low', value: 'low' },
+        { label: 'Medium', value: 'medium' },
+        { label: 'High', value: 'high' },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.options).toHaveLength(3);
+    }
+  });
+
   it('rejects unknown field type', () => {
     const result = FieldSchema.safeParse({
       name: 'x',

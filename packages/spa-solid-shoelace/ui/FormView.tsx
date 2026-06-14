@@ -4,6 +4,8 @@ import '@shoelace-style/shoelace/dist/components/switch/switch.js';
 import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
+import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
+import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
@@ -298,6 +300,29 @@ function FormEditor(props: FormEditorProps) {
                     </For>
                   </sl-select>
                 </Show>
+                <Show when={field.type === 'radio-group'}>
+                  <sl-radio-group
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    help-text={field.helpText ?? undefined}
+                    disabled={field.readOnly || undefined}
+                    prop:value={strVal()}
+                    invalid={!!err() || undefined}
+                    on:sl-change={(e: Event) =>
+                      setValue(
+                        field.name,
+                        (e.target as EventTarget & { value: string }).value,
+                      )
+                    }
+                  >
+                    <For each={field.options}>
+                      {(opt) => (
+                        <sl-radio-button value={String(opt.value)}>
+                          {opt.label}
+                        </sl-radio-button>
+                      )}
+                    </For>
+                  </sl-radio-group>
+                </Show>
                 <Show when={field.type === 'checkbox'}>
                   <sl-checkbox
                     disabled={field.readOnly || undefined}
@@ -333,6 +358,7 @@ function FormEditor(props: FormEditorProps) {
                   when={
                     !isTextarea() &&
                     field.type !== 'select' &&
+                    field.type !== 'radio-group' &&
                     field.type !== 'checkbox' &&
                     field.type !== 'switch'
                   }

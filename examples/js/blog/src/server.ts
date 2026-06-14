@@ -107,6 +107,7 @@ app.get('/api/ui/posts/:id', (req, res) => {
       label: 'Author',
       options: AUTHORS.map((a) => ({ label: a.name, value: a.id })),
     })
+    .fieldOverride('status', { type: 'radio-group' })
     .create({ method: 'POST', url: '/posts' })
     .update({ method: 'PUT', url: '/posts/{id}' })
     .delete({ method: 'DELETE', url: '/posts/{id}' });

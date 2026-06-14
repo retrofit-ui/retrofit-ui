@@ -11,6 +11,7 @@ export const FieldTypeSchema = z.enum([
   'checkbox',
   'switch',
   'radio',
+  'radio-group',
   'textarea',
   'markdown',
   'file',

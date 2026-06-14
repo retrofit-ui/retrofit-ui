@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { CalendarViewBuilder } from '../calendar-builder';
 
 const baseEvents = [
-  { id: '1', title: 'Meeting', start: '2026-06-15T09:00:00', end: '2026-06-15T10:00:00' },
+  {
+    id: '1',
+    title: 'Meeting',
+    start: '2026-06-15T09:00:00',
+    end: '2026-06-15T10:00:00',
+  },
 ];
 
 describe('CalendarViewBuilder', () => {
@@ -32,10 +37,19 @@ describe('CalendarViewBuilder', () => {
     expect(spec.defaultView).toBe('week');
     expect(spec.editable).toBe(true);
     expect(spec.metadata?.title).toBe('My Agenda');
-    expect(spec.endpoints?.find).toEqual({ method: 'GET', url: '/events/{id}' });
+    expect(spec.endpoints?.find).toEqual({
+      method: 'GET',
+      url: '/events/{id}',
+    });
     expect(spec.endpoints?.create).toEqual({ method: 'POST', url: '/events' });
-    expect(spec.endpoints?.update).toEqual({ method: 'PUT', url: '/events/{id}' });
-    expect(spec.endpoints?.delete).toEqual({ method: 'DELETE', url: '/events/{id}' });
+    expect(spec.endpoints?.update).toEqual({
+      method: 'PUT',
+      url: '/events/{id}',
+    });
+    expect(spec.endpoints?.delete).toEqual({
+      method: 'DELETE',
+      url: '/events/{id}',
+    });
   });
 
   it('defaultView maps all four valid values', () => {

@@ -66,8 +66,9 @@ beforeAll(async () => {
   app.use(createExpressRouter(config));
   app.get('/api/ui/events/calendar', (_req, res) => {
     res.json(
-      CalendarViewBuilder
-        .events([{ id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' }])
+      CalendarViewBuilder.events([
+        { id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' },
+      ])
         .defaultView('month')
         .build(),
     );
@@ -577,7 +578,10 @@ describe('CalendarViewBuilder – express integration', () => {
   it('GET /api/ui/events/calendar returns a valid CalendarSpec with embedded events', async () => {
     const res = await fetch(`${baseUrl}/api/ui/events/calendar`);
     expect(res.status).toBe(200);
-    const data = await res.json() as { events: { id: string; title: string }[]; defaultView: string };
+    const data = (await res.json()) as {
+      events: { id: string; title: string }[];
+      defaultView: string;
+    };
     expect(data.defaultView).toBe('month');
     expect(data.events).toHaveLength(1);
     expect(data.events[0]?.id).toBe('1');

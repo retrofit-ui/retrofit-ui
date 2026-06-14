@@ -1,7 +1,3 @@
-import '@fullcalendar/core/index.css';
-import '@fullcalendar/daygrid/index.css';
-import '@fullcalendar/timegrid/index.css';
-
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -9,15 +5,19 @@ import listPlugin from '@fullcalendar/list';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import type { CalendarSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
-import { Show, createResource, onCleanup, onMount, useContext } from 'solid-js';
+import { createResource, onCleanup, onMount, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './App';
 
 function viewNameToFullCalendar(view: CalendarSpec['defaultView']): string {
   switch (view) {
-    case 'week': return 'timeGridWeek';
-    case 'day':  return 'timeGridDay';
-    case 'list': return 'listWeek';
-    default:     return 'dayGridMonth';
+    case 'week':
+      return 'timeGridWeek';
+    case 'day':
+      return 'timeGridDay';
+    case 'list':
+      return 'listWeek';
+    default:
+      return 'dayGridMonth';
   }
 }
 
@@ -51,27 +51,41 @@ function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
       },
       dateClick: (info) => {
         if (!spec.endpoints?.create) return;
-        navigate(`/${props.resource}/new?start=${encodeURIComponent(info.dateStr)}`);
+        navigate(
+          `/${props.resource}/new?start=${encodeURIComponent(info.dateStr)}`,
+        );
       },
       eventDrop: async (info) => {
         const ep = spec.endpoints?.update;
-        if (!ep) { info.revert(); return; }
+        if (!ep) {
+          info.revert();
+          return;
+        }
         const url = substituteParams(ep.url, { id: info.event.id });
         const res = await fetch(url, {
           method: ep.method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ start: info.event.startStr, end: info.event.endStr }),
+          body: JSON.stringify({
+            start: info.event.startStr,
+            end: info.event.endStr,
+          }),
         });
         if (!res.ok) info.revert();
       },
       eventResize: async (info) => {
         const ep = spec.endpoints?.update;
-        if (!ep) { info.revert(); return; }
+        if (!ep) {
+          info.revert();
+          return;
+        }
         const url = substituteParams(ep.url, { id: info.event.id });
         const res = await fetch(url, {
           method: ep.method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ start: info.event.startStr, end: info.event.endStr }),
+          body: JSON.stringify({
+            start: info.event.startStr,
+            end: info.event.endStr,
+          }),
         });
         if (!res.ok) info.revert();
       },
@@ -92,7 +106,8 @@ export function CalendarView() {
     () => params.resource,
     async (resource) => {
       const res = await fetch(`${apiBase}/${resource}/calendar`);
-      if (!res.ok) throw new Error(`Failed to fetch calendar spec for ${resource}`);
+      if (!res.ok)
+        throw new Error(`Failed to fetch calendar spec for ${resource}`);
       return (await res.json()) as CalendarSpec;
     },
   );
@@ -100,7 +115,9 @@ export function CalendarView() {
   return (
     <>
       <Show when={spec.loading}>
-        <div class="retrofit-view"><p class="retrofit-muted">Loading calendar…</p></div>
+        <div class="retrofit-view">
+          <p class="retrofit-muted">Loading calendar…</p>
+        </div>
       </Show>
       <Show when={spec.error}>
         <div class="retrofit-view">

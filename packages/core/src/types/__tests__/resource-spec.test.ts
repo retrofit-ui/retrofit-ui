@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { CalendarEvent, CalendarSpec, Stat, StatSpec, TableSpec } from '../resource-spec';
+import type {
+  CalendarEvent,
+  CalendarSpec,
+  Stat,
+  StatSpec,
+  TableSpec,
+} from '../resource-spec';
 
 const idColumn = {
   key: 'id',
@@ -109,9 +115,9 @@ describe('CalendarSpec', () => {
       defaultView: 'month',
       editable: true,
       endpoints: {
-        find:   { method: 'GET',    url: '/events/{id}' },
-        create: { method: 'POST',   url: '/events' },
-        update: { method: 'PUT',    url: '/events/{id}' },
+        find: { method: 'GET', url: '/events/{id}' },
+        create: { method: 'POST', url: '/events' },
+        update: { method: 'PUT', url: '/events/{id}' },
         delete: { method: 'DELETE', url: '/events/{id}' },
       },
       metadata: { title: 'Events' },

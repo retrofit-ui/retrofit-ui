@@ -124,7 +124,7 @@ export interface CalendarSpec {
   defaultView?: 'month' | 'week' | 'day' | 'list';
   editable?: boolean;
   endpoints?: {
-    find?:   EndpointDirective;
+    find?: EndpointDirective;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;

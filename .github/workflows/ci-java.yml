@@ -1,15 +1,6 @@
 name: Java CI
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/retrofit-ui-spring-boot-**/**'
-      - 'examples/java/**'
-      - 'build.gradle.kts'
-      - 'settings.gradle.kts'
-      - 'gradle/**'
-      - '.github/workflows/ci-java.yml'
   pull_request:
     paths:
       - 'packages/retrofit-ui-spring-boot-**/**'

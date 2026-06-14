@@ -1,25 +1,22 @@
 # Plan: Issue #50 — Formatted number columns
 
-## Design decision: client-side vs server-side formatting
+## Approach: server-side formatted strings
 
-The issue proposes a `format` enum on `Column` rendered by Shoelace web components
-(`<sl-format-number>`, `<sl-format-bytes>`).
+> **Previous plan used client-side `<sl-format-number>` / `<sl-format-bytes>` Shoelace components.
+> That approach has been replaced per review feedback and the philosophy in `AGENTS.md`
+> (§ *Display formatting philosophy*, commit 9b3afbf).**
 
-The comment from @thenomadlad proposes a server-side `format` function:
+Reasons for the change:
+- Client-side `Intl` formatting produces locale-dependent output per browser — a user in Germany
+  sees `1.234,56 €`, a US user sees `$1,234.56` for the same row. That is wrong for business tools.
+- A closed `format` enum requires a schema change every time a new format type is added.
+- The approach does not generalise to dates/timestamps, where cross-language inconsistencies
+  are worse.
 
-```typescript
-.columnOverride('amount', {
-  format: (price) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(price)
-})
-```
-
-**Client-side wins for this architecture** for one hard reason: `Column` is a Zod schema
-that is serialized to JSON and sent over HTTP. Functions cannot cross the wire. Implementing
-the function approach server-side would require `TableViewBuilder.build()` to apply formatters
-to every row value, then store the column as `type: 'string'` — losing the fact that it's a
-number and preventing any future client-side sorting or filtering on the raw value.
-
-Client-side Shoelace components also get the user's locale for free.
+**New model**: every cell in the wire payload becomes `{ value: unknown; formatted?: string }`.
+The server populates `formatted` when the developer provides a `format` function via
+`columnOverride`. The function never crosses the wire — only the resulting string does.
+The client renders `cell.formatted ?? String(cell.value ?? '')`.
 
 ---
 
@@ -27,129 +24,153 @@ Client-side Shoelace components also get the user's locale for free.
 
 ### 1. `packages/core/src/types/table.ts`
 
-**What the file currently does**: defines `ColumnSchema` (Zod), `ColumnType`, `TableMetadataSchema`,
-`TableSchema` — all used as the JSON wire format shared between server and SPA.
+**What the file currently does**: defines `ColumnSchema`, `ColumnType`, `TableMetadataSchema`,
+`TableSchema` as the JSON wire format shared between server and SPA. Row data is
+`z.array(z.record(z.string(), z.unknown()))`.
 
-**What to add** — two new optional fields on `ColumnSchema`:
+**What to add — `CellSchema` and `Cell`**:
 
 ```typescript
-format: z.enum(['decimal', 'currency', 'percent', 'bytes']).optional(),
-currency: z.string().optional(), // ISO 4217, only meaningful when format === 'currency'
+export const CellSchema = z.object({
+  value: z.unknown(),
+  formatted: z.string().optional(),
+});
+export type Cell = z.infer<typeof CellSchema>;
 ```
 
-Add them after `badgeVariants`. No existing field changes. The Zod `.optional()` keeps the
-schema backward-compatible with existing JSON that omits these fields.
+**What to change — `TableSchema`**:
 
-**Do NOT** add a cross-field validation like `currency requires format === 'currency'` at this
-layer — Zod refinements add complexity and the SPA can tolerate a stray `currency` field
-gracefully.
+```typescript
+// before
+data: z.array(z.record(z.string(), z.unknown())),
+// after
+data: z.array(z.record(z.string(), CellSchema)),
+```
+
+**What to revert** — remove `format` and `currency` fields from `ColumnSchema` that were added
+in the current PR. Do not add them. No other `ColumnSchema` fields change.
+
+**What must remain true**: all existing `ColumnSchema.parse()` calls still succeed; only
+`TableSchema`'s `data` row shape changes.
 
 ---
 
-### 2. `packages/spa-solid-shoelace/ui/shoelace-types.d.ts`
+### 2. `packages/schema-builder-zod/src/TableBuilder.ts`
 
-**What the file currently does**: declares JSX intrinsic elements for every Shoelace component
-used in the SPA so TypeScript doesn't complain about unknown custom elements.
+**What the file currently does**: `columnOverride(key, overrides: Partial<Column>)` merges
+partial column overrides. `build()` returns a `TableSpec` with columns and raw row data.
 
-**What to add** — two new entries inside the `IntrinsicElements` interface, after `'sl-badge'`:
+**What to change**:
+
+`columnOverride` must accept an optional `format` function that is **not** part of `Column`
+(it never goes on the wire). Store it in a parallel `Map<string, (v: unknown) => string>`.
 
 ```typescript
-'sl-format-number': JSX.HTMLAttributes<HTMLElement> & {
-  value?: number;
-  type?: 'currency' | 'decimal' | 'percent';
-  currency?: string;
-  'currency-display'?: 'symbol' | 'narrowSymbol' | 'code' | 'name';
-  'no-grouping'?: boolean;
-  'minimum-fraction-digits'?: number;
-  'maximum-fraction-digits'?: number;
-};
-'sl-format-bytes': JSX.HTMLAttributes<HTMLElement> & {
-  value?: number;
-  unit?: 'byte' | 'bit';
-  display?: 'short' | 'long' | 'narrow';
-};
+private formatters = new Map<string, (v: unknown) => string>();
+
+columnOverride(key: string, override: Partial<Column> & { format?: (v: unknown) => string }) {
+  const { format, ...columnOverride } = override;
+  if (format) this.formatters.set(key, format);
+  // existing merge logic with columnOverride
+}
 ```
 
-Include only the props we will actually use in `CellDisplay`; this is not an exhaustive mirror
-of the Shoelace docs.
+`build()` must wrap every cell in `{ value }` and add `formatted` where a formatter exists:
+
+```typescript
+// before (conceptual)
+data: rows.map(row =>
+  Object.fromEntries(columns.map(col => [col.key, row[col.key]]))
+)
+
+// after
+data: rows.map(row =>
+  Object.fromEntries(
+    columns.map(col => {
+      const value = row[col.key];
+      const formatter = this.formatters.get(col.key);
+      const cell: Cell = formatter
+        ? { value, formatted: formatter(value) }
+        : { value };
+      return [col.key, cell];
+    })
+  )
+)
+```
+
+Import `Cell` from `@retrofit-ui/core`.
+
+**Developer API** (unchanged from the reviewer's example):
+
+```typescript
+TableView.schema(ExpenseSchema)
+  .columnOverride('amount', {
+    format: (v) =>
+      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v)),
+  })
+  .columnOverride('createdAt', {
+    format: (v) => new Date(String(v)).toLocaleDateString('en-US', { dateStyle: 'medium' }),
+  })
+```
+
+Check whether `packages/server-solid-shoelace/src/view-builder.ts` re-exports or re-implements
+this path and apply the same change there if so.
 
 ---
 
 ### 3. `packages/spa-solid-shoelace/ui/TableView.tsx`
 
-**What the file currently does**: fetches a `TableSpec` from the API, renders a `<table>`.
-`CellDisplay` is the component that renders individual cells in read mode. It currently switches
-on `col.type === 'boolean'` and `badgeVariant()`, falling back to `<span>{strVal()}</span>`.
+**What the file currently does**: renders a `<table>` from a fetched `TableSpec`. `CellDisplay`
+switches on `col.type === 'boolean'` and `badgeVariants`, falling back to
+`<span>{strVal()}</span>`. Row data is accessed as `row[col.key]` (raw unknown).
 
-**What to change** — two things:
+**What to change**:
 
-**a) Add Shoelace imports** at the top of the file alongside the existing ones:
+**a) Update all cell access** from `row[col.key]` to `row[col.key].value` /
+`row[col.key].formatted` throughout the file. Any place that reads a cell's raw value for
+sorting, filtering, or display must go through `.value`.
 
-```typescript
-import '@shoelace-style/shoelace/dist/components/format-number/format-number.js';
-import '@shoelace-style/shoelace/dist/components/format-bytes/format-bytes.js';
-```
-
-**b) Extend `CellDisplay`** — add `Match` cases for each format value. Insert them between
-the `badgeVariant` match and the fallback. Key implementation notes:
-
-- Guard on `props.col.type === 'number' && props.col.format` so non-number columns are unaffected.
-- `Number(props.value ?? 0)` coerces safely; `NaN` will render as `0` from Shoelace's
-  perspective, which is better than crashing.
-- Order: `bytes` and `percent` are unambiguous; `currency` requires `col.currency`.
-  `decimal` is the catch-all for `type === 'number' && format === 'decimal'`.
-
-Resulting `CellDisplay` structure:
+**b) Replace `CellDisplay`** — remove all `<sl-format-number>` and `<sl-format-bytes>` match
+cases. The new display rule:
 
 ```tsx
-function CellDisplay(props: { col: Column; value: unknown }) {
-  const strVal = () => String(props.value ?? '');
-  const badgeVariant = () => props.col.badgeVariants?.[strVal()];
-  const numVal = () => Number(props.value ?? 0);
+function CellDisplay(props: { col: Column; cell: Cell }) {
+  const display = () => props.cell.formatted ?? String(props.cell.value ?? '');
+  const badgeVariant = () => props.col.badgeVariants?.[display()];
 
   return (
-    <Switch fallback={<span>{strVal()}</span>}>
+    <Switch fallback={<span>{display()}</span>}>
       <Match when={props.col.type === 'boolean'}>
-        <span>{props.value ? '✓' : '✗'}</span>
+        <span>{props.cell.value ? '✓' : '✗'}</span>
       </Match>
       <Match when={badgeVariant()}>
-        {(variant) => <sl-badge variant={variant()}>{strVal()}</sl-badge>}
-      </Match>
-      <Match when={props.col.format === 'bytes'}>
-        <sl-format-bytes value={numVal()} />
-      </Match>
-      <Match when={props.col.format === 'percent'}>
-        <sl-format-number value={numVal()} type="percent" />
-      </Match>
-      <Match when={props.col.format === 'currency'}>
-        <sl-format-number value={numVal()} type="currency" currency={props.col.currency ?? 'USD'} />
-      </Match>
-      <Match when={props.col.format === 'decimal'}>
-        <sl-format-number value={numVal()} />
+        {(variant) => <sl-badge variant={variant()}>{display()}</sl-badge>}
       </Match>
     </Switch>
   );
 }
 ```
 
-`numVal` is a derived accessor (not a `createMemo`) because `CellDisplay` is not a reactive
-component in a hot loop — accessor is idiomatic SolidJS here and matches the existing `strVal`.
+Note: `display()` is used for the badge variant lookup (so a formatted string like `"Active"`
+still maps to its variant) and for fallback text. The boolean branch still reads `.value`
+directly for truthiness.
+
+**c) Remove Shoelace format-component imports** added in the current PR:
+
+```typescript
+// remove these two lines
+import '@shoelace-style/shoelace/dist/components/format-number/format-number.js';
+import '@shoelace-style/shoelace/dist/components/format-bytes/format-bytes.js';
+```
 
 ---
 
-## Server-side builder — no changes needed
+### 4. `packages/spa-solid-shoelace/ui/shoelace-types.d.ts`
 
-`TableViewBuilder.columnOverride(key, override: Partial<Column>)` already accepts any
-`Partial<Column>`. Once `Column` grows `format` and `currency`, callers can do:
+**What the file currently does**: declares JSX intrinsic elements for Shoelace components.
 
-```typescript
-TableView.schema(ExpenseSchema)
-  .columnOverride('amount', { format: 'currency', currency: 'USD' })
-  .columnOverride('fileSize', { format: 'bytes' })
-```
-
-No changes to `packages/server-solid-shoelace/src/view-builder.ts` or
-`packages/schema-builder-zod/src/TableBuilder.ts` are required.
+**What to revert** — remove the `sl-format-number` and `sl-format-bytes` declarations added
+in the current PR. No other entries change.
 
 ---
 
@@ -157,62 +178,74 @@ No changes to `packages/server-solid-shoelace/src/view-builder.ts` or
 
 | Case | Behavior |
 |------|----------|
-| `format: 'currency'` with no `currency` field | Defaults to `'USD'` in `CellDisplay` |
-| `format` set on a non-`number` column | The `Match` conditions for `bytes/percent/currency/decimal` still fire (no type guard on `col.type`); `numVal()` will be `NaN` → Shoelace renders `0` or empty. Acceptable; don't add a guard now. |
-| `value` is `null` or `undefined` | `Number(null)` = 0, `Number(undefined)` = NaN → coerced to 0 by the `?? 0` |
-| `value` is a string `"1234"` | `Number("1234")` = 1234 — works as expected |
-| Shoelace component not yet defined (SSR / hydration) | Not applicable; this is a pure SPA |
+| No `format` function configured for a column | `build()` emits `{ value }` with no `formatted` field; `CellDisplay` renders `String(cell.value ?? '')` |
+| `format` function throws | Let it propagate at `build()` time — server error, not a client concern |
+| `value` is `null` or `undefined` | `String(null ?? '')` = `''`; `String(undefined ?? '')` = `''` |
+| Boolean column with a formatter | `display()` would be the formatted string, but the boolean `Match` fires first on `.value` |
+| Sorting / filtering | Must use `cell.value`, not `cell.formatted`, to preserve numeric/date ordering |
 
 ---
 
-## Tests to write
+## Tests to write / update
 
 ### Unit — `packages/core/src/types/__tests__/table.test.ts`
 
-Add a `describe('format field')` block:
+Replace the `format field` describe block added in the current PR with a `CellSchema` block:
 
-- `format: 'decimal'` with no other fields → parses OK
-- `format: 'currency'` + `currency: 'USD'` → parses OK, both fields round-trip
-- `format: 'percent'` → parses OK
-- `format: 'bytes'` → parses OK
-- `format: 'invalid'` → `safeParse` returns `success: false`
-- `currency` without `format` → still parses OK (no cross-field requirement)
-- Existing column without `format` → `col.format` is `undefined` (backward compat)
+- `{ value: 1234.56 }` → parses OK; `cell.formatted` is `undefined`
+- `{ value: 1234.56, formatted: "$1,234.56" }` → parses OK; both fields round-trip
+- `{ value: "Acme Corp" }` → parses OK
+- `{}` → `safeParse` returns `success: false` (`value` is required)
+- `TableSchema` with cells in `{ value }` shape → parses OK
+- Existing column without `formatted` data → backward compat is irrelevant (this is a breaking
+  shape change, acknowledged as acceptable)
 
 ### Unit — `packages/schema-builder-zod/src/__tests__/TableBuilder.test.ts`
 
-Add one test to the existing `describe('tableFromSchema')` block:
+Replace / extend the current format-related test:
 
-- `withColumnOverrides({ amount: { format: 'currency', currency: 'EUR' } })` → `build()` does
-  not throw and the column has `format: 'currency'`, `currency: 'EUR'`
+- `columnOverride('amount', { format: fn })` → `build()` emits `{ value: 1234.56, formatted: "$1,234.56" }` for that column
+- Column without a formatter → `build()` emits `{ value: rawValue }` (no `formatted` key)
+- `build()` does not put `format` on the serialised `Column` object (it stays server-only)
+
+### Unit — `CellDisplay` (if a component test file exists)
+
+- Renders `cell.formatted` when present, not raw value
+- Renders `String(cell.value)` when `formatted` is absent
+- Boolean branch reads `cell.value` for truthiness regardless of `formatted`
 
 ### E2E — `examples/js/expenses/e2e/expenses.spec.ts`
 
-Add a new `describe('Formatted number columns')` block. Requires a temporary route in
-`examples/js/expenses/src/server.ts` (or reuse `/api/ui/expenses` after adding the override):
+Update any existing cell-value assertions to account for the `{ value, formatted? }` wire
+shape (they likely operate on rendered text so may not need changes).
+
+Add a `describe('Server-side formatting')` block. Requires updating the `/api/ui/expenses`
+handler to include a format function:
 
 ```typescript
-// In the /api/ui/expenses handler, add columnOverride for amount:
-.columnOverride('amount', { format: 'currency', currency: 'USD' })
+.columnOverride('amount', {
+  format: (v) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v)),
+})
 ```
 
 Tests:
-- The `amount` cell contains an `<sl-format-number>` element (not a plain `<span>`)
-- The rendered text includes a currency symbol (check for `$` or `USD` in the element's
-  shadow DOM text — or just assert the element exists and is a `sl-format-number`)
-
-Note: Shoelace custom elements render in shadow DOM, so asserting on computed visible text
-(e.g., `$1,234.56`) may require `page.locator('sl-format-number').evaluate(el => el.textContent)`.
-If that proves brittle, fall back to asserting element presence only.
+- The `amount` cell displays `$` + formatted number (rendered text, not element type)
+- No `<sl-format-number>` element appears anywhere in the table
+- Other cells (string, boolean) render as before
 
 ---
 
 ## What must remain true after the change
 
-- All existing `ColumnSchema.parse()` calls continue to succeed (format fields are optional)
-- `TableSchema.parse()` round-trips unchanged data unchanged
-- The `CellDisplay` fallback (`<span>{strVal()}</span>`) is still reached for columns with no
-  `format` and no `badgeVariant` — i.e., the happy path for strings/dates/etc.
-- The boolean branch still fires before the format branches
-- Existing E2E tests in `examples/js/expenses/e2e/expenses.spec.ts` all pass without
-  modification (the expenses server doesn't use `format` yet unless we add a test route)
+- `ColumnSchema.parse()` calls succeed for columns with no `format`/`currency` fields
+  (those fields are gone; existing data that omits them is fine)
+- `TableSchema.parse()` accepts row data in the new `{ value, formatted? }` cell shape
+- `CellDisplay` fallback (`<span>{display()}</span>`) still fires for plain string/number cells
+  with no formatter configured
+- The boolean branch (`✓` / `✗`) still fires before the fallback
+- Badge variant lookup still works, using the display string (formatted if present)
+- Sorting and filtering logic uses `cell.value`, not `cell.formatted`
+- No `<sl-format-number>` or `<sl-format-bytes>` elements remain in the codebase
+- All existing E2E tests pass (cell text assertions should be unaffected if the server is
+  updated to emit formatted strings for the same columns under test)

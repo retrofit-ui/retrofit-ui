@@ -1,20 +1,26 @@
 # Plan: Calendar view for event/scheduling data (CalendarSpec) — Issue #64
 
-## Goal
+## Context and current state
 
-Add a fifth core view type, `CalendarSpec`, that renders a month/week/day/list calendar powered by FullCalendar. The view is reached at `/:resource/calendar` in the SPA and served by a `CalendarViewBuilder` on the server side.
+The branch `feat/issue-64` contains an initial implementation of `CalendarSpec` using a **client-side fetch** approach: the spec carries `endpoint: EndpointDirective` and `fields: { id, start, title, ... }`, and the SPA calls the endpoint at render time inside FullCalendar's `events` async callback. This was rejected in PR review:
+
+> The calendar view data should be built serverside — the UI shouldn't load and fetch the events separately. Update the spec to contain actual calendar event elements each with fully populated data instead of a get endpoint to fetch the data and decide how it should be shown. Follow the same philosophy we follow for tableview or formview.
+>
+> In addition, create an example calendar example app in `examples/js/personal-agenda` which contains a table view of events and a calendar view as well.
+
+The revised design mirrors `TableSpec.rows`: the server populates `events: CalendarEvent[]` before serialising the spec, and the SPA renders the array directly. No second fetch.
 
 ---
 
-## Feedback addressed (PR review by thenomadlad)
+## What is already done — do not touch these files
 
-> The calendar view data should be built serverside — the UI shouldn't load and fetch the events separately. Update the spec to contain actual calendar event elements each with fully populated data instead of a get endpoint to fetch the data and decide how it should be shown. Follow the same philosophy we follow for tableview or formview (where the value for each row/field was already populated serverside).
-
-**How addressed:** The previous design had `endpoint: EndpointDirective` in `CalendarSpec` — the UI would call that URL at runtime to fetch events, then map field names via a `fields` object. This is replaced with an `events: CalendarEvent[]` array that the server populates before serialising the spec, exactly like `TableSpec.rows`. The UI no longer makes a separate fetch for event data; it renders `spec.events` directly.
-
-> In addition, create an example calendar example app in `examples/js/personal-agenda` which contains a table view of events and a calendar view as well.
-
-**How addressed:** A new `examples/js/personal-agenda` section is added below (section 9).
+| File | Status |
+|------|--------|
+| `packages/spa-solid-shoelace/ui/App.tsx` | Route `/:resource/calendar` already added before `/:resource/:id` |
+| `packages/spa-solid-shoelace/package.json` | All 5 FullCalendar packages already in `devDependencies` (`core`, `daygrid`, `timegrid`, `interaction`, `list`) |
+| `packages/spa-solid-shoelace/vite.config.ts` | `optimizeDeps.include` for all 5 packages already present |
+| `packages/spa-solid-shoelace/ui/layout.css` | `.retrofit-calendar` CSS overrides using Shoelace tokens already present |
+| `packages/server-solid-shoelace/src/index.ts` | `CalendarView`, `CalendarViewBuilder`, `CalendarSpec` already exported — only `CalendarEvent` is missing |
 
 ---
 
@@ -22,47 +28,49 @@ Add a fifth core view type, `CalendarSpec`, that renders a month/week/day/list c
 
 ### 1. `packages/core/src/types/resource-spec.ts`
 
-**Why:** All top-level view spec types live here. `CalendarEvent` and `CalendarSpec` follow the same pattern as `TableSpec` (plain TypeScript interfaces, no Zod schema).
+**Current state:** `CalendarSpec` uses `endpoint: EndpointDirective` and `fields: { id, start, title, end?, color?, allDay? }`. No `CalendarEvent` type exists.
 
-**What to add** (after the `MarkdownViewSpec` interface):
+**What must remain true after:** All existing interfaces (`TableSpec`, `FormSpec`, `MarkdownViewSpec`, `TreeSpec`, `EndpointDirective`, `RowAction`) are unchanged.
+
+**Changes:**
+
+Remove the old `CalendarSpec` interface (lines 83–102). Replace with:
 
 ```typescript
 /** A single calendar event, fully populated server-side. */
 export interface CalendarEvent {
   id: string;
   title: string;
-  start: string;       // ISO 8601 datetime or date string
-  end?: string;        // ISO 8601; if absent FullCalendar uses a 1-hour slot
-  color?: string;      // hex or CSS named colour
+  start: string;    // ISO 8601 datetime or date string
+  end?: string;     // ISO 8601; FullCalendar defaults to 1-hour slot when absent
+  color?: string;   // hex or CSS named colour
   allDay?: boolean;
 }
 
 /** Returned by GET /api/ui/{resource}/calendar — drives the calendar view. */
 export interface CalendarSpec {
-  events: CalendarEvent[];                            // pre-populated server-side
-  defaultView?: 'month' | 'week' | 'day' | 'list';  // default: 'month'
-  editable?: boolean;                                 // allow drag-to-move/resize; requires update endpoint
+  events: CalendarEvent[];                           // pre-populated server-side
+  defaultView?: 'month' | 'week' | 'day' | 'list'; // default: 'month'
+  editable?: boolean;                                // drag-to-move/resize; requires update endpoint
   endpoints?: {
-    find?:   EndpointDirective;   // click event → navigate to form
-    create?: EndpointDirective;   // click empty slot → open create form with pre-filled date
-    update?: EndpointDirective;   // drag-to-reschedule
+    find?:   EndpointDirective; // click event → navigate to form
+    create?: EndpointDirective; // click empty slot → open create form with pre-filled date
+    update?: EndpointDirective; // drag-to-reschedule
     delete?: EndpointDirective;
   };
   metadata?: { title?: string };
 }
 ```
 
-**What must remain true:** The existing interfaces (`TableSpec`, `FormSpec`, `MarkdownViewSpec`, `TreeSpec`) are unchanged. `EndpointDirective` and `RowAction` are unchanged.
-
-**What changed from original plan:** Removed `endpoint: EndpointDirective` (the events-fetch URL) and `fields` (field-name mapping). Added `CalendarEvent` interface and `events: CalendarEvent[]` to `CalendarSpec`.
-
 ---
 
-### 2. `packages/server-solid-shoelace/src/calendar-builder.ts` (NEW FILE)
+### 2. `packages/server-solid-shoelace/src/calendar-builder.ts`
 
-**Why:** `TableViewBuilder` lives in its own file (`view-builder.ts`). Calendar gets its own file to keep concerns separate and match that precedent.
+**Current state:** Uses `static endpoint(directive)` factory and `idField()`, `startField()`, `endField()`, `titleField()`, `colorField()`, `allDayField()` setters.
 
-**Implementation:**
+**What must remain true after:** `CalendarView` export alias still works. `build()` output is JSON-serializable and omits undefined optional keys.
+
+**Replace the entire file with:**
 
 ```typescript
 import type { CalendarEvent, CalendarSpec, EndpointDirective } from '@retrofit-ui/core';
@@ -103,76 +111,17 @@ export class CalendarViewBuilder {
 export const CalendarView = CalendarViewBuilder;
 ```
 
-**Key decisions:**
-
-- `CalendarViewBuilder.events(events)` is the static factory, mirroring `TableView.forRows(schema, rows)`. Events are the primary data — they are required to start.
-- `editable(editable = true)` keeps the no-arg convenience (`CalendarView.events([...]).editable()`).
-- `build()` omits optional keys entirely rather than setting them to `undefined`, matching the pattern in `TableViewBuilder`.
-
-**What changed from original plan:** Removed `static endpoint()` factory and all `*Field()` setter methods. Factory is now `static events()`.
+**Key change:** Factory is now `CalendarViewBuilder.events(events)` — events are required to start the builder. All `*Field()` setters are removed.
 
 ---
 
-### 3. `packages/server-solid-shoelace/src/index.ts`
+### 3. `packages/spa-solid-shoelace/ui/CalendarView.tsx`
 
-**Why:** All public exports for the server package flow through this file.
+**Current state:** The `CalendarInner` component passes an `async events(info)` callback to FullCalendar that calls `fetch(spec.endpoint.url)` and maps `spec.fields.*` onto the results. This is the client-side fetch pattern.
 
-**What to add:**
+**What must remain true after:** Loading/error/content states still work. `CalendarInner` still uses `onMount`/`onCleanup` pattern. `eventDrop` and `eventResize` still revert on non-OK response. Two-component structure (`CalendarView` + `CalendarInner`) is retained.
 
-```typescript
-export type { CalendarEvent, CalendarSpec } from '@retrofit-ui/core';
-export { CalendarView, CalendarViewBuilder } from './calendar-builder';
-```
-
-The re-export of `CalendarEvent` is new (it did not exist before). The rest follows the existing pattern.
-
----
-
-### 4. `packages/spa-solid-shoelace/package.json`
-
-**Why:** FullCalendar is not yet a dependency.
-
-**What to add** (under `devDependencies`, matching the pattern for all other deps in this package):
-
-```json
-"@fullcalendar/core": "^6.0.0",
-"@fullcalendar/daygrid": "^6.0.0",
-"@fullcalendar/timegrid": "^6.0.0",
-"@fullcalendar/interaction": "^6.0.0"
-```
-
-All four FullCalendar packages must be at the same major version. The `interaction` plugin is required for `dateClick` (click on empty slot to create) even when `editable` is `false`.
-
-After editing, run `pnpm install` from the repo root.
-
----
-
-### 5. `packages/spa-solid-shoelace/vite.config.ts`
-
-**Why:** FullCalendar uses multiple ESM packages that Vite sometimes fails to pre-bundle correctly. Adding them to `optimizeDeps.include` prevents HMR issues in development.
-
-**What to add:**
-
-```typescript
-optimizeDeps: {
-  include: [
-    '@fullcalendar/core',
-    '@fullcalendar/daygrid',
-    '@fullcalendar/timegrid',
-    '@fullcalendar/interaction',
-  ],
-},
-```
-
----
-
-### 6. `packages/spa-solid-shoelace/ui/CalendarView.tsx` (NEW FILE)
-
-**Why:** Follows the pattern of `FormView.tsx`, `TableView.tsx`, `MarkdownView.tsx` — one file per view type.
-
-**What changed from original plan:** Removed the `events` callback (which previously fetched from `spec.endpoint.url`). FullCalendar now receives `events: spec.events` — a static array populated by the server. No `substituteParams` helper needed.
-
-**Structure (two-component approach):**
+**Replace the entire file with:**
 
 ```tsx
 import '@fullcalendar/core/index.css';
@@ -181,8 +130,9 @@ import '@fullcalendar/timegrid/index.css';
 
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import type { CalendarSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, onCleanup, onMount, Show, useContext } from 'solid-js';
@@ -211,7 +161,7 @@ function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
     const isEditable = !!(spec.editable && spec.endpoints?.update);
 
     cal = new Calendar(el, {
-      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
       initialView: viewNameToFullCalendar(spec.defaultView),
       headerToolbar: {
         left: 'prev,next today',
@@ -220,7 +170,7 @@ function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
       },
       editable: isEditable,
       selectable: !!spec.endpoints?.create,
-      events: spec.events,          // pre-populated by server; no client-side fetch
+      events: spec.events,   // static array — no client-side fetch
       eventClick: (info) => {
         if (!spec.endpoints?.find) return;
         navigate(`/${props.resource}/${info.event.id}`);
@@ -298,274 +248,29 @@ export function CalendarView() {
 }
 ```
 
-**Why two-component approach:** `CalendarInner` uses `onMount`, which SolidJS guarantees runs only after the DOM is attached. Wrapping in `<Show when={spec()}>` ensures `CalendarInner` mounts (and `onMount` fires) only once the spec is available. Trying to initialise FullCalendar via `createEffect` in the outer component, then destroy and recreate on spec changes, is messy — the two-component split is the clean SolidJS pattern here.
+**Key change:** `events: spec.events` replaces the `async events(info)` callback. The `substituteParams` helper is retained for `eventDrop`/`eventResize` URL substitution. `EventSourceFuncArg` import is removed.
 
 ---
 
-### 7. `packages/spa-solid-shoelace/ui/App.tsx`
+### 4. `packages/server-solid-shoelace/src/index.ts`
 
-**Why:** The SPA router must know about the `/:resource/calendar` route.
-
-**Critical ordering constraint:** The new route must be registered **before** `/:resource/:id`. `@solidjs/router` matches routes in declaration order. If `/:resource/:id` comes first, navigating to `#/events/calendar` would match it with `id='calendar'`, loading `FormView` instead of `CalendarView`.
-
-**Change:**
-
-```tsx
-import { CalendarView } from './CalendarView';
-
-// In the route list:
-<Route path="/:resource" component={TableView} />
-<Route path="/:resource/new" component={FormView} />
-<Route path="/:resource/calendar" component={CalendarView} />   // ← ADD before /:resource/:id
-<Route path="/:resource/:id/render" component={MarkdownView} />
-<Route path="/:resource/:id" component={FormView} />
-```
-
----
-
-### 8. `packages/spa-solid-shoelace/ui/layout.css`
-
-**Why:** FullCalendar's default styles use its own CSS variables. We override the key ones to align with Shoelace design tokens.
-
-**What to add** (at the end of the file):
-
-```css
-/* Calendar view */
-.retrofit-calendar {
-  font-family: var(--sl-font-sans);
-}
-
-.retrofit-calendar .fc-toolbar-title {
-  font-size: var(--sl-font-size-x-large);
-  font-weight: var(--sl-font-weight-semibold);
-  color: var(--sl-color-neutral-900);
-}
-
-.retrofit-calendar .fc-button {
-  background-color: var(--sl-color-neutral-0);
-  border-color: var(--sl-color-neutral-300);
-  color: var(--sl-color-neutral-700);
-  font-family: var(--sl-font-sans);
-  font-size: var(--sl-font-size-small);
-  border-radius: var(--sl-border-radius-medium);
-}
-
-.retrofit-calendar .fc-button:hover {
-  background-color: var(--sl-color-neutral-50);
-  border-color: var(--sl-color-neutral-400);
-}
-
-.retrofit-calendar .fc-button-primary:not(:disabled).fc-button-active,
-.retrofit-calendar .fc-button-primary:not(:disabled):active {
-  background-color: var(--sl-color-primary-600);
-  border-color: var(--sl-color-primary-600);
-  color: var(--sl-color-neutral-0);
-}
-
-.retrofit-calendar .fc-today-button {
-  background-color: var(--sl-color-primary-600);
-  border-color: var(--sl-color-primary-600);
-  color: var(--sl-color-neutral-0);
-}
-
-.retrofit-calendar .fc-daygrid-day.fc-day-today {
-  background-color: var(--sl-color-primary-50);
-}
-
-.retrofit-calendar .fc-col-header-cell {
-  background-color: var(--sl-color-neutral-50);
-  font-size: var(--sl-font-size-small);
-  font-weight: var(--sl-font-weight-semibold);
-  color: var(--sl-color-neutral-600);
-}
-
-.retrofit-calendar .fc-event {
-  border-radius: var(--sl-border-radius-small);
-  font-size: var(--sl-font-size-small);
-  font-family: var(--sl-font-sans);
-}
-
-.retrofit-calendar td,
-.retrofit-calendar th {
-  border-color: var(--sl-color-neutral-200);
-}
-```
-
----
-
-### 9. `examples/js/personal-agenda/` (NEW EXAMPLE)
-
-**Why:** Requested in PR review. Demonstrates the calendar view alongside a table view on the same data set, showing that both views can be served from the same in-memory store.
-
-**Directory structure** (mirroring `examples/js/todos/`):
-
-```
-examples/js/personal-agenda/
-  package.json
-  tsconfig.json
-  playwright.config.ts
-  src/
-    server.ts
-    store.ts
-  e2e/
-    agenda.spec.ts
-```
-
-**`src/store.ts`** — in-memory event store:
+**What to add:** One line — re-export `CalendarEvent` alongside the already-exported `CalendarSpec`:
 
 ```typescript
-import type { CalendarEvent } from '@retrofit-ui/server-solid-shoelace';
-
-// seed data covers multiple months so the calendar has visible events
-const seed: CalendarEvent[] = [
-  { id: '1', title: 'Team standup',   start: '2026-06-16T09:00:00', end: '2026-06-16T09:30:00', color: '#3b82f6' },
-  { id: '2', title: 'Design review',  start: '2026-06-18T14:00:00', end: '2026-06-18T15:00:00' },
-  { id: '3', title: 'Summer offsite', start: '2026-06-22', end: '2026-06-25', allDay: true, color: '#10b981' },
-  { id: '4', title: 'Dentist',        start: '2026-07-03T11:00:00', end: '2026-07-03T12:00:00' },
-  { id: '5', title: 'Q3 kickoff',     start: '2026-07-07T10:00:00', end: '2026-07-07T11:30:00', color: '#f59e0b' },
-];
-
-let events = [...seed];
-
-export const store = {
-  all: () => events,
-  find: (id: string) => events.find(e => e.id === id),
-  create: (body: Partial<CalendarEvent>) => {
-    const e: CalendarEvent = { id: String(Date.now()), title: '', start: '', ...body };
-    events.push(e);
-    return e;
-  },
-  update: (id: string, body: Partial<CalendarEvent>) => {
-    const idx = events.findIndex(e => e.id === id);
-    if (idx === -1) return null;
-    events[idx] = { ...events[idx], ...body };
-    return events[idx];
-  },
-  delete: (id: string) => { events = events.filter(e => e.id !== id); },
-};
+export type { CalendarEvent, CalendarSpec, ... } from '@retrofit-ui/core';
 ```
 
-**`src/server.ts`** — two views of the same data:
-
-```typescript
-import { CalendarView, retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
-import express from 'express';
-import { store } from './store';
-
-const app = express();
-app.use(express.json());
-
-// REST endpoints (used by CalendarView mutation endpoints)
-app.get('/events', (_req, res) => res.json(store.all()));
-app.get('/events/:id', (req, res) => res.json(store.find(req.params.id)));
-app.post('/events', (req, res) => res.json(store.create(req.body)));
-app.put('/events/:id', (req, res) => res.json(store.update(req.params.id, req.body)));
-app.delete('/events/:id', (req, res) => { store.delete(req.params.id); res.json({ ok: true }); });
-
-const retrofit = retrofitUi(app);
-
-// Table view — list all events with columns for title, start, end, allDay
-app.get('/api/ui/events', (_req, res) => {
-  res.json(
-    retrofit(
-      TableView.forRows(/* … column schema … */, store.all())
-        .find({ method: 'GET', url: '/events/{id}' })
-        .build(),
-    ),
-  );
-});
-
-// Calendar view — events pre-populated server-side
-app.get('/api/ui/events/calendar', (_req, res) => {
-  res.json(
-    retrofit(
-      CalendarView.events(store.all())
-        .defaultView('month')
-        .title('Personal Agenda')
-        .find({ method: 'GET', url: '/events/{id}' })
-        .create({ method: 'POST', url: '/events' })
-        .update({ method: 'PUT', url: '/events/{id}' })
-        .editable()
-        .build(),
-    ),
-  );
-});
-
-const PORT = process.env.PORT ?? 3002;
-app.listen(PORT, () => console.log(`Personal agenda running at http://localhost:${PORT}`));
-```
-
-**`package.json`** — copy structure from `examples/js/todos/package.json`; rename package, keep same deps. No Zod/schema-builder needed since we're not using form validation in this example.
-
-**E2E tests** (`e2e/agenda.spec.ts`) — cover:
-- Table view renders event rows
-- Calendar link in nav is present and navigates to `#/events/calendar`
-- Calendar renders the month grid (`.fc-daygrid-body` is visible)
-- Seed events appear in the correct cells
-- Clicking an event navigates to `#/events/1`
+Specifically, add `CalendarEvent` to the existing `export type { ... } from '@retrofit-ui/core'` block.
 
 ---
 
-## Implementation approach and key decisions
+## Files to rewrite (tests)
 
-### Server-side data population (revised from original)
+### 5. `packages/server-solid-shoelace/src/__tests__/calendar-builder.test.ts`
 
-The previous plan had `endpoint: EndpointDirective` in `CalendarSpec` — the UI would call that URL at runtime (inside FullCalendar's `events` callback), map field names via a `fields` object, and FullCalendar would re-invoke the callback on month navigation. This is inconsistent with how the rest of the framework works.
+**Current state:** Tests use `CalendarViewBuilder.endpoint(...)` and `*Field()` methods — the old API.
 
-The new design embeds `events: CalendarEvent[]` directly in the spec, exactly like `TableSpec.rows`. The server handler (`GET /api/ui/events/calendar`) loads the data and calls `CalendarView.events(store.all()).build()` before responding. FullCalendar receives a static array and renders the events that fall in the current view's date range. Navigation between months/weeks still works — FullCalendar filters the local array.
-
-This means the calendar always shows events for whatever the server returned at spec-load time. If the user needs a different date range, the page reloads. This is intentional and matches the table view philosophy.
-
-### `CalendarSpec` is an interface, not a Zod schema
-
-All three existing view specs in `resource-spec.ts` are plain interfaces. `CalendarSpec` follows the same pattern.
-
-### `ViewSpec` union is NOT updated
-
-`ViewSpec` in `page.ts` is used for children within `PageSpec` (page layout panes). Calendar is a top-level route view, not an embeddable pane — it needs a full-page container for FullCalendar's toolbar and navigation. Embedding calendar inside a flex/grid layout pane is a future enhancement.
-
-### `editable` requires both the flag AND an `update` endpoint
-
-Setting `editable: true` in the spec without an `update` endpoint would result in drag events that silently fail. The component computes `isEditable = !!(spec.editable && spec.endpoints?.update)` — both must be present.
-
-### `eventResize` mirrors `eventDrop`
-
-FullCalendar fires `eventResize` when the user drags the end-edge of an event. Both `eventDrop` and `eventResize` send `{ start, end }` to the `update` endpoint and call `info.revert()` on non-OK response.
-
-### `dateClick` navigates with `?start=` query param
-
-When the user clicks an empty slot, we navigate to `/${resource}/new?start=<ISO date>`. The existing `FormView` does not pre-fill fields from query params today, so this opens an empty create form. Pre-filling is a follow-on enhancement.
-
-### CSS imports from FullCalendar
-
-FullCalendar requires its own CSS files imported as side-effects at the top of `CalendarView.tsx`. Vite bundles them into the SPA's CSS output.
-
-### `@fullcalendar/list` in v6
-
-In FullCalendar v6, the list view may be bundled into `@fullcalendar/core` or require a separate `@fullcalendar/list` package. Verify during implementation and add the package + plugin if needed.
-
----
-
-## Edge cases to handle
-
-| Edge case | How to handle |
-|-----------|---------------|
-| `spec.events` is empty | FullCalendar renders an empty calendar — correct behaviour. |
-| Event `end` is absent | Omit `end` from the event object. FullCalendar renders it as a 1-hour slot by default. |
-| Event `color` is absent | Pass event as-is; FullCalendar uses its default colour. |
-| `spec.editable` is true but no `update` endpoint | Compute `isEditable = !!(spec.editable && spec.endpoints?.update)`. No drag allowed; no broken network calls. |
-| `eventDrop` / `eventResize` fetch fails | Always call `info.revert()` on non-OK response. |
-| `spec.endpoints?.create` absent | Pass `selectable: false` to FullCalendar; `dateClick` is a no-op. |
-| `spec.endpoints?.find` absent | `eventClick` handler is a no-op. |
-| Calendar spec endpoint returns non-OK | `createResource` throws; `<Show when={spec.error}>` renders the error message. |
-| `/:resource/calendar` route matched before `/:resource/:id` | Handled by route declaration order in `App.tsx`. |
-| Title absent from spec | `<Show when={s().metadata?.title}>` — no `<h1>` renders, same pattern as `TableView`. |
-
----
-
-## Tests to write
-
-### Unit tests — `packages/server-solid-shoelace/src/__tests__/calendar-builder.test.ts` (NEW FILE)
+**Replace entirely with:**
 
 ```typescript
 import { describe, expect, it } from 'vitest';
@@ -619,7 +324,7 @@ describe('CalendarViewBuilder', () => {
     const spec = CalendarViewBuilder.events(baseEvents).build();
     expect(() => JSON.stringify(spec)).not.toThrow();
     const round = JSON.parse(JSON.stringify(spec)) as typeof spec;
-    expect(round.events[0].id).toBe('1');
+    expect(round.events[0]?.id).toBe('1');
   });
 
   it('CalendarView is an alias for CalendarViewBuilder', async () => {
@@ -629,43 +334,75 @@ describe('CalendarViewBuilder', () => {
 });
 ```
 
-### Unit tests — `packages/core/src/types/__tests__/resource-spec.test.ts` (NEW or updated FILE)
+---
+
+### 6. `packages/core/src/types/__tests__/resource-spec.test.ts`
+
+**Current state:** The `CalendarSpec` describe block tests the old `endpoint`+`fields` shape.
+
+**Replace only the `CalendarSpec` describe block** (leave `TableSpec.metadata.pagination` tests untouched):
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import type { CalendarSpec, CalendarEvent } from '../resource-spec';
+import type { CalendarEvent, CalendarSpec } from '../resource-spec';
 
 describe('CalendarSpec', () => {
-  it('minimal spec has required fields', () => {
+  it('minimal spec requires only events array', () => {
     const spec: CalendarSpec = { events: [] };
     expect(spec.events).toEqual([]);
   });
 
-  it('CalendarEvent accepts fully populated event', () => {
+  it('CalendarEvent accepts a fully populated event', () => {
     const ev: CalendarEvent = {
-      id: '1', title: 'Meeting',
-      start: '2026-06-15T09:00:00', end: '2026-06-15T10:00:00',
-      color: '#3b82f6', allDay: false,
+      id: '1',
+      title: 'Meeting',
+      start: '2026-06-15T09:00:00',
+      end: '2026-06-15T10:00:00',
+      color: '#3b82f6',
+      allDay: false,
     };
     expect(ev.title).toBe('Meeting');
+  });
+
+  it('CalendarSpec accepts all optional fields', () => {
+    const spec: CalendarSpec = {
+      events: [{ id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' }],
+      defaultView: 'month',
+      editable: true,
+      endpoints: {
+        find:   { method: 'GET',    url: '/events/{id}' },
+        create: { method: 'POST',   url: '/events' },
+        update: { method: 'PUT',    url: '/events/{id}' },
+        delete: { method: 'DELETE', url: '/events/{id}' },
+      },
+      metadata: { title: 'Events' },
+    };
+    expect(spec.defaultView).toBe('month');
+    expect(spec.metadata?.title).toBe('Events');
+    expect(spec.endpoints?.find?.url).toBe('/events/{id}');
   });
 });
 ```
 
-### Integration tests — `packages/server-solid-shoelace/src/__tests__/express.test.ts`
+---
 
-Add a `describe` block that registers a calendar route and verifies the returned JSON contains embedded events:
+### 7. `packages/server-solid-shoelace/src/__tests__/express.test.ts`
+
+**Current state:** The calendar integration test (around line 66 and line 481) uses `CalendarViewBuilder.endpoint(...)`.
+
+**Update** the calendar route fixture and integration test describe block to use `CalendarViewBuilder.events(...)`:
 
 ```typescript
+// route fixture (~line 66):
 app.get('/api/ui/events/calendar', (_req, res) => {
   res.json(
     CalendarViewBuilder
       .events([{ id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' }])
       .defaultView('month')
-      .build()
+      .build(),
   );
 });
 
+// integration test describe block (~line 481):
 describe('CalendarViewBuilder – express integration', () => {
   it('GET /api/ui/events/calendar returns a valid CalendarSpec with embedded events', async () => {
     const res = await fetch(`${baseUrl}/api/ui/events/calendar`);
@@ -673,24 +410,137 @@ describe('CalendarViewBuilder – express integration', () => {
     const data = await res.json() as { events: { id: string; title: string }[]; defaultView: string };
     expect(data.defaultView).toBe('month');
     expect(data.events).toHaveLength(1);
-    expect(data.events[0].id).toBe('1');
-    expect(data.events[0].title).toBe('Meeting');
+    expect(data.events[0]?.id).toBe('1');
+    expect(data.events[0]?.title).toBe('Meeting');
   });
 });
 ```
 
-### E2E tests — `examples/js/personal-agenda/e2e/agenda.spec.ts`
+---
+
+## New file to create: `examples/js/personal-agenda/`
+
+Mirror the structure of `examples/js/todos/`. Create these 6 files:
+
+### `examples/js/personal-agenda/package.json`
+
+Copy `examples/js/todos/package.json` and:
+- Change `"name"` to `"personal-agenda"`
+- Change `"description"` to something about events/calendar
+- Keep all deps identical (same `@retrofit-ui/server-solid-shoelace workspace:*`, express, tsx, etc.)
+
+### `examples/js/personal-agenda/tsconfig.json`
+
+Copy from `examples/js/todos/tsconfig.json` verbatim.
+
+### `examples/js/personal-agenda/playwright.config.ts`
+
+Copy from `examples/js/todos/playwright.config.ts`. Change the port to `3002` (or whatever is free; check existing examples to avoid conflicts).
+
+### `examples/js/personal-agenda/src/store.ts`
+
+```typescript
+import type { CalendarEvent } from '@retrofit-ui/server-solid-shoelace';
+
+const seed: CalendarEvent[] = [
+  { id: '1', title: 'Team standup',   start: '2026-06-16T09:00:00', end: '2026-06-16T09:30:00', color: '#3b82f6' },
+  { id: '2', title: 'Design review',  start: '2026-06-18T14:00:00', end: '2026-06-18T15:00:00' },
+  { id: '3', title: 'Summer offsite', start: '2026-06-22',           end: '2026-06-25', allDay: true, color: '#10b981' },
+  { id: '4', title: 'Dentist',        start: '2026-07-03T11:00:00', end: '2026-07-03T12:00:00' },
+  { id: '5', title: 'Q3 kickoff',     start: '2026-07-07T10:00:00', end: '2026-07-07T11:30:00', color: '#f59e0b' },
+];
+
+let events = [...seed];
+
+export const store = {
+  all: () => events,
+  find: (id: string) => events.find((e) => e.id === id),
+  create: (body: Partial<CalendarEvent>): CalendarEvent => {
+    const e: CalendarEvent = { id: String(Date.now()), title: '', start: '', ...body };
+    events.push(e);
+    return e;
+  },
+  update: (id: string, body: Partial<CalendarEvent>) => {
+    const idx = events.findIndex((e) => e.id === id);
+    if (idx === -1) return null;
+    events[idx] = { ...events[idx], ...body } as CalendarEvent;
+    return events[idx];
+  },
+  delete: (id: string) => { events = events.filter((e) => e.id !== id); },
+};
+```
+
+### `examples/js/personal-agenda/src/server.ts`
+
+```typescript
+import { CalendarView, retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
+import express from 'express';
+import { z } from 'zod';
+import { store } from './store';
+
+const app = express();
+app.use(express.json());
+
+// REST endpoints (used by CalendarView mutation endpoints)
+app.get('/events',     (_req, res) => res.json(store.all()));
+app.get('/events/:id', (req, res) => res.json(store.find(req.params.id)));
+app.post('/events',    (req, res) => res.json(store.create(req.body)));
+app.put('/events/:id', (req, res) => res.json(store.update(req.params.id, req.body)));
+app.delete('/events/:id', (req, res) => { store.delete(req.params.id); res.json({ ok: true }); });
+
+const EventSchema = z.object({
+  id:     z.string(),
+  title:  z.string(),
+  start:  z.string(),
+  end:    z.string().optional(),
+  allDay: z.boolean().optional(),
+  color:  z.string().optional(),
+});
+
+const retrofit = retrofitUi(app);
+
+app.get('/api/ui/events', (_req, res) => {
+  res.json(
+    retrofit(
+      TableView.forRows(EventSchema, store.all())
+        .find({ method: 'GET', url: '/events/{id}' })
+        .rowAction({ label: 'Calendar', routePattern: '/calendar' })
+        .build(),
+    ),
+  );
+});
+
+app.get('/api/ui/events/calendar', (_req, res) => {
+  res.json(
+    retrofit(
+      CalendarView.events(store.all())
+        .defaultView('month')
+        .title('Personal Agenda')
+        .find({ method: 'GET', url: '/events/{id}' })
+        .create({ method: 'POST', url: '/events' })
+        .update({ method: 'PUT', url: '/events/{id}' })
+        .editable()
+        .build(),
+    ),
+  );
+});
+
+const PORT = process.env.PORT ?? 3002;
+app.listen(PORT, () => console.log(`Personal agenda running at http://localhost:${PORT}`));
+```
+
+### `examples/js/personal-agenda/e2e/agenda.spec.ts`
 
 ```typescript
 import { expect, test } from '@playwright/test';
 
-test('table view renders events', async ({ page }) => {
+test('table view renders event rows', async ({ page }) => {
   await page.goto('/#/events');
   await expect(page.locator('.retrofit-table')).toBeVisible();
   await expect(page.locator('text=Team standup')).toBeVisible();
 });
 
-test('calendar view renders month grid with events', async ({ page }) => {
+test('calendar view renders month grid with seed events', async ({ page }) => {
   await page.goto('/#/events/calendar');
   await expect(page.locator('.fc-daygrid-body')).toBeVisible();
   await expect(page.locator('text=Team standup')).toBeVisible();
@@ -706,36 +556,87 @@ test('clicking event navigates to form view', async ({ page }) => {
 
 ---
 
+## Implementation approach and key decisions
+
+### Server-side data population (why the original approach was wrong)
+
+The original `CalendarSpec` had `endpoint: EndpointDirective` — the SPA called it inside FullCalendar's `events` async callback (which FullCalendar invokes on every navigation, with `start`/`end` bounds). This is inconsistent with the rest of the framework: `TableSpec.rows` and `FormSpec.fields` are fully populated by the server before the response is sent. The SPA renders, not fetches.
+
+The revised design: `events: CalendarEvent[]` is an array pre-populated by the server handler. FullCalendar receives a static array and filters by the current view's date range locally. Navigation between months/weeks still works — FullCalendar filters the local array. If the user needs a different date range, they reload the page. This matches table view's philosophy.
+
+### `CalendarSpec` is a plain TypeScript interface, not a Zod schema
+
+All existing view specs in `resource-spec.ts` are plain interfaces. `CalendarSpec` follows the same pattern — no Zod schema needed.
+
+### `ViewSpec` union is NOT updated
+
+`ViewSpec` in `page.ts` is used for embedded panes in `PageSpec`. Calendar is a top-level route view and needs the full page for FullCalendar's toolbar. Embedding in a layout pane is a future enhancement.
+
+### `editable` requires both the flag AND an `update` endpoint
+
+`isEditable = !!(spec.editable && spec.endpoints?.update)` — without an update endpoint, dragging is disabled so there are no silent failures.
+
+### `eventResize` mirrors `eventDrop`
+
+Both handlers send `{ start, end }` to the update endpoint and call `info.revert()` on non-OK response.
+
+### `dateClick` navigates with `?start=` query param
+
+Navigates to `/${resource}/new?start=<ISO date>`. `FormView` does not pre-fill from query params today — the create form opens empty. Pre-filling is a follow-on.
+
+### Two-component approach in `CalendarView.tsx`
+
+`CalendarInner` uses `onMount`, which SolidJS guarantees runs only after the DOM is attached. Wrapping in `<Show when={spec()}>` ensures `CalendarInner` mounts only once the spec is ready. Using `createEffect` in a single component to init/destroy FullCalendar on spec changes is messier.
+
+---
+
+## Edge cases to handle
+
+| Edge case | How to handle |
+|-----------|---------------|
+| `spec.events` is empty | FullCalendar renders an empty calendar grid — correct behaviour |
+| Event `end` absent | Omit `end`; FullCalendar renders as a 1-hour slot |
+| Event `color` absent | Pass event as-is; FullCalendar uses its default colour |
+| `editable: true` but no `update` endpoint | `isEditable = !!(spec.editable && spec.endpoints?.update)` — drag disabled |
+| `eventDrop` / `eventResize` fetch fails | Always call `info.revert()` on non-OK |
+| `spec.endpoints?.create` absent | `selectable: false` passed to FullCalendar; `dateClick` is a no-op |
+| `spec.endpoints?.find` absent | `eventClick` handler returns early |
+| Calendar spec fetch returns non-OK | `createResource` throws; `<Show when={spec.error}>` renders error |
+| `/:resource/calendar` route ordering | Already handled in `App.tsx` — declared before `/:resource/:id` |
+| Title absent from spec | `<Show when={s().metadata?.title}>` — no `<h1>` rendered |
+
+---
+
 ## Changeset
 
-This is a new feature (minor bump) affecting two packages:
+New feature (minor bump) affecting two packages:
 
-```
+```bash
 pnpm changeset
-# → select: @retrofit-ui/core (minor), @retrofit-ui/server-solid-shoelace (minor)
-# Note: spa-solid-shoelace is an internal bundle, not independently versioned
+# select: @retrofit-ui/core (minor), @retrofit-ui/server-solid-shoelace (minor)
+# spa-solid-shoelace is an internal bundle, not independently versioned
 ```
 
 ---
 
 ## Summary of all changes
 
-| File | Change |
-|------|--------|
-| `packages/core/src/types/resource-spec.ts` | Add `CalendarEvent` interface and updated `CalendarSpec` (events array replaces endpoint+fields) |
-| `packages/server-solid-shoelace/src/calendar-builder.ts` | New file: `CalendarViewBuilder` with `static events()` factory + `CalendarView` alias |
-| `packages/server-solid-shoelace/src/index.ts` | Export `CalendarView`, `CalendarViewBuilder`; re-export `CalendarEvent`, `CalendarSpec` types |
-| `packages/spa-solid-shoelace/package.json` | Add four `@fullcalendar/*` devDependencies |
-| `packages/spa-solid-shoelace/vite.config.ts` | Add `optimizeDeps.include` for FullCalendar packages |
-| `packages/spa-solid-shoelace/ui/CalendarView.tsx` | New file: `CalendarInner` + `CalendarView`; events from spec, no separate fetch |
-| `packages/spa-solid-shoelace/ui/App.tsx` | Add `/:resource/calendar` route before `/:resource/:id`; import `CalendarView` |
-| `packages/spa-solid-shoelace/ui/layout.css` | Add `.retrofit-calendar` overrides using Shoelace tokens |
-| `packages/server-solid-shoelace/src/__tests__/calendar-builder.test.ts` | New unit test file |
-| `packages/core/src/types/__tests__/resource-spec.test.ts` | New (or updated) type-level test file |
-| `packages/server-solid-shoelace/src/__tests__/express.test.ts` | Add integration test verifying embedded events in calendar spec |
-| `examples/js/personal-agenda/package.json` | New example app package |
-| `examples/js/personal-agenda/tsconfig.json` | New example app tsconfig |
-| `examples/js/personal-agenda/playwright.config.ts` | New example app playwright config |
-| `examples/js/personal-agenda/src/store.ts` | In-memory event store with seed data |
-| `examples/js/personal-agenda/src/server.ts` | Express server with table + calendar view of events |
-| `examples/js/personal-agenda/e2e/agenda.spec.ts` | E2E tests for both views |
+| File | Action | Notes |
+|------|--------|-------|
+| `packages/core/src/types/resource-spec.ts` | **Edit** | Add `CalendarEvent`; replace `CalendarSpec` (remove `endpoint`+`fields`, add `events`) |
+| `packages/server-solid-shoelace/src/calendar-builder.ts` | **Rewrite** | Replace `static endpoint()` + `*Field()` with `static events()` factory |
+| `packages/spa-solid-shoelace/ui/CalendarView.tsx` | **Rewrite** | Replace async events callback with `events: spec.events` static array |
+| `packages/server-solid-shoelace/src/index.ts` | **Edit** | Add `CalendarEvent` to re-exports |
+| `packages/server-solid-shoelace/src/__tests__/calendar-builder.test.ts` | **Rewrite** | Update all tests to use new `static events()` API |
+| `packages/core/src/types/__tests__/resource-spec.test.ts` | **Edit** | Replace `CalendarSpec` describe block; add `CalendarEvent` import |
+| `packages/server-solid-shoelace/src/__tests__/express.test.ts` | **Edit** | Update calendar fixture and integration test to use `CalendarViewBuilder.events()` |
+| `examples/js/personal-agenda/package.json` | **Create** | New example app package |
+| `examples/js/personal-agenda/tsconfig.json` | **Create** | Copy from `examples/js/todos/` |
+| `examples/js/personal-agenda/playwright.config.ts` | **Create** | Port 3002; copy structure from todos |
+| `examples/js/personal-agenda/src/store.ts` | **Create** | In-memory event store with 5 seed events |
+| `examples/js/personal-agenda/src/server.ts` | **Create** | Express server with table + calendar views |
+| `examples/js/personal-agenda/e2e/agenda.spec.ts` | **Create** | E2E: table renders, calendar renders, event click navigates |
+| `packages/spa-solid-shoelace/ui/App.tsx` | **No change** | Route already in place |
+| `packages/spa-solid-shoelace/package.json` | **No change** | All 5 FullCalendar packages already present |
+| `packages/spa-solid-shoelace/vite.config.ts` | **No change** | `optimizeDeps.include` already present |
+| `packages/spa-solid-shoelace/ui/layout.css` | **No change** | `.retrofit-calendar` CSS overrides already present |

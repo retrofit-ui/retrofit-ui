@@ -126,9 +126,13 @@ while IFS= read -r issue; do
     new_comments=$(pr_new_comments "$pr_number")
     new_comment_count=$(echo "$new_comments" | jq length)
 
-    log "  → PR #${pr_number}  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}"
+    impl_commits=$(gh pr view "$pr_number" --repo "$REPO" --json commits \
+      --jq '[.commits[] | select(.messageHeadline | startswith("plan:") | not)] | length' \
+      2>/dev/null || echo "0")
 
-    if [ "$ci_status" != "failure" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ]; then
+    log "  → PR #${pr_number}  ci=${ci_status}  conflicts=${conflicts}  new_comments=${new_comment_count}  impl_commits=${impl_commits}"
+
+    if [ "$impl_commits" -gt 0 ] && [ "$ci_status" != "failure" ] && [ "$conflicts" = "false" ] && [ "$new_comment_count" -eq 0 ]; then
       log "  → healthy, skipping  (elapsed: $(elapsed $t0))"
       continue
     fi

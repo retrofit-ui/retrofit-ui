@@ -30,8 +30,16 @@ export const ColumnSchema = z.object({
   alignment: z.enum(['left', 'center', 'right']).default('left'),
   options: z.array(FieldOptionSchema).optional(),
   badgeVariants: z.record(z.string(), BadgeVariantSchema).optional(),
+  format: z.enum(['currency', 'bytes', 'percent', 'decimal']).optional(),
+  currency: z.string().optional(),
 });
 export type Column = z.infer<typeof ColumnSchema>;
+
+export const CellSchema = z.object({
+  value: z.unknown(),
+  formatted: z.string().optional(),
+});
+export type Cell = z.infer<typeof CellSchema>;
 
 export const TableMetadataSchema = z.object({
   title: z.string().optional(),
@@ -51,7 +59,7 @@ export type TableMetadata = z.infer<typeof TableMetadataSchema>;
 
 export const TableSchema = z.object({
   columns: z.array(ColumnSchema).min(1),
-  data: z.array(z.record(z.string(), z.unknown())),
+  data: z.array(z.record(z.string(), CellSchema)),
   metadata: TableMetadataSchema.optional(),
 });
 export type Table = z.infer<typeof TableSchema>;

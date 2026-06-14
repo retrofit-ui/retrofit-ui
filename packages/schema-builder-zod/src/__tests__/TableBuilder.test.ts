@@ -1,5 +1,5 @@
 import { TableSchema } from '@retrofit-ui/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { tableFromSchema } from '../TableBuilder';
 
@@ -40,9 +40,11 @@ describe('tableFromSchema', () => {
     expect(priorityCol?.type).toBe('enum');
   });
 
-  it('includes data rows', () => {
+  it('includes data rows as cells with value field', () => {
     const table = tableFromSchema(TodoSchema, data).build();
     expect(table.data).toHaveLength(2);
+    expect(table.data[0]?.id).toEqual({ value: 1 });
+    expect(table.data[0]?.title).toEqual({ value: 'Buy milk' });
   });
 
   it('withRowLink sets metadata.rowLink', () => {
@@ -71,6 +73,30 @@ describe('tableFromSchema', () => {
     const titleCol = table.columns.find((c) => c.key === 'title');
     expect(titleCol?.sortable).toBe(true);
     expect(titleCol?.label).toBe('Task');
+  });
+
+  it('columnOverride with format fn produces formatted cell', () => {
+    const fmt = vi.fn((v: unknown) => `$${String(v)}`);
+    const table = tableFromSchema(TodoSchema, data)
+      .columnOverride('id', { format: fmt })
+      .build();
+    expect(fmt).toHaveBeenCalledTimes(2);
+    expect(table.data[0]?.id).toEqual({ value: 1, formatted: '$1' });
+    expect(table.data[1]?.id).toEqual({ value: 2, formatted: '$2' });
+  });
+
+  it('column without formatter emits { value } with no formatted key', () => {
+    const table = tableFromSchema(TodoSchema, data).build();
+    expect(table.data[0]?.title).toEqual({ value: 'Buy milk' });
+    expect('formatted' in (table.data[0]?.title ?? {})).toBe(false);
+  });
+
+  it('build() does not put format function on the Column object', () => {
+    const table = tableFromSchema(TodoSchema, data)
+      .columnOverride('id', { format: (v) => String(v) })
+      .build();
+    const idCol = table.columns.find((c) => c.key === 'id');
+    expect(idCol).not.toHaveProperty('format');
   });
 
   it('build() output passes TableSchema.parse()', () => {

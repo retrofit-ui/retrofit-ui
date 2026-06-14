@@ -11,6 +11,24 @@ async function waitForForm(page: import('@playwright/test').Page) {
   await page.waitForSelector('form');
 }
 
+test.describe('Formatted number columns', () => {
+  test('amount cell uses sl-format-number element (not a plain span)', async ({
+    page,
+  }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+    const formatEl = page.locator('sl-format-number').first();
+    await expect(formatEl).toBeVisible();
+  });
+
+  test('amount sl-format-number has type="currency"', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+    const formatEl = page.locator('sl-format-number').first();
+    await expect(formatEl).toHaveAttribute('type', 'currency');
+  });
+});
+
 test.describe('Expenses narrow table', () => {
   test('renders only description, amount, date columns (not status/notes/id)', async ({
     page,

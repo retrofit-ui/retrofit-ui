@@ -138,26 +138,27 @@ while IFS= read -r issue; do
     fi
   fi
 
-  # ── Set up worktree ─────────────────────────────────────────────────────────
-  [ -d "$worktree" ] && git worktree remove --force "$worktree" 2>/dev/null || true
+  if (
+    # ── Set up worktree ───────────────────────────────────────────────────────
+    [ -d "$worktree" ] && git worktree remove --force "$worktree" 2>/dev/null || true
 
-  if [ -n "$pr_number" ] || git rev-parse --verify "origin/$branch" &>/dev/null 2>&1; then
-    git fetch origin "$branch" 2>/dev/null || true
-    git worktree add "$worktree" "$branch"
-  else
-    git branch -D "$branch" 2>/dev/null || true
-    git worktree add "$worktree" -b "$branch" main
-  fi
+    if [ -n "$pr_number" ] || git rev-parse --verify "origin/$branch" &>/dev/null 2>&1; then
+      git fetch origin "$branch" 2>/dev/null || true
+      git worktree add "$worktree" "$branch"
+    else
+      git branch -D "$branch" 2>/dev/null || true
+      git worktree add "$worktree" -b "$branch" main
+    fi
 
-  # ── Step 1: Plan ────────────────────────────────────────────────────────────
-  plan_committed=false
-  if git -C "$worktree" log --oneline -- "$plan_file" 2>/dev/null | grep -q .; then
-    plan_committed=true
-  fi
+    # ── Step 1: Plan ──────────────────────────────────────────────────────────
+    plan_committed=false
+    if git -C "$worktree" log --oneline -- "$plan_file" 2>/dev/null | grep -q .; then
+      plan_committed=true
+    fi
 
-  if [ "$plan_committed" = false ]; then
-    log "  → step 1: creating plan"
-    plan_prompt="You are creating an implementation plan for a GitHub issue in the retrofit-ui TypeScript monorepo.
+    if [ "$plan_committed" = false ]; then
+      log "  → step 1: creating plan"
+      plan_prompt="You are creating an implementation plan for a GitHub issue in the retrofit-ui TypeScript monorepo.
 
 ## Issue #${number}: ${title}
 
@@ -174,10 +175,10 @@ ${body}
   - Tests to write (unit, integration, e2e)
 - Be concrete and specific — this plan will be handed to a separate implementation step.
 - Do not start implementing. Only produce the plan file."
-  elif [ "$new_comment_count" -gt 0 ]; then
-    log "  → step 1: updating plan based on ${new_comment_count} review comment(s)"
-    formatted_comments=$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
-    plan_prompt="You are updating an implementation plan based on pull request review feedback.
+    elif [ "$new_comment_count" -gt 0 ]; then
+      log "  → step 1: updating plan based on ${new_comment_count} review comment(s)"
+      formatted_comments=$(echo "$new_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
+      plan_prompt="You are updating an implementation plan based on pull request review feedback.
 
 ## Issue #${number}: ${title}
 ## PR: #${pr_number} (branch \`${branch}\`)
@@ -192,9 +193,9 @@ ${formatted_comments}
 - Update it to address the review feedback. Add, remove, or revise sections as needed.
 - If a comment is addressed by the existing plan already, note that explicitly.
 - Do not start implementing. Only update the plan file."
-  else
-    log "  → step 1: verifying plan is complete"
-    plan_prompt="You are verifying and completing an implementation plan for a GitHub issue.
+    else
+      log "  → step 1: verifying plan is complete"
+      plan_prompt="You are verifying and completing an implementation plan for a GitHub issue.
 
 ## Issue #${number}: ${title}
 
@@ -206,37 +207,32 @@ The plan is at \`${plan_file}\`. It was committed but may have been interrupted 
 - If it is complete (covers files to change, implementation approach, edge cases, and tests), make no changes.
 - If any sections are missing or too shallow to act on, fill them in.
 - Do not start implementing. Only update the plan file if needed."
-  fi
+    fi
 
-  (cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 20 \
-    -p "$plan_prompt" 2>&1 | tee "$log_file")
+    cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 20 \
+      -p "$plan_prompt" 2>&1 | tee "$log_file"
 
-  # Commit plan if new or changed
-  (
-    cd "$worktree"
+    # Commit plan if new or changed
     mkdir -p "$PLAN_DIR"
-    git add "$plan_file"
-    if ! git diff --cached --quiet; then
-      git commit -m "plan: #${number} ${title}"
-      git push origin "$branch"
+    git -C "$worktree" add "$plan_file"
+    if ! git -C "$worktree" diff --cached --quiet; then
+      git -C "$worktree" commit -m "plan: #${number} ${title}"
+      git -C "$worktree" push origin "$branch"
       log "  → plan committed and pushed"
     else
       log "  → plan complete, no changes needed"
     fi
-  )
 
-  # ── Step 2: Implementation ──────────────────────────────────────────────────
-  log "  → step 2: implementing"
+    # ── Step 2: Implementation ────────────────────────────────────────────────
+    log "  → step 2: implementing"
 
-  fix_context=""
-  [ "$conflicts" = "true" ]    && fix_context+="- The PR has MERGE CONFLICTS with main. Rebase or merge main into this branch to resolve them.\n"
-  [ "$ci_status" = "failure" ] && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
+    fix_context=""
+    [ "$conflicts" = "true" ]    && fix_context+="- The PR has MERGE CONFLICTS with main. Rebase or merge main into this branch to resolve them.\n"
+    [ "$ci_status" = "failure" ] && fix_context+="- CI is FAILING. Run \`pnpm build\` and \`pnpm test\` to reproduce and fix the failures.\n"
 
-  (
-    cd "$worktree"
-    git fetch origin main
-    git rebase origin/main
-    claude --dangerously-skip-permissions --verbose --max-turns 40 \
+    git -C "$worktree" fetch origin main
+    git -C "$worktree" rebase origin/main
+    cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 40 \
       -p "You are implementing a GitHub issue for the retrofit-ui TypeScript monorepo.
 
 ## Issue #${number}: ${title}
@@ -252,15 +248,12 @@ $([ -n "$fix_context" ] && printf "## Problems to fix\n\n${fix_context}")
 - Run \`pnpm build\` and \`pnpm test\` to confirm everything is green.
 - Do not commit, push, or open a PR — the script handles that.
 - Do not ask for confirmation. Work autonomously to completion." 2>&1 | tee -a "$log_file"
-  )
 
-  # Commit implementation (everything except the plan file, which is already committed)
-  (
-    cd "$worktree"
-    git add -A
-    git restore --staged "$plan_file" 2>/dev/null || true  # plan already committed
-    if ! git diff --cached --quiet; then
-      git commit -m "feat: ${title} (closes #${number})
+    # Commit implementation (everything except the plan file, which is already committed)
+    git -C "$worktree" add -A
+    git -C "$worktree" restore --staged "$plan_file" 2>/dev/null || true
+    if ! git -C "$worktree" diff --cached --quiet; then
+      git -C "$worktree" commit -m "feat: ${title} (closes #${number})
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
     else
@@ -270,43 +263,46 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
     # Push with retry loop — if pre-push CI fails, ask Claude to fix and try again
     # --force-with-lease because the rebase above rewrites the plan commit's SHA
     push_attempts=0
-    while ! git push --force-with-lease origin "$branch" 2>&1 | tee -a "$log_file"; do
+    while ! git -C "$worktree" push --force-with-lease origin "$branch" 2>&1 | tee -a "$log_file"; do
       push_attempts=$(( push_attempts + 1 ))
       if [ "$push_attempts" -ge 3 ]; then
         log "  ✗ push failed after ${push_attempts} attempts — giving up"
         exit 1
       fi
       log "  → push failed (attempt ${push_attempts}), asking Claude to fix CI..."
-      claude --dangerously-skip-permissions --verbose --max-turns 20 \
+      cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 20 \
         -p "The pre-push CI hook just failed when pushing branch \`${branch}\` for issue #${number} (${title}).
 
 Look at the CI output above in the terminal (check recent log output or run \`pnpm build && pnpm test && pnpm typecheck && pnpm lint\` to reproduce).
 
 Fix all failing build, test, typecheck, and lint errors. Do not commit — the script will handle that." \
         2>&1 | tee -a "$log_file"
-      git add -A
-      git restore --staged "$plan_file" 2>/dev/null || true
-      if ! git diff --cached --quiet; then
-        git commit -m "fix: CI failures for #${number}
+      git -C "$worktree" add -A
+      git -C "$worktree" restore --staged "$plan_file" 2>/dev/null || true
+      if ! git -C "$worktree" diff --cached --quiet; then
+        git -C "$worktree" commit -m "fix: CI failures for #${number}
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
       fi
     done
     log "  → implementation committed and pushed"
-  ) && log "  ✓ #${number} done  (elapsed: $(elapsed $t0))" \
-    || log "  ✗ #${number} failed  (elapsed: $(elapsed $t0))"
 
-  # Open PR if one doesn't exist yet
-  if [ -z "$pr_number" ]; then
-    plan_content=$(cat "${worktree}/${plan_file}" 2>/dev/null || echo "")
-    gh pr create --repo "$REPO" --base main --head "$branch" \
-      --title "feat: ${title}" \
-      --body "$(printf "closes #%s\n\n## Implementation plan\n\n%s" "$number" "$plan_content")" \
-      && log "  → PR opened" || log "  ⚠ PR creation failed"
+    # Open PR if one doesn't exist yet
+    if [ -z "$pr_number" ]; then
+      plan_content=$(cat "${worktree}/${plan_file}" 2>/dev/null || echo "")
+      gh pr create --repo "$REPO" --base main --head "$branch" \
+        --title "feat: ${title}" \
+        --body "$(printf "closes #%s\n\n## Implementation plan\n\n%s" "$number" "$plan_content")" \
+        && log "  → PR opened" || log "  ⚠ PR creation failed"
+    fi
+  ); then
+    log "  ✓ #${number} done  (elapsed: $(elapsed $t0))"
+    worked_on=$(( worked_on + 1 ))
+  else
+    log "  ✗ #${number} failed  (elapsed: $(elapsed $t0))"
   fi
 
   git worktree remove --force "$worktree" 2>/dev/null || true
-  worked_on=$(( worked_on + 1 ))
 
 done < <(echo "$issues_json" | jq -c 'sort_by(.number) | .[]')
 

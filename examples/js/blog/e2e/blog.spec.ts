@@ -127,7 +127,9 @@ test.describe('Blog edit form', () => {
 });
 
 test.describe('Radio-group segmented control', () => {
-  test('segmented control renders with all status buttons', async ({ page }) => {
+  test('segmented control renders with all status buttons', async ({
+    page,
+  }) => {
     await page.goto('/#/posts/1');
     await waitForForm(page);
     await expect(page.locator('sl-radio-group')).toBeVisible();
@@ -142,10 +144,15 @@ test.describe('Radio-group segmented control', () => {
     ).toBeVisible();
   });
 
-  test('selecting a radio button updates the stored value', async ({ page }) => {
+  test('selecting a radio button updates the stored value', async ({
+    page,
+  }) => {
     await page.goto('/#/posts/2');
     await waitForForm(page);
-    await page.locator('sl-radio-button').filter({ hasText: 'published' }).click();
+    await page
+      .locator('sl-radio-button')
+      .filter({ hasText: 'published' })
+      .click();
     await page.locator('sl-button[type="submit"]').click();
     await expect(
       page.locator('sl-alert').filter({ hasText: 'Saved successfully' }),

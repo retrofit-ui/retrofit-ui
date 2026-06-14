@@ -63,3 +63,18 @@ export interface MarkdownViewSpec {
   field: string;
   metadata?: { title?: string };
 }
+
+/** Returned by GET /api/ui/{resource}/tree — drives the tree view. */
+export interface TreeSpec {
+  endpoint: EndpointDirective;
+  idField: string;
+  parentField: string;
+  labelField: string;
+  selection?: 'single' | 'multiple' | 'leaf';
+  actions?: {
+    create?: EndpointDirective;
+    update?: EndpointDirective;
+    delete?: EndpointDirective;
+  };
+  metadata?: { title?: string };
+}

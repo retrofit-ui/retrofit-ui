@@ -214,6 +214,21 @@ declare module 'solid-js' {
         'minimum-significant-digits'?: number;
         'maximum-significant-digits'?: number;
       };
+      'sl-tree': JSX.HTMLAttributes<HTMLElement> & {
+        selection?: 'single' | 'multiple' | 'leaf';
+        'on:sl-selection-change'?: SlEventHandler;
+        children?: JSX.Element;
+      };
+      'sl-tree-item': JSX.HTMLAttributes<HTMLElement> & {
+        expanded?: boolean;
+        selected?: boolean;
+        disabled?: boolean;
+        lazy?: boolean;
+        'data-id'?: string;
+        children?: JSX.Element;
+        'on:sl-expand'?: SlEventHandler;
+        'on:sl-collapse'?: SlEventHandler;
+      };
     }
   }
 }

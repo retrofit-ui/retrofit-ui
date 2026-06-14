@@ -1,6 +1,18 @@
 import type { Column, Field } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
 
+export interface TreeResourceConfig {
+  list: () => unknown[] | Promise<unknown[]>;
+  idField?: string;
+  parentField?: string;
+  labelField?: string;
+  selection?: 'single' | 'multiple' | 'leaf';
+  create?: (data: unknown) => unknown | Promise<unknown>;
+  update?: (id: string, data: unknown) => unknown | Promise<unknown>;
+  delete?: (id: string) => unknown | Promise<unknown>;
+  metadata?: { title?: string };
+}
+
 export interface FormConfig {
   schema: ZodTypeAny;
   renderer: string;
@@ -29,6 +41,7 @@ export interface RetrofitTheme {
 export interface RetrofitConfig {
   forms?: Record<string, FormConfig>;
   resources?: Record<string, ResourceConfig>;
+  trees?: Record<string, TreeResourceConfig>;
   customRenderers?: unknown[];
   theme?: RetrofitTheme;
   /** Full base path for resource API calls. Default: '/api/ui'.

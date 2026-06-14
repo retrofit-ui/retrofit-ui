@@ -4,6 +4,14 @@ retrofit-ui is built around one rule: **when in doubt, do the work on the server
 
 The frontend's job is to render what it's told. Any logic that decides *what* to render — which rows to show, how a number should be displayed, which fields a user can edit — belongs on the server, where it can be tested, versioned, and applied consistently across every client.
 
+## The spec is the only coupling point
+
+@retrofit-ui/core defines the wire contract — the shape of every UI spec a backend declares and every response a renderer consumes. A backend team writing a Python or Go response-builder implements against that contract; @retrofit-ui/spa-solid-shoelace does the same on the renderer side. Neither needs to know the other exists.
+
+The goal is for the spec to carry enough information that a backend library can make meaningful guarantees to its users — correct pagination shape, valid column types, predictable cell structure — without any runtime knowledge of which renderer will consume the output.
+
+> *Open problem: there is currently no mechanism for the backend to send renderer-specific configuration — e.g. hints that only make sense for a Shoelace-based SPA. For now, the spec is designed to be renderer-agnostic.*
+
 ## What belongs on the frontend
 
 The frontend owns things that are inherently client concerns:

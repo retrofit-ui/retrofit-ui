@@ -158,6 +158,58 @@ test.describe('Todos inline-edit table', () => {
   });
 });
 
+test.describe('Field tooltip', () => {
+  test('sl-tooltip element is present in the DOM', async ({ page }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+    await expect(page.locator('sl-tooltip').first()).toBeAttached();
+  });
+
+  test('sl-icon-button with question-circle is visible next to the label', async ({
+    page,
+  }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+    await expect(
+      page.locator('sl-icon-button[name="question-circle"]').first(),
+    ).toBeVisible();
+  });
+
+  test('tooltip content attribute matches configured string', async ({
+    page,
+  }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+    const tooltip = page.locator(
+      'sl-tooltip[content="Enter a short description of the task"]',
+    );
+    await expect(tooltip).toBeAttached();
+  });
+
+  test('field with tooltip and helpText renders both', async ({ page }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+    const tooltip = page.locator(
+      'sl-tooltip[content="Enter a short description of the task"]',
+    );
+    await expect(tooltip).toBeAttached();
+    const titleInput = page.locator('sl-input').filter({ hasText: '' }).first();
+    const helpText = await titleInput.evaluate(
+      (el: HTMLElement & { helpText?: string }) => el.getAttribute('help-text'),
+    );
+    expect(helpText).toBe('Keep it brief');
+  });
+
+  test('done field (switch, no tooltip) has no sibling sl-icon-button', async ({
+    page,
+  }) => {
+    await page.goto(EDIT_TODO_URL);
+    await page.waitForSelector('form');
+    const switchWrapper = page.locator('sl-switch').locator('..');
+    await expect(switchWrapper.locator('sl-icon-button')).toHaveCount(0);
+  });
+});
+
 test.describe('Todo form view with sl-switch for done field', () => {
   test('edit form renders sl-switch for the done field', async ({ page }) => {
     await page.goto(EDIT_TODO_URL);

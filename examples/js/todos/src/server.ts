@@ -68,6 +68,10 @@ app.get('/api/ui/todos/:id', (req, res) => {
   const entity = isNew ? undefined : store.find(id);
   const builder = formSpec(TodoSchema, CreateTodoSchema)
     .fieldOverride('done', { type: 'switch' })
+    .fieldOverride('title', {
+      tooltip: 'Enter a short description of the task',
+      helpText: 'Keep it brief',
+    })
     .update({ method: 'PUT', url: `/todos/${id}` })
     .delete({ method: 'DELETE', url: `/todos/${id}` });
   if (entity) builder.values(entity as Record<string, unknown>);

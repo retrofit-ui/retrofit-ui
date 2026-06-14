@@ -64,6 +64,26 @@ TableView.schema(PostSchema)
 | `alignment` | `'left' \| 'center' \| 'right'` | Cell alignment |
 | `label` | `string` | Override the auto-derived column header |
 | `type` | `ColumnType` | Override the auto-derived type |
+| `badgeVariants` | `Record<string, 'primary' \| 'success' \| 'neutral' \| 'warning' \| 'danger'>` | Renders the cell as `<sl-badge>` with the mapped variant; values absent from the map render as plain text |
+
+### Status badges (enum columns)
+
+Use `badgeVariants` to render enum values as coloured `<sl-badge>` elements for at-a-glance status scanning:
+
+```typescript
+TableView.schema(PostSchema)
+  .columnOverride('status', {
+    badgeVariants: {
+      draft:     'neutral',
+      published: 'success',
+      archived:  'warning',
+    },
+  })
+  .list({ method: 'GET', url: '/posts' })
+  .build();
+```
+
+Values absent from the map fall through to plain text — partial maps are valid.
 
 ## Inline editing
 

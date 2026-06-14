@@ -11,6 +11,14 @@ export const ColumnTypeSchema = z.enum([
 ]);
 export type ColumnType = z.infer<typeof ColumnTypeSchema>;
 
+const BadgeVariantSchema = z.enum([
+  'primary',
+  'success',
+  'neutral',
+  'warning',
+  'danger',
+]);
+
 export const ColumnSchema = z.object({
   key: z.string().min(1),
   label: z.string().min(1),
@@ -21,6 +29,7 @@ export const ColumnSchema = z.object({
   width: z.string().optional(),
   alignment: z.enum(['left', 'center', 'right']).default('left'),
   options: z.array(FieldOptionSchema).optional(),
+  badgeVariants: z.record(z.string(), BadgeVariantSchema).optional(),
 });
 export type Column = z.infer<typeof ColumnSchema>;
 

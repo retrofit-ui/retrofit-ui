@@ -29,6 +29,44 @@ describe('ColumnSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('badgeVariants is optional', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'status',
+      label: 'Status',
+      type: 'enum',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.badgeVariants).toBeUndefined();
+    }
+  });
+
+  it('badgeVariants with valid variants parses correctly', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'status',
+      label: 'Status',
+      type: 'enum',
+      badgeVariants: { draft: 'neutral', published: 'success' },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.badgeVariants).toEqual({
+        draft: 'neutral',
+        published: 'success',
+      });
+    }
+  });
+
+  it('badgeVariants with an invalid variant string fails', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'status',
+      label: 'Status',
+      type: 'enum',
+      badgeVariants: { draft: 'info' },
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe('TableSchema', () => {
@@ -52,5 +90,31 @@ describe('TableSchema', () => {
       metadata: { title: 'Users', pageSize: 10 },
     });
     expect(result.success).toBe(true);
+  });
+
+  it('badgeVariants survives a TableSchema round-trip', () => {
+    const result = TableSchema.safeParse({
+      columns: [
+        {
+          key: 'status',
+          label: 'Status',
+          type: 'enum',
+          badgeVariants: {
+            draft: 'neutral',
+            published: 'success',
+            archived: 'warning',
+          },
+        },
+      ],
+      data: [{ status: 'published' }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.columns[0]?.badgeVariants).toEqual({
+        draft: 'neutral',
+        published: 'success',
+        archived: 'warning',
+      });
+    }
   });
 });

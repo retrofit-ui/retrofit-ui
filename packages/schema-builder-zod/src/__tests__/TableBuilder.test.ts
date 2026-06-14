@@ -81,4 +81,17 @@ describe('tableFromSchema', () => {
       .build();
     expect(() => TableSchema.parse(table)).not.toThrow();
   });
+
+  it('withColumnOverrides accepts badgeVariants', () => {
+    const table = tableFromSchema(TodoSchema, data)
+      .withColumnOverrides({
+        priority: { badgeVariants: { low: 'neutral', high: 'danger' } },
+      })
+      .build();
+    const priorityCol = table.columns.find((c) => c.key === 'priority');
+    expect(priorityCol?.badgeVariants).toEqual({
+      low: 'neutral',
+      high: 'danger',
+    });
+  });
 });

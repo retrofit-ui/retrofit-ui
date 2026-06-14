@@ -57,8 +57,8 @@ pr_ci_status() {
 
 pr_has_conflicts() {
   local pr_number="$1"
-  gh pr view "$pr_number" --repo "$REPO" --json mergeable \
-    --jq '.mergeable == "CONFLICTING"' 2>/dev/null || echo "false"
+  gh pr view "$pr_number" --repo "$REPO" --json mergeable,mergeStateStatus \
+    --jq '.mergeable == "CONFLICTING" or .mergeStateStatus == "DIRTY"' 2>/dev/null || echo "false"
 }
 
 pr_new_comments() {

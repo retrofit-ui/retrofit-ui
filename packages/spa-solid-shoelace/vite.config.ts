@@ -9,6 +9,15 @@ export default defineConfig({
     outDir: 'dist/ui-shell',
     emptyOutDir: true,
   },
+  optimizeDeps: {
+    include: [
+      '@fullcalendar/core',
+      '@fullcalendar/daygrid',
+      '@fullcalendar/timegrid',
+      '@fullcalendar/interaction',
+      '@fullcalendar/list',
+    ],
+  },
   server: {
     proxy: {
       '/api': {

@@ -1,4 +1,4 @@
-import type { Column, Field } from '@retrofit-ui/core';
+import type { Column, Field, StatSpec } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
 
 export interface TreeResourceConfig {
@@ -29,6 +29,7 @@ export interface ResourceConfig<S extends ZodRawShape = ZodRawShape> {
   delete?: (id: string) => unknown | Promise<unknown>;
   columnOverrides?: Record<string, Partial<Column>>;
   fieldOverrides?: Record<string, Partial<Field>>;
+  stats?: StatSpec | (() => StatSpec | Promise<StatSpec>);
 }
 
 export interface RetrofitTheme {

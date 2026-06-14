@@ -229,6 +229,13 @@ declare module 'solid-js' {
         'on:sl-expand'?: SlEventHandler;
         'on:sl-collapse'?: SlEventHandler;
       };
+      'sl-relative-time': JSX.HTMLAttributes<HTMLElement> & {
+        date?: string;
+        lang?: string;
+        format?: 'long' | 'short' | 'narrow';
+        numeric?: 'always' | 'auto';
+        sync?: boolean;
+      };
     }
   }
 }

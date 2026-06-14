@@ -78,3 +78,56 @@ export interface TreeSpec {
   };
   metadata?: { title?: string };
 }
+
+export interface TimelineEvent {
+  timestamp: string;
+  title: string;
+  description?: string;
+  variant?: 'success' | 'warning' | 'danger' | 'neutral' | 'primary';
+  icon?: string;
+}
+
+/** Returned by GET /api/ui/{resource}/timeline or GET /api/ui/{resource}/:id/timeline */
+export interface TimelineSpec {
+  events: TimelineEvent[];
+  metadata?: { title?: string };
+}
+
+/** A single KPI/statistic card. Value is computed server-side and embedded in the spec. */
+export interface Stat {
+  label: string;
+  value: number | string;
+  format?: 'number' | 'currency' | 'percent' | 'bytes';
+  currency?: string;
+  description?: string;
+}
+
+/** Returned by GET /api/ui/{resource}/stats — drives the stat/KPI grid view. */
+export interface StatSpec {
+  stats: Stat[];
+  metadata?: { title?: string };
+}
+
+/** A single calendar event, fully populated server-side. */
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string;
+  end?: string;
+  color?: string;
+  allDay?: boolean;
+}
+
+/** Returned by GET /api/ui/{resource}/calendar — drives the calendar view. */
+export interface CalendarSpec {
+  events: CalendarEvent[];
+  defaultView?: 'month' | 'week' | 'day' | 'list';
+  editable?: boolean;
+  endpoints?: {
+    find?: EndpointDirective;
+    create?: EndpointDirective;
+    update?: EndpointDirective;
+    delete?: EndpointDirective;
+  };
+  metadata?: { title?: string };
+}

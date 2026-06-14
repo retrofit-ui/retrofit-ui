@@ -1,4 +1,6 @@
 export type {
+  CalendarEvent,
+  CalendarSpec,
   EndpointDirective,
   FilterField,
   FilterFormSpec,
@@ -9,12 +11,18 @@ export type {
   PageSpec,
   Pane,
   RowAction,
+  Stat,
+  StatSpec,
   TableSpec,
+  TimelineEvent,
+  TimelineSpec,
   TreeSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
 export { createExpressRouter, retrofitUi } from './adapters/express';
 export { serveUiShell } from './adapters/ui-shell';
+export { CalendarView, CalendarViewBuilder } from './calendar-builder';
+export { defineConfig, defineRetrofitConfig } from './config';
 export { FormSpecBuilder, formSpec } from './form-builder';
 export {
   col,
@@ -27,6 +35,8 @@ export {
   pageSpec,
   row,
 } from './page-builder';
+export { StatView, StatViewBuilder } from './stat-view-builder';
+export { TimelineView, TimelineViewBuilder } from './timeline-builder';
 export { TreeView, TreeViewBuilder } from './tree-builder';
 export type { RetrofitTheme } from './types';
 export { TableView, TableViewBuilder } from './view-builder';

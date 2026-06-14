@@ -290,7 +290,12 @@ describe('resource routes – rating field', () => {
     const res = await fetch(`${baseUrl}/api/ui/reviews/new`);
     expect(res.status).toBe(200);
     const data = (await res.json()) as {
-      fields: { name: string; type: string; ratingMax?: number; ratingPrecision?: number }[];
+      fields: {
+        name: string;
+        type: string;
+        ratingMax?: number;
+        ratingPrecision?: number;
+      }[];
     };
     const scoreField = data.fields.find((f) => f.name === 'score');
     expect(scoreField?.type).toBe('rating');

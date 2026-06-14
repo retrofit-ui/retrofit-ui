@@ -506,6 +506,7 @@ function FormEditor(props: FormEditorProps) {
                   <div>
                     <Show when={!hideLabel()}>
                       <label
+                        for={`${field.name}-rating`}
                         style={{
                           display: 'block',
                           'margin-bottom': 'var(--sl-spacing-2x-small)',
@@ -517,6 +518,7 @@ function FormEditor(props: FormEditorProps) {
                       </label>
                     </Show>
                     <sl-rating
+                      id={`${field.name}-rating`}
                       label={fieldLabel()}
                       prop:value={Number(values()[field.name] ?? 0)}
                       max={field.ratingMax ?? 5}

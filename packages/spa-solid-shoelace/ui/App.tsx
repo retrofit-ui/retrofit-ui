@@ -2,6 +2,7 @@ import { HashRouter, Route } from '@solidjs/router';
 import { createContext } from 'solid-js';
 import { FormView } from './FormView';
 import { MarkdownView } from './MarkdownView';
+import { StatView } from './StatView';
 import { TableView } from './TableView';
 import { TimelineView } from './TimelineView';
 import { TreeView } from './TreeView';
@@ -27,6 +28,7 @@ export function App(props: { apiBase?: string }) {
         <Route path="/" component={Landing} />
         <Route path="/:resource" component={TableView} />
         <Route path="/:resource/tree" component={TreeView} />
+        <Route path="/:resource/stats" component={StatView} />
         <Route path="/:resource/new" component={FormView} />
         <Route path="/:resource/timeline" component={TimelineView} />
         <Route path="/:resource/:id/render" component={MarkdownView} />

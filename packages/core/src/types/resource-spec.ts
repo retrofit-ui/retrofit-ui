@@ -92,3 +92,18 @@ export interface TimelineSpec {
   events: TimelineEvent[];
   metadata?: { title?: string };
 }
+
+/** A single KPI/statistic card. Value is computed server-side and embedded in the spec. */
+export interface Stat {
+  label: string;
+  value: number | string;
+  format?: 'number' | 'currency' | 'percent' | 'bytes';
+  currency?: string;
+  description?: string;
+}
+
+/** Returned by GET /api/ui/{resource}/stats — drives the stat/KPI grid view. */
+export interface StatSpec {
+  stats: Stat[];
+  metadata?: { title?: string };
+}

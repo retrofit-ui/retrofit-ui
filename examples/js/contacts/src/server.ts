@@ -1,12 +1,16 @@
 import {
+  createExpressRouter,
+  defineConfig,
   filterForm,
   formSpec,
   pageSpec,
   retrofitUi,
+  StatViewBuilder,
   TableFormWorkflowBundle,
   TableView,
 } from '@retrofit-ui/server-solid-shoelace';
 import express from 'express';
+import { z } from 'zod';
 import { ContactSchema, UpdateContactSchema } from './schemas';
 import { store } from './store';
 
@@ -118,6 +122,27 @@ app.get('/api/ui/contacts-by-type', (_req, res) => {
     ),
   );
 });
+
+app.use(
+  createExpressRouter(
+    defineConfig({
+      resources: {
+        dashboard: {
+          schema: z.object({}),
+          stats: () =>
+            new StatViewBuilder()
+              .title('Contacts Dashboard')
+              .stat({
+                label: 'Total Contacts',
+                value: store.all().length,
+                format: 'number',
+              })
+              .build(),
+        },
+      },
+    }),
+  ),
+);
 
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => {

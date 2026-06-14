@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ColumnSchema, TableSchema } from '../table';
+import { CellSchema, ColumnSchema, TableSchema } from '../table';
 
 describe('ColumnSchema', () => {
   it('parses a valid column', () => {
@@ -69,63 +69,57 @@ describe('ColumnSchema', () => {
   });
 });
 
-describe('format field', () => {
-  const base = { key: 'amount', label: 'Amount', type: 'number' as const };
-
-  it('format: decimal with no other fields parses OK', () => {
-    const result = ColumnSchema.safeParse({ ...base, format: 'decimal' });
+describe('CellSchema', () => {
+  it('{ value: 1234.56 } parses OK and formatted is undefined', () => {
+    const result = CellSchema.safeParse({ value: 1234.56 });
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.value).toBe(1234.56);
+      expect(result.data.formatted).toBeUndefined();
+    }
   });
 
-  it('format: currency + currency: USD parses OK and round-trips', () => {
-    const result = ColumnSchema.safeParse({
-      ...base,
-      format: 'currency',
-      currency: 'USD',
+  it('{ value: 1234.56, formatted: "$1,234.56" } parses OK and both fields round-trip', () => {
+    const result = CellSchema.safeParse({
+      value: 1234.56,
+      formatted: '$1,234.56',
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.format).toBe('currency');
-      expect(result.data.currency).toBe('USD');
+      expect(result.data.value).toBe(1234.56);
+      expect(result.data.formatted).toBe('$1,234.56');
     }
   });
 
-  it('format: percent parses OK', () => {
-    const result = ColumnSchema.safeParse({ ...base, format: 'percent' });
+  it('{ value: "Acme Corp" } parses OK', () => {
+    const result = CellSchema.safeParse({ value: 'Acme Corp' });
     expect(result.success).toBe(true);
   });
 
-  it('format: bytes parses OK', () => {
-    const result = ColumnSchema.safeParse({ ...base, format: 'bytes' });
-    expect(result.success).toBe(true);
-  });
-
-  it('format: invalid fails safeParse', () => {
-    const result = ColumnSchema.safeParse({ ...base, format: 'invalid' });
+  it('{} fails safeParse — value is required', () => {
+    const result = CellSchema.safeParse({});
     expect(result.success).toBe(false);
-  });
-
-  it('currency without format still parses OK', () => {
-    const result = ColumnSchema.safeParse({ ...base, currency: 'EUR' });
-    expect(result.success).toBe(true);
-  });
-
-  it('existing column without format has format undefined', () => {
-    const result = ColumnSchema.safeParse(base);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.format).toBeUndefined();
-    }
   });
 });
 
 describe('TableSchema', () => {
-  it('parses a valid table', () => {
+  it('parses a valid table with cell-shaped data', () => {
     const result = TableSchema.safeParse({
       columns: [{ key: 'id', label: 'ID', type: 'number' }],
-      data: [{ id: 1 }, { id: 2 }],
+      data: [{ id: { value: 1 } }, { id: { value: 2 } }],
     });
     expect(result.success).toBe(true);
+  });
+
+  it('parses a valid table with formatted cells', () => {
+    const result = TableSchema.safeParse({
+      columns: [{ key: 'amount', label: 'Amount', type: 'number' }],
+      data: [{ amount: { value: 1234.56, formatted: '$1,234.56' } }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.data[0]?.amount?.formatted).toBe('$1,234.56');
+    }
   });
 
   it('rejects a table with no columns', () => {
@@ -156,7 +150,7 @@ describe('TableSchema', () => {
           },
         },
       ],
-      data: [{ status: 'published' }],
+      data: [{ status: { value: 'published' } }],
     });
     expect(result.success).toBe(true);
     if (result.success) {

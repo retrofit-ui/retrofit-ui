@@ -1,4 +1,4 @@
-import type { Column, Table, TableMetadata } from '@retrofit-ui/core';
+import type { Cell, Column, Table, TableMetadata } from '@retrofit-ui/core';
 import { TableSchema } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape } from 'zod';
 import { getShape, zodFieldToColumn } from './mappers';
@@ -9,6 +9,7 @@ export class TableBuilder<S extends ZodRawShape> {
   private rowLink?: string;
   private createUrl?: string;
   private overrides: Record<string, Partial<Column>> = {};
+  private formatters = new Map<string, (v: unknown) => string>();
 
   constructor(
     private readonly schema: ZodObject<S>,
@@ -40,6 +41,25 @@ export class TableBuilder<S extends ZodRawShape> {
     return this;
   }
 
+  columnOverride(
+    key: string,
+    override: Omit<Partial<Column>, 'format'> & {
+      format?: NonNullable<Column['format']> | ((v: unknown) => string);
+    },
+  ): this {
+    const { format, ...rest } = override;
+    const colOverride: Partial<Column> = rest as Partial<Column>;
+    if (typeof format === 'function') {
+      this.formatters.set(key, format);
+    } else if (format !== undefined) {
+      colOverride.format = format;
+    }
+    if (Object.keys(colOverride).length > 0) {
+      this.overrides[key] = { ...this.overrides[key], ...colOverride };
+    }
+    return this;
+  }
+
   build(): Table {
     const shape = getShape(this.schema);
     const columns: Column[] = Object.entries(shape).map(
@@ -58,7 +78,20 @@ export class TableBuilder<S extends ZodRawShape> {
       ...(this.createUrl && { createUrl: this.createUrl }),
     };
 
-    return TableSchema.parse({ columns, data: this.data, metadata });
+    const data = this.data.map((row) =>
+      Object.fromEntries(
+        columns.map((col) => {
+          const value = row[col.key];
+          const formatter = this.formatters.get(col.key);
+          const cell: Cell = formatter
+            ? { value, formatted: formatter(value) }
+            : { value };
+          return [col.key, cell];
+        }),
+      ),
+    );
+
+    return TableSchema.parse({ columns, data, metadata });
   }
 }
 

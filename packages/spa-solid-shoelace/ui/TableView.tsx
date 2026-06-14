@@ -1,8 +1,8 @@
 import '@shoelace-style/shoelace/dist/components/badge/badge.js';
-import '@shoelace-style/shoelace/dist/components/button-group/button-group.js';
-import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/format-bytes/format-bytes.js';
 import '@shoelace-style/shoelace/dist/components/format-number/format-number.js';
+import '@shoelace-style/shoelace/dist/components/button-group/button-group.js';
+import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
@@ -11,7 +11,7 @@ import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 
-import type { Column, PageSpec, TableSpec } from '@retrofit-ui/core';
+import type { Cell, Column, PageSpec, TableSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import {
   createEffect,
@@ -30,7 +30,7 @@ import { substitutePattern } from './utils';
 
 type ResourceData =
   | { kind: 'page'; spec: PageSpec }
-  | { kind: 'table'; spec: TableSpec; data: Record<string, unknown>[] };
+  | { kind: 'table'; spec: TableSpec; data: Record<string, Cell>[] };
 
 async function fetchTableView(
   resource: string,
@@ -47,7 +47,7 @@ async function fetchTableView(
   }
 
   const spec = json as unknown as TableSpec;
-  let data: Record<string, unknown>[] = [];
+  let data: Record<string, Cell>[] = [];
   if (spec.rows) {
     data = spec.rows;
   } else if (spec.endpoints?.list) {
@@ -62,7 +62,12 @@ async function fetchTableView(
     }
     const dataRes = await fetch(url);
     if (dataRes.ok) {
-      data = (await dataRes.json()) as Record<string, unknown>[];
+      const raw = (await dataRes.json()) as Record<string, unknown>[];
+      data = raw.map((row) =>
+        Object.fromEntries(
+          Object.entries(row).map(([k, v]) => [k, { value: v } satisfies Cell]),
+        ),
+      );
     }
   }
 

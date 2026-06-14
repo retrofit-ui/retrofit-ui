@@ -217,7 +217,9 @@ test.describe('Loading skeleton states', () => {
 });
 
 test.describe('Relative time display', () => {
-  test('updatedAt column renders sl-relative-time element', async ({ page }) => {
+  test('updatedAt column renders sl-relative-time element', async ({
+    page,
+  }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
     await expect(page.locator('tbody sl-relative-time').first()).toBeVisible();

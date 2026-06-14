@@ -136,3 +136,34 @@
   border-radius: var(--sl-border-radius-medium);
   overflow-x: auto;
 }
+
+/* Tags input */
+.retrofit-tags-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sl-spacing-2x-small);
+}
+
+.retrofit-tags-label {
+  font-size: var(--sl-font-size-small);
+  font-weight: var(--sl-font-weight-semibold);
+  color: var(--sl-color-neutral-700);
+}
+
+.retrofit-tags-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sl-spacing-2x-small);
+  padding: var(--sl-spacing-x-small);
+  border: solid var(--sl-input-border-width) var(--sl-input-border-color);
+  border-radius: var(--sl-input-border-radius-medium);
+  background: var(--sl-input-background-color);
+  min-height: var(--sl-input-height-medium);
+}
+
+.retrofit-tags-help {
+  margin: 0;
+  font-size: var(--sl-font-size-small);
+  color: var(--sl-color-neutral-500);
+}

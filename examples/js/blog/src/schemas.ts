@@ -6,7 +6,7 @@ export const PostSchema = z.object({
   slug: z.string(),
   body: z.string(),
   status: z.enum(['draft', 'published', 'archived']),
-  tags: z.string().optional(),
+  tags: z.array(z.string()).optional(),
   author: z.string(),
   updatedAt: z.string(),
 });
@@ -19,7 +19,7 @@ export const UpdatePostSchema = z.object({
   slug: z.string(),
   body: z.string(),
   status: z.enum(['draft', 'published', 'archived']),
-  tags: z.string().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 export type Post = z.infer<typeof PostSchema>;

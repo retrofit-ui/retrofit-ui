@@ -124,6 +124,20 @@ describe('formFromSchema', () => {
     expect(priorityField?.type).toBe('radio-group');
   });
 
+  it('withFieldOverrides can set type to tags', () => {
+    const form = formFromSchema(TodoSchema)
+      .withFieldOverrides({ title: { type: 'tags' } })
+      .build();
+    expect(form.fields.find((f) => f.name === 'title')?.type).toBe('tags');
+  });
+
+  it('tags field override passes FormSchema.parse()', () => {
+    const form = formFromSchema(TodoSchema)
+      .withFieldOverrides({ title: { type: 'tags' } })
+      .build();
+    expect(() => FormSchema.parse(form)).not.toThrow();
+  });
+
   it('build() output passes FormSchema.parse()', () => {
     const form = formFromSchema(TodoSchema)
       .withMutability(UpdateTodoSchema)

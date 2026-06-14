@@ -100,7 +100,7 @@ app.get('/api/ui/posts/:id', (req, res) => {
       helpText: 'lowercase, hyphens only',
       validation: { pattern: '^[a-z0-9-]+$' },
     })
-    .fieldOverride('tags', { helpText: 'comma-separated' })
+    .fieldOverride('tags', { type: 'tags' })
     .fieldOverride('title', { validation: { max: 200 } })
     .fieldOverride('author', {
       type: 'select',

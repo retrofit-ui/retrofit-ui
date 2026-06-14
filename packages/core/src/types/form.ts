@@ -16,6 +16,7 @@ export const FieldTypeSchema = z.enum([
   'markdown',
   'file',
   'color',
+  'tags',
 ]);
 export type FieldType = z.infer<typeof FieldTypeSchema>;
 

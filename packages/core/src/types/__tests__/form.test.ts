@@ -103,6 +103,15 @@ describe('FieldSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts tags field type', () => {
+    const result = FieldSchema.safeParse({
+      name: 'tags',
+      label: 'Tags',
+      type: 'tags',
+    });
+    expect(result.success).toBe(true);
+  });
+
   it('rejects unknown field type', () => {
     const result = FieldSchema.safeParse({
       name: 'x',

@@ -9,6 +9,7 @@ import '@shoelace-style/shoelace/dist/components/radio-button/radio-button.js';
 import '@shoelace-style/shoelace/dist/components/radio-group/radio-group.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import '@shoelace-style/shoelace/dist/components/tag/tag.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type { FormSpec } from '@retrofit-ui/core';
@@ -92,6 +93,76 @@ export function FormView() {
   );
 }
 
+interface TagsInputProps {
+  value: string[];
+  onChange: (v: string[]) => void;
+  label?: string;
+  helpText?: string;
+  disabled?: boolean;
+  invalid?: boolean;
+  placeholder?: string;
+}
+
+function TagsInput(props: TagsInputProps) {
+  const [draft, setDraft] = createSignal('');
+
+  function addTag(raw: string) {
+    const tag = raw.trim();
+    if (!tag) return;
+    props.onChange([...props.value, tag]);
+    setDraft('');
+  }
+
+  function removeTag(tag: string) {
+    props.onChange(props.value.filter((t) => t !== tag));
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag(draft());
+    } else if (e.key === ',') {
+      e.preventDefault();
+      addTag(draft());
+    } else if (e.key === 'Backspace' && draft() === '') {
+      props.onChange(props.value.slice(0, -1));
+    }
+  }
+
+  return (
+    <div class="retrofit-tags-input">
+      <Show when={props.label}>
+        <label class="retrofit-tags-label">{props.label}</label>
+      </Show>
+      <div class="retrofit-tags-field" aria-label={props.label}>
+        <For each={props.value}>
+          {(tag) => (
+            <sl-tag
+              removable={!props.disabled || undefined}
+              on:sl-remove={() => removeTag(tag)}
+            >
+              {tag}
+            </sl-tag>
+          )}
+        </For>
+        <sl-input
+          placeholder={props.value.length === 0 ? props.placeholder : undefined}
+          disabled={props.disabled || undefined}
+          prop:value={draft()}
+          invalid={props.invalid || undefined}
+          on:sl-input={(e: Event) =>
+            setDraft((e.target as EventTarget & { value: string }).value)
+          }
+          on:keydown={handleKeydown}
+        />
+      </div>
+      <Show when={props.helpText}>
+        <p class="retrofit-tags-help">{props.helpText}</p>
+      </Show>
+    </div>
+  );
+}
+
 interface FormEditorProps {
   spec: FormSpec;
   entity: Record<string, unknown>;
@@ -156,6 +227,7 @@ function FormEditor(props: FormEditorProps) {
         if (existing !== undefined) return [f.name, existing];
         if (f.type === 'checkbox' || f.type === 'switch')
           return [f.name, false];
+        if (f.type === 'tags') return [f.name, []];
         return [f.name, ''];
       }),
     );
@@ -179,7 +251,12 @@ function FormEditor(props: FormEditorProps) {
     for (const field of visibleFields()) {
       if (field.readOnly) continue;
       const val = values()[field.name];
-      if (field.required && (val === undefined || val === '' || val === null)) {
+      const isEmpty =
+        val === undefined ||
+        val === '' ||
+        val === null ||
+        (Array.isArray(val) && val.length === 0);
+      if (field.required && isEmpty) {
         errs[field.name] = `${field.label} is required`;
       }
     }
@@ -401,6 +478,17 @@ function FormEditor(props: FormEditorProps) {
                     </Show>
                   </div>
                 </Show>
+                <Show when={field.type === 'tags'}>
+                  <TagsInput
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    helpText={field.helpText}
+                    placeholder={field.placeholder}
+                    disabled={field.readOnly || undefined}
+                    invalid={!!err() || undefined}
+                    value={(values()[field.name] as string[] | undefined) ?? []}
+                    onChange={(v) => setValue(field.name, v)}
+                  />
+                </Show>
                 <Show
                   when={
                     !isTextarea() &&
@@ -408,7 +496,8 @@ function FormEditor(props: FormEditorProps) {
                     field.type !== 'radio-group' &&
                     field.type !== 'checkbox' &&
                     field.type !== 'switch' &&
-                    field.type !== 'color'
+                    field.type !== 'color' &&
+                    field.type !== 'tags'
                   }
                 >
                   <sl-input

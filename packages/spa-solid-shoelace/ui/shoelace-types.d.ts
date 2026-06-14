@@ -136,6 +136,14 @@ declare module 'solid-js' {
         'on:sl-input'?: SlEventHandler;
         'aria-label'?: string;
       };
+      'sl-tag': JSX.HTMLAttributes<HTMLElement> & {
+        variant?: 'primary' | 'success' | 'neutral' | 'warning' | 'danger';
+        size?: 'small' | 'medium' | 'large';
+        pill?: boolean;
+        removable?: boolean;
+        'on:sl-remove'?: SlEventHandler;
+        children?: JSX.Element;
+      };
     }
   }
 }

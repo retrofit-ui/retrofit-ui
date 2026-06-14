@@ -258,12 +258,35 @@ $([ -n "$fix_context" ] && printf "## Problems to fix\n\n${fix_context}")
       git commit -m "feat: ${title} (closes #${number})
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-      git push origin "$branch"
-      log "  → implementation committed and pushed"
     else
       log "  ⚠ no implementation changes to commit"
-      git push origin "$branch" 2>/dev/null || true
     fi
+
+    # Push with retry loop — if pre-push CI fails, ask Claude to fix and try again
+    push_attempts=0
+    while ! git push origin "$branch" 2>&1 | tee -a "$log_file"; do
+      push_attempts=$(( push_attempts + 1 ))
+      if [ "$push_attempts" -ge 3 ]; then
+        log "  ✗ push failed after ${push_attempts} attempts — giving up"
+        exit 1
+      fi
+      log "  → push failed (attempt ${push_attempts}), asking Claude to fix CI..."
+      claude --dangerously-skip-permissions --verbose --max-turns 20 \
+        -p "The pre-push CI hook just failed when pushing branch \`${branch}\` for issue #${number} (${title}).
+
+Look at the CI output above in the terminal (check recent log output or run \`pnpm build && pnpm test && pnpm typecheck && pnpm lint\` to reproduce).
+
+Fix all failing build, test, typecheck, and lint errors. Do not commit — the script will handle that." \
+        2>&1 | tee -a "$log_file"
+      git add -A
+      git restore --staged "$plan_file" 2>/dev/null || true
+      if ! git diff --cached --quiet; then
+        git commit -m "fix: CI failures for #${number}
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+      fi
+    done
+    log "  → implementation committed and pushed"
   ) && log "  ✓ #${number} done  (elapsed: $(elapsed $t0))" \
     || log "  ✗ #${number} failed  (elapsed: $(elapsed $t0))"
 

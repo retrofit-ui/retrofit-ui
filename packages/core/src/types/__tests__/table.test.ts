@@ -29,6 +29,46 @@ describe('ColumnSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it('accepts display: relative on a date column', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'createdAt',
+      label: 'Created At',
+      type: 'date',
+      display: 'relative',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts display: absolute', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'createdAt',
+      label: 'Created At',
+      type: 'date',
+      display: 'absolute',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an invalid display value', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'createdAt',
+      label: 'Created At',
+      type: 'date',
+      display: 'fuzzy',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('display is optional and omitting it parses successfully', () => {
+    const result = ColumnSchema.safeParse({
+      key: 'createdAt',
+      label: 'Created At',
+      type: 'string',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.display).toBeUndefined();
+  });
 });
 
 describe('TableSchema', () => {

@@ -3,8 +3,10 @@ import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/dialog/dialog.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
+import '@shoelace-style/shoelace/dist/components/relative-time/relative-time.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
 
 import type { Column, PageSpec, TableSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
@@ -118,6 +120,24 @@ function CellInput(props: {
   );
 }
 
+function CellDisplay(props: { col: Column; value: unknown }) {
+  const strVal = () => String(props.value ?? '');
+
+  if (props.col.type === 'boolean') {
+    return <span>{props.value ? '✓' : '✗'}</span>;
+  }
+
+  if (props.col.display === 'relative') {
+    return (
+      <sl-tooltip content={strVal()}>
+        <sl-relative-time date={strVal()} />
+      </sl-tooltip>
+    );
+  }
+
+  return <span>{strVal()}</span>;
+}
+
 function DataRow(props: {
   row: Record<string, unknown>;
   spec: TableSpec;
@@ -215,15 +235,7 @@ function DataRow(props: {
             >
               <Show
                 when={editing() && col.editable}
-                fallback={
-                  <span>
-                    {col.type === 'boolean'
-                      ? props.row[col.key]
-                        ? '✓'
-                        : '✗'
-                      : String(props.row[col.key] ?? '')}
-                  </span>
-                }
+                fallback={<CellDisplay col={col} value={props.row[col.key]} />}
               >
                 <CellInput
                   col={col}

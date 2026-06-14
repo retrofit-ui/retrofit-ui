@@ -81,6 +81,7 @@ app.get('/api/ui/posts', (_req, res) => {
       TableView.forRows(PostSchema, store.all())
         .columnOverride('title', { sortable: true })
         .columnOverride('status', { filterable: true })
+        .columnOverride('updatedAt', { display: 'relative' })
         .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
         .find({ method: 'GET', url: '/posts/{id}' })
         .create({ method: 'POST', url: '/posts' })

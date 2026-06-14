@@ -21,6 +21,7 @@ export const ColumnSchema = z.object({
   width: z.string().optional(),
   alignment: z.enum(['left', 'center', 'right']).default('left'),
   options: z.array(FieldOptionSchema).optional(),
+  display: z.enum(['absolute', 'relative']).optional(),
 });
 export type Column = z.infer<typeof ColumnSchema>;
 

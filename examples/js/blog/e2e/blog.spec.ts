@@ -216,6 +216,34 @@ test.describe('Loading skeleton states', () => {
   });
 });
 
+test.describe('Relative time display', () => {
+  test('updatedAt column renders sl-relative-time element', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+    await expect(page.locator('tbody sl-relative-time').first()).toBeVisible();
+  });
+
+  test('sl-relative-time is wrapped in an sl-tooltip', async ({ page }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+    await expect(
+      page.locator('sl-tooltip sl-relative-time').first(),
+    ).toBeVisible();
+  });
+
+  test('sl-relative-time date attribute contains an ISO string', async ({
+    page,
+  }) => {
+    await page.goto(TABLE_URL);
+    await waitForTable(page);
+    const dateAttr = await page
+      .locator('sl-relative-time')
+      .first()
+      .getAttribute('date');
+    expect(dateAttr).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+});
+
 test.describe('Blog markdown render view', () => {
   test('Preview button navigates to render view', async ({ page }) => {
     await page.goto(TABLE_URL);

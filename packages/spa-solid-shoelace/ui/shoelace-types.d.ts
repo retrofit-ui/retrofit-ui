@@ -124,6 +124,37 @@ declare module 'solid-js' {
       'sl-skeleton': JSX.HTMLAttributes<HTMLElement> & {
         effect?: 'none' | 'sheen' | 'pulse';
       };
+      'sl-relative-time': JSX.HTMLAttributes<HTMLElement> & {
+        date?: string | Date;
+        lang?: string;
+        format?: 'long' | 'short' | 'narrow';
+        numeric?: 'always' | 'auto';
+        sync?: boolean;
+      };
+      'sl-tooltip': JSX.HTMLAttributes<HTMLElement> & {
+        content?: string;
+        placement?:
+          | 'top'
+          | 'top-start'
+          | 'top-end'
+          | 'bottom'
+          | 'bottom-start'
+          | 'bottom-end'
+          | 'right'
+          | 'right-start'
+          | 'right-end'
+          | 'left'
+          | 'left-start'
+          | 'left-end';
+        trigger?: string;
+        disabled?: boolean;
+        hoist?: boolean;
+        children?: JSX.Element;
+        'on:sl-show'?: SlEventHandler;
+        'on:sl-hide'?: SlEventHandler;
+        'on:sl-after-show'?: SlEventHandler;
+        'on:sl-after-hide'?: SlEventHandler;
+      };
       'sl-color-picker': JSX.HTMLAttributes<HTMLElement> & {
         format?: 'hex' | 'rgb' | 'hsl' | 'hsv';
         value?: string;

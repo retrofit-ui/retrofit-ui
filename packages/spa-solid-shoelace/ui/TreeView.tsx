@@ -9,12 +9,14 @@ import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, createSignal, For, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './App';
 import { showToast } from './toast';
-import { buildTree } from './tree-utils';
 import type { TreeNode } from './tree-utils';
+import { buildTree } from './tree-utils';
 
 function TreeItem(props: { treeNode: TreeNode; spec: TreeSpec }) {
   return (
-    <sl-tree-item data-id={String(props.treeNode.node[props.spec.idField] ?? '')}>
+    <sl-tree-item
+      data-id={String(props.treeNode.node[props.spec.idField] ?? '')}
+    >
       {String(props.treeNode.node[props.spec.labelField] ?? '')}
       <For each={props.treeNode.children}>
         {(child) => <TreeItem treeNode={child} spec={props.spec} />}
@@ -82,8 +84,14 @@ export function TreeView() {
     <>
       <Show when={isLoading()}>
         <div class="retrofit-view">
-          <sl-skeleton effect="sheen" style={{ height: '1.5rem', 'margin-bottom': '0.5rem' }} />
-          <sl-skeleton effect="sheen" style={{ height: '1.5rem', 'margin-bottom': '0.5rem' }} />
+          <sl-skeleton
+            effect="sheen"
+            style={{ height: '1.5rem', 'margin-bottom': '0.5rem' }}
+          />
+          <sl-skeleton
+            effect="sheen"
+            style={{ height: '1.5rem', 'margin-bottom': '0.5rem' }}
+          />
           <sl-skeleton effect="sheen" style={{ height: '1.5rem' }} />
         </div>
       </Show>
@@ -114,8 +122,17 @@ export function TreeView() {
             <sl-tree
               selection={spec()?.selection ?? 'single'}
               on:sl-selection-change={(e: Event) => {
-                const items = (e as CustomEvent<{ selection: HTMLElement[] }>).detail.selection;
-                setSelectedIds(items.map((el) => (el as HTMLElement & { dataset: DOMStringMap }).dataset.id ?? '').filter(Boolean));
+                const items = (e as CustomEvent<{ selection: HTMLElement[] }>)
+                  .detail.selection;
+                setSelectedIds(
+                  items
+                    .map(
+                      (el) =>
+                        (el as HTMLElement & { dataset: DOMStringMap }).dataset
+                          .id ?? '',
+                    )
+                    .filter(Boolean),
+                );
               }}
             >
               <For each={treeRoots()}>

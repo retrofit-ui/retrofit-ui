@@ -76,7 +76,12 @@ describe('buildTree', () => {
   it('preserves node data on the result', () => {
     const nodes = [{ id: 'abc', parentId: null, name: 'Hello', extra: 42 }];
     const result = buildTree(nodes, 'id', 'parentId');
-    expect(result[0]?.node).toEqual({ id: 'abc', parentId: null, name: 'Hello', extra: 42 });
+    expect(result[0]?.node).toEqual({
+      id: 'abc',
+      parentId: null,
+      name: 'Hello',
+      extra: 42,
+    });
   });
 
   it('uses custom idField and parentField names', () => {

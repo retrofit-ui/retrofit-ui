@@ -1,11 +1,11 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import type { TreeSpec } from '@retrofit-ui/core';
 import express from 'express';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { createExpressRouter } from '../adapters/express';
 import { defineConfig } from '../config';
-import type { TreeSpec } from '@retrofit-ui/core';
 
 const onSubmit = vi.fn().mockResolvedValue(undefined);
 const listFn = vi.fn().mockResolvedValue([{ id: 1, name: 'Foo' }]);
@@ -441,7 +441,11 @@ describe('tree resource routes – categories', () => {
     expect(res.status).toBe(200);
     const data = (await res.json()) as unknown[];
     expect(data).toHaveLength(3);
-    expect(data[0]).toMatchObject({ id: 1, parentId: null, name: 'Electronics' });
+    expect(data[0]).toMatchObject({
+      id: 1,
+      parentId: null,
+      name: 'Electronics',
+    });
   });
 
   it('GET /api/ui/categories/tree/data returns 500 when list throws', async () => {

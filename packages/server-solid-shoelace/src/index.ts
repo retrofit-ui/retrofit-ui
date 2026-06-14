@@ -27,9 +27,9 @@ export {
   pageSpec,
   row,
 } from './page-builder';
+export { TreeView, TreeViewBuilder } from './tree-builder';
 export type { RetrofitTheme } from './types';
 export { TableView, TableViewBuilder } from './view-builder';
-export { TreeView, TreeViewBuilder } from './tree-builder';
 export {
   TableFormWorkflowBundle,
   WorkflowBundle,

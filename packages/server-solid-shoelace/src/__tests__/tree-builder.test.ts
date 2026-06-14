@@ -33,7 +33,10 @@ describe('TreeViewBuilder', () => {
   });
 
   it('selection() sets selection field', () => {
-    const spec = new TreeViewBuilder().endpoint(ep).selection('multiple').build();
+    const spec = new TreeViewBuilder()
+      .endpoint(ep)
+      .selection('multiple')
+      .build();
     expect(spec.selection).toBe('multiple');
   });
 

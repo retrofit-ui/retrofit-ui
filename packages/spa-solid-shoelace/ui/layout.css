@@ -254,3 +254,39 @@
   color: var(--sl-color-neutral-700);
   margin: var(--sl-spacing-2x-small) 0 0;
 }
+
+/* Stat / KPI grid view */
+.retrofit-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--sl-spacing-large);
+}
+
+.retrofit-stat-card {
+  padding: var(--sl-spacing-large);
+  border: 1px solid var(--sl-color-neutral-200);
+  border-radius: var(--sl-border-radius-large);
+  background: var(--sl-color-neutral-0);
+}
+
+.retrofit-stat-value {
+  font-size: var(--sl-font-size-3x-large);
+  font-weight: var(--sl-font-weight-bold);
+  color: var(--sl-color-neutral-900);
+  line-height: 1.1;
+  margin-bottom: var(--sl-spacing-x-small);
+}
+
+.retrofit-stat-label {
+  font-size: var(--sl-font-size-small);
+  font-weight: var(--sl-font-weight-semibold);
+  color: var(--sl-color-neutral-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.retrofit-stat-description {
+  font-size: var(--sl-font-size-x-small);
+  color: var(--sl-color-neutral-500);
+  margin-top: var(--sl-spacing-2x-small);
+}

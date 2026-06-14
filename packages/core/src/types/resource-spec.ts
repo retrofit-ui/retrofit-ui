@@ -92,3 +92,18 @@ export interface TimelineSpec {
   events: TimelineEvent[];
   metadata?: { title?: string };
 }
+
+/** A single KPI/statistic card. The SPA fetches endpoint to get { value: number | string }. */
+export interface Stat {
+  label: string;
+  endpoint: EndpointDirective;
+  format?: 'number' | 'currency' | 'percent' | 'bytes';
+  currency?: string;
+  description?: string;
+}
+
+/** Returned by GET /api/ui/{resource}/stats — drives the stat/KPI grid view. */
+export interface StatSpec {
+  stats: Stat[];
+  metadata?: { title?: string };
+}

@@ -88,6 +88,21 @@ export function createExpressRouter(config: RetrofitConfig): express.Router {
       }
     });
 
+    // GET /api/ui/:name/stats — stat/KPI spec (must be before /:id)
+    if (resource.stats) {
+      router.get(`${prefix}/stats`, async (_req, res) => {
+        try {
+          const spec =
+            typeof resource.stats === 'function'
+              ? await resource.stats()
+              : resource.stats;
+          res.json(spec);
+        } catch {
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
+    }
+
     // GET /api/ui/:name/new — create form spec
     router.get(`${prefix}/new`, (_req, res) => {
       const builder = new FormSpecBuilder(

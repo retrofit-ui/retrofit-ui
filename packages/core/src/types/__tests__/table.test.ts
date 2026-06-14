@@ -69,6 +69,56 @@ describe('ColumnSchema', () => {
   });
 });
 
+describe('format field', () => {
+  const base = { key: 'amount', label: 'Amount', type: 'number' as const };
+
+  it('format: decimal with no other fields parses OK', () => {
+    const result = ColumnSchema.safeParse({ ...base, format: 'decimal' });
+    expect(result.success).toBe(true);
+  });
+
+  it('format: currency + currency: USD parses OK and round-trips', () => {
+    const result = ColumnSchema.safeParse({
+      ...base,
+      format: 'currency',
+      currency: 'USD',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.format).toBe('currency');
+      expect(result.data.currency).toBe('USD');
+    }
+  });
+
+  it('format: percent parses OK', () => {
+    const result = ColumnSchema.safeParse({ ...base, format: 'percent' });
+    expect(result.success).toBe(true);
+  });
+
+  it('format: bytes parses OK', () => {
+    const result = ColumnSchema.safeParse({ ...base, format: 'bytes' });
+    expect(result.success).toBe(true);
+  });
+
+  it('format: invalid fails safeParse', () => {
+    const result = ColumnSchema.safeParse({ ...base, format: 'invalid' });
+    expect(result.success).toBe(false);
+  });
+
+  it('currency without format still parses OK', () => {
+    const result = ColumnSchema.safeParse({ ...base, currency: 'EUR' });
+    expect(result.success).toBe(true);
+  });
+
+  it('existing column without format has format undefined', () => {
+    const result = ColumnSchema.safeParse(base);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.format).toBeUndefined();
+    }
+  });
+});
+
 describe('TableSchema', () => {
   it('parses a valid table', () => {
     const result = TableSchema.safeParse({

@@ -73,6 +73,15 @@ describe('tableFromSchema', () => {
     expect(titleCol?.label).toBe('Task');
   });
 
+  it('withColumnOverrides accepts format and currency', () => {
+    const table = tableFromSchema(TodoSchema, data)
+      .withColumnOverrides({ id: { format: 'currency', currency: 'EUR' } })
+      .build();
+    const idCol = table.columns.find((c) => c.key === 'id');
+    expect(idCol?.format).toBe('currency');
+    expect(idCol?.currency).toBe('EUR');
+  });
+
   it('build() output passes TableSchema.parse()', () => {
     const table = tableFromSchema(TodoSchema, data)
       .withRowLink('/api/ui/todos/{id}')

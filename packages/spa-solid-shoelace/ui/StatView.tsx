@@ -40,9 +40,7 @@ interface StatCardData {
   error?: string;
 }
 
-async function fetchStatValues(
-  spec: StatSpec,
-): Promise<StatCardData[]> {
+async function fetchStatValues(spec: StatSpec): Promise<StatCardData[]> {
   return Promise.all(
     spec.stats.map(async (stat) => {
       try {
@@ -82,7 +80,9 @@ function StatCard(props: { data: StatCardData }) {
       <div class="retrofit-stat-value">{displayValue()}</div>
       <div class="retrofit-stat-label">{props.data.stat.label}</div>
       <Show when={props.data.stat.description}>
-        <div class="retrofit-stat-description">{props.data.stat.description}</div>
+        <div class="retrofit-stat-description">
+          {props.data.stat.description}
+        </div>
       </Show>
     </div>
   );
@@ -104,7 +104,10 @@ export function StatView() {
           <For each={Array(4).fill(null)}>
             {() => (
               <div class="retrofit-stat-card">
-                <sl-skeleton effect="sheen" style={{ height: '2.5rem', 'margin-bottom': '0.5rem' }} />
+                <sl-skeleton
+                  effect="sheen"
+                  style={{ height: '2.5rem', 'margin-bottom': '0.5rem' }}
+                />
                 <sl-skeleton effect="sheen" style={{ width: '60%' }} />
               </div>
             )}
@@ -121,9 +124,7 @@ export function StatView() {
               <h1 class="retrofit-page-title">{v().spec.metadata?.title}</h1>
             </Show>
             <div class="retrofit-stat-grid">
-              <For each={v().cards}>
-                {(card) => <StatCard data={card} />}
-              </For>
+              <For each={v().cards}>{(card) => <StatCard data={card} />}</For>
             </div>
           </>
         )}

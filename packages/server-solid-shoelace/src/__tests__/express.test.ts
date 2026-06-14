@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { createExpressRouter } from '../adapters/express';
 import { defineConfig } from '../config';
+import type { TreeSpec } from '@retrofit-ui/core';
 
 const onSubmit = vi.fn().mockResolvedValue(undefined);
 const listFn = vi.fn().mockResolvedValue([{ id: 1, name: 'Foo' }]);
@@ -364,5 +365,98 @@ describe('resource routes – unimplemented handlers', () => {
   it('DELETE /api/ui/bare/:id returns 501 when delete not implemented', async () => {
     const res = await fetch(`${bareUrl}/api/ui/bare/1`, { method: 'DELETE' });
     expect(res.status).toBe(501);
+  });
+});
+
+describe('tree resource routes – categories', () => {
+  const treeListFn = vi.fn().mockResolvedValue([
+    { id: 1, parentId: null, name: 'Electronics' },
+    { id: 2, parentId: 1, name: 'Phones' },
+    { id: 3, parentId: 1, name: 'Laptops' },
+  ]);
+  const treeDeleteFn = vi.fn().mockResolvedValue(undefined);
+
+  const treeConfig = defineConfig({
+    trees: {
+      categories: {
+        list: treeListFn,
+        delete: treeDeleteFn,
+        metadata: { title: 'Categories' },
+      },
+    },
+  });
+
+  let treeUrl: string;
+  let treeServer: ReturnType<typeof createServer>;
+
+  beforeAll(async () => {
+    const app = express();
+    app.use(express.json());
+    app.use(createExpressRouter(treeConfig));
+    treeServer = createServer(app);
+    await new Promise<void>((resolve) => treeServer.listen(0, resolve));
+    const port = (treeServer.address() as AddressInfo).port;
+    treeUrl = `http://localhost:${port}`;
+  });
+
+  afterAll(
+    async () =>
+      new Promise<void>((resolve, reject) =>
+        treeServer.close((err) => (err ? reject(err) : resolve())),
+      ),
+  );
+
+  it('GET /api/ui/categories/tree returns TreeSpec JSON with correct shape', async () => {
+    const res = await fetch(`${treeUrl}/api/ui/categories/tree`);
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as TreeSpec;
+    expect(data.endpoint).toBeDefined();
+    expect(data.idField).toBe('id');
+    expect(data.parentField).toBe('parentId');
+    expect(data.labelField).toBe('name');
+  });
+
+  it('TreeSpec includes endpoint.url and endpoint.method', async () => {
+    const res = await fetch(`${treeUrl}/api/ui/categories/tree`);
+    const data = (await res.json()) as TreeSpec;
+    expect(data.endpoint.method).toBe('GET');
+    expect(data.endpoint.url).toContain('/api/ui/categories/tree/data');
+  });
+
+  it('TreeSpec includes delete action when delete handler is configured', async () => {
+    const res = await fetch(`${treeUrl}/api/ui/categories/tree`);
+    const data = (await res.json()) as TreeSpec;
+    expect(data.actions?.delete).toBeDefined();
+    expect(data.actions?.delete?.method).toBe('DELETE');
+  });
+
+  it('TreeSpec includes metadata.title when configured', async () => {
+    const res = await fetch(`${treeUrl}/api/ui/categories/tree`);
+    const data = (await res.json()) as TreeSpec;
+    expect(data.metadata?.title).toBe('Categories');
+  });
+
+  it('GET /api/ui/categories/tree/data returns the flat node list', async () => {
+    const res = await fetch(`${treeUrl}/api/ui/categories/tree/data`);
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as unknown[];
+    expect(data).toHaveLength(3);
+    expect(data[0]).toMatchObject({ id: 1, parentId: null, name: 'Electronics' });
+  });
+
+  it('GET /api/ui/categories/tree/data returns 500 when list throws', async () => {
+    treeListFn.mockRejectedValueOnce(new Error('db error'));
+    const res = await fetch(`${treeUrl}/api/ui/categories/tree/data`);
+    expect(res.status).toBe(500);
+  });
+
+  it('DELETE /api/ui/categories/:id deletes a tree node', async () => {
+    const res = await fetch(`${treeUrl}/api/ui/categories/1`, {
+      method: 'DELETE',
+    });
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as { ok: boolean };
+    expect(data.ok).toBe(true);
+    expect(treeDeleteFn).toHaveBeenCalledWith('1');
   });
 });

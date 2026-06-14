@@ -3,6 +3,7 @@ import express from 'express';
 import { FormSpecBuilder } from '../form-builder';
 import { FormRegistry } from '../registry';
 import { zodToJsonSchema } from '../schema-utils';
+import { TreeViewBuilder } from '../tree-builder';
 import type { RetrofitConfig, RetrofitTheme } from '../types';
 import { TableViewBuilder } from '../view-builder';
 import { serveUiShell } from './ui-shell';
@@ -180,6 +181,49 @@ export function createExpressRouter(config: RetrofitConfig): express.Router {
         res.status(500).json({ error: 'Internal server error' });
       }
     });
+  }
+
+  // ── Tree routes ──────────────────────────────────────────────────────────
+
+  for (const [name, tree] of Object.entries(config.trees ?? {})) {
+    const prefix = `${apiBase}/${name}`;
+
+    // GET /api/ui/:name/tree — tree spec
+    router.get(`${prefix}/tree`, (_req, res) => {
+      const builder = new TreeViewBuilder()
+        .endpoint({ method: 'GET', url: `${prefix}/tree/data` });
+      if (tree.idField) builder.idField(tree.idField);
+      if (tree.parentField) builder.parentField(tree.parentField);
+      if (tree.labelField) builder.labelField(tree.labelField);
+      if (tree.selection) builder.selection(tree.selection);
+      if (tree.create) builder.create({ method: 'POST', url: prefix });
+      if (tree.update) builder.update({ method: 'PUT', url: `${prefix}/{id}` });
+      if (tree.delete) builder.delete({ method: 'DELETE', url: `${prefix}/{id}` });
+      if (tree.metadata) builder.metadata(tree.metadata);
+      res.json(builder.build());
+    });
+
+    // GET /api/ui/:name/tree/data — flat node list
+    router.get(`${prefix}/tree/data`, async (_req, res) => {
+      try {
+        const data = await tree.list();
+        res.json(data);
+      } catch {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+
+    // DELETE /api/ui/:name/:id — delete tree node
+    if (tree.delete) {
+      router.delete(`${prefix}/:id`, async (req, res) => {
+        try {
+          await tree.delete!(req.params.id);
+          res.json({ ok: true });
+        } catch {
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
+    }
   }
 
   return router;

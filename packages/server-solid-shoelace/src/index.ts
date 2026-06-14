@@ -10,6 +10,7 @@ export type {
   Pane,
   RowAction,
   TableSpec,
+  TreeSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
 export { createExpressRouter, retrofitUi } from './adapters/express';
@@ -28,6 +29,7 @@ export {
 } from './page-builder';
 export type { RetrofitTheme } from './types';
 export { TableView, TableViewBuilder } from './view-builder';
+export { TreeView, TreeViewBuilder } from './tree-builder';
 export {
   TableFormWorkflowBundle,
   WorkflowBundle,

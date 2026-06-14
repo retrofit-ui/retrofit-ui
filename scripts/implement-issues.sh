@@ -213,6 +213,11 @@ $(echo "$all_issue_comments" | jq -r '.[] | "  [\(.author)]: \(.body)"')
       git worktree add "$worktree" -b "$branch" main
     fi
 
+    # Install dependencies so Claude has a working node_modules in the worktree.
+    # pnpm reuses the global content-addressable store, so this is fast (no re-download).
+    log "  → pnpm install"
+    pnpm --dir "$worktree" install --frozen-lockfile
+
     # ── Step 1: Plan ──────────────────────────────────────────────────────────
     plan_committed=false
     if git -C "$worktree" log --oneline -- "$plan_file" 2>/dev/null | grep -q .; then

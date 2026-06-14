@@ -6,6 +6,8 @@ export const FieldTypeSchema = z.enum([
   'password',
   'number',
   'date',
+  'datetime',
+  'time',
   'select',
   'multiselect',
   'checkbox',

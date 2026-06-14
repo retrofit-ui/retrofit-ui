@@ -12,6 +12,40 @@ import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 
 import type { Cell, Column, PageSpec, TableSpec } from '@retrofit-ui/core';
+
+function isoToDatetimeLocal(iso: string): string {
+  return iso ? iso.slice(0, 16) : '';
+}
+function datetimeLocalToIso(local: string): string {
+  if (!local) return '';
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString();
+}
+
+function formatCellValue(col: Column, row: Record<string, unknown>): string {
+  const raw = row[col.key];
+  if (raw == null) return '';
+  if (col.type === 'boolean') return raw ? '✓' : '✗';
+  if (col.type === 'date') {
+    const d = new Date(`${String(raw)}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? String(raw) : d.toLocaleDateString();
+  }
+  if (col.type === 'datetime') {
+    const d = new Date(String(raw));
+    return Number.isNaN(d.getTime())
+      ? String(raw)
+      : d.toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        });
+  }
+  if (col.type === 'time') {
+    const parts = String(raw).split(':');
+    return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : String(raw);
+  }
+  return String(raw);
+}
+
 import { useNavigate, useParams } from '@solidjs/router';
 import {
   createEffect,
@@ -117,9 +151,34 @@ function CellInput(props: {
     );
   }
 
+  if (props.col.type === 'datetime') {
+    return (
+      <sl-input
+        type="datetime-local"
+        prop:value={isoToDatetimeLocal(strVal())}
+        style={{ 'min-width': '160px' }}
+        on:sl-change={(e: Event) => {
+          props.onChange(
+            datetimeLocalToIso(
+              (e.target as EventTarget & { value: string }).value,
+            ),
+          );
+        }}
+      />
+    );
+  }
+
   return (
     <sl-input
-      type={props.col.type === 'number' ? 'number' : 'text'}
+      type={
+        props.col.type === 'number'
+          ? 'number'
+          : props.col.type === 'date'
+            ? 'date'
+            : props.col.type === 'time'
+              ? 'time'
+              : 'text'
+      }
       prop:value={strVal()}
       style={{ 'min-width': '80px' }}
       on:sl-input={(e: Event) => {
@@ -133,12 +192,14 @@ function CellInput(props: {
 }
 
 function CellDisplay(props: { col: Column; value: unknown }) {
+  const display = () =>
+    formatCellValue(props.col, { [props.col.key]: props.value });
   const strVal = () => String(props.value ?? '');
   const badgeVariant = () => props.col.badgeVariants?.[strVal()];
   const numVal = () => Number(props.value ?? 0);
 
   return (
-    <Switch fallback={<span>{strVal()}</span>}>
+    <Switch fallback={<span>{display()}</span>}>
       <Match when={props.col.type === 'boolean'}>
         <span>{props.value ? '✓' : '✗'}</span>
       </Match>

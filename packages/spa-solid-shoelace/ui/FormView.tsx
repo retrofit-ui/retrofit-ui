@@ -28,6 +28,15 @@ import {
 import { ApiBaseContext } from './App';
 import { showToast } from './toast';
 
+function isoToDatetimeLocal(iso: string): string {
+  return iso ? iso.slice(0, 16) : '';
+}
+function datetimeLocalToIso(local: string): string {
+  if (!local) return '';
+  const d = new Date(local);
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString();
+}
+
 interface FormViewData {
   spec: FormSpec;
   entity: Record<string, unknown>;
@@ -257,6 +266,8 @@ function FormEditor(props: FormEditorProps) {
     Object.fromEntries(
       visibleFields().map((f) => {
         const existing = props.entity[f.name];
+        if (f.type === 'datetime')
+          return [f.name, isoToDatetimeLocal(String(existing ?? ''))];
         if (existing !== undefined) return [f.name, existing];
         if (f.type === 'checkbox' || f.type === 'switch')
           return [f.name, false];
@@ -622,6 +633,22 @@ function FormEditor(props: FormEditorProps) {
                     </Show>
                   </div>
                 </Show>
+                <Show when={field.type === 'datetime'}>
+                  <sl-input
+                    label={hideLabel() ? undefined : fieldLabel()}
+                    aria-label={fieldLabel()}
+                    type="datetime-local"
+                    help-text={field.helpText ?? undefined}
+                    disabled={field.readOnly || undefined}
+                    prop:value={isoToDatetimeLocal(strVal())}
+                    invalid={!!err() || undefined}
+                    on:sl-change={(e: Event) => {
+                      const raw = (e.target as EventTarget & { value: string })
+                        .value;
+                      setValue(field.name, datetimeLocalToIso(raw));
+                    }}
+                  />
+                </Show>
                 <Show
                   when={
                     !isTextarea() &&
@@ -631,7 +658,8 @@ function FormEditor(props: FormEditorProps) {
                     field.type !== 'switch' &&
                     field.type !== 'color' &&
                     field.type !== 'tags' &&
-                    field.type !== 'rating'
+                    field.type !== 'rating' &&
+                    field.type !== 'datetime'
                   }
                 >
                   <sl-input

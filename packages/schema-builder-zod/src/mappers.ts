@@ -39,20 +39,41 @@ function toFieldType(def: ZodDef): FieldType {
     const checks = getChecks(def);
     if (checks.some((c) => c.check === 'string_format' && c.format === 'email'))
       return 'email';
+    if (
+      checks.some((c) => c.check === 'string_format' && c.format === 'datetime')
+    )
+      return 'datetime';
+    if (checks.some((c) => c.check === 'string_format' && c.format === 'date'))
+      return 'date';
+    if (checks.some((c) => c.check === 'string_format' && c.format === 'time'))
+      return 'time';
     return 'text';
   }
   if (type === 'number') return 'number';
   if (type === 'boolean') return 'checkbox';
   if (type === 'enum') return 'select';
+  if (type === 'date') return 'datetime';
   return 'text';
 }
 
 function toColumnType(def: ZodDef): Column['type'] {
   const type = def.type as string;
-  if (type === 'string') return 'string';
+  if (type === 'string') {
+    const checks = getChecks(def);
+    if (
+      checks.some((c) => c.check === 'string_format' && c.format === 'datetime')
+    )
+      return 'datetime';
+    if (checks.some((c) => c.check === 'string_format' && c.format === 'date'))
+      return 'date';
+    if (checks.some((c) => c.check === 'string_format' && c.format === 'time'))
+      return 'time';
+    return 'string';
+  }
   if (type === 'number') return 'number';
   if (type === 'boolean') return 'boolean';
   if (type === 'enum') return 'enum';
+  if (type === 'date') return 'datetime';
   return 'string';
 }
 

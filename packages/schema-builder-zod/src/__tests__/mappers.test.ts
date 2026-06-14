@@ -68,6 +68,37 @@ describe('zodFieldToField', () => {
     expect(field.validation?.min).toBe(2);
     expect(field.validation?.max).toBe(50);
   });
+
+  it('maps z.string().datetime() to datetime field', () => {
+    const field = zodFieldToField('ts', z.string().datetime());
+    expect(field.type).toBe('datetime');
+  });
+
+  it('maps z.string().date() to date field', () => {
+    const field = zodFieldToField('d', z.string().date());
+    expect(field.type).toBe('date');
+  });
+
+  it('maps z.string().time() to time field', () => {
+    const field = zodFieldToField('t', z.string().time());
+    expect(field.type).toBe('time');
+  });
+
+  it('maps z.date() to datetime field', () => {
+    const field = zodFieldToField('createdAt', z.date());
+    expect(field.type).toBe('datetime');
+  });
+
+  it('maps z.string().datetime().optional() to datetime field with required false', () => {
+    const field = zodFieldToField('ts', z.string().datetime().optional());
+    expect(field.type).toBe('datetime');
+    expect(field.required).toBe(false);
+  });
+
+  it('maps z.string().email() to email field (unchanged)', () => {
+    const field = zodFieldToField('email', z.string().email());
+    expect(field.type).toBe('email');
+  });
 });
 
 describe('zodFieldToColumn', () => {
@@ -96,6 +127,28 @@ describe('zodFieldToColumn', () => {
 
   it('falls back to string for an unrecognised zod type', () => {
     expect(zodFieldToColumn('val', z.literal('foo')).type).toBe('string');
+  });
+
+  it('maps z.string().datetime() to datetime column', () => {
+    expect(zodFieldToColumn('ts', z.string().datetime()).type).toBe('datetime');
+  });
+
+  it('maps z.string().date() to date column', () => {
+    expect(zodFieldToColumn('d', z.string().date()).type).toBe('date');
+  });
+
+  it('maps z.string().time() to time column', () => {
+    expect(zodFieldToColumn('t', z.string().time()).type).toBe('time');
+  });
+
+  it('maps z.date() to datetime column', () => {
+    expect(zodFieldToColumn('createdAt', z.date()).type).toBe('datetime');
+  });
+
+  it('maps z.string().date().optional() to date column', () => {
+    expect(zodFieldToColumn('d', z.string().date().optional()).type).toBe(
+      'date',
+    );
   });
 });
 

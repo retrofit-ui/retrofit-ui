@@ -28,6 +28,24 @@ describe('DetailFieldSchema', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("accepts 'datetime' field type", () => {
+    const result = DetailFieldSchema.safeParse({
+      label: 'Created At',
+      value: '2025-06-14T14:30:00.000Z',
+      type: 'datetime',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts 'time' field type", () => {
+    const result = DetailFieldSchema.safeParse({
+      label: 'Start Time',
+      value: '14:30:00',
+      type: 'time',
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe('SectionSchema', () => {

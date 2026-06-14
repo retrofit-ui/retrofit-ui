@@ -4,6 +4,8 @@ export const DetailFieldTypeSchema = z.enum([
   'text',
   'number',
   'date',
+  'datetime',
+  'time',
   'boolean',
   'url',
   'email',

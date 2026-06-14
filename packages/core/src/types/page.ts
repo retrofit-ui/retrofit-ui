@@ -4,7 +4,7 @@ import type { FormSpec, MarkdownViewSpec, TableSpec } from './resource-spec';
 export interface FilterField {
   name: string;
   label: string;
-  type: 'select' | 'text' | 'date';
+  type: 'select' | 'text' | 'date' | 'datetime' | 'time';
   options?: FieldOption[];
   placeholder?: string;
 }

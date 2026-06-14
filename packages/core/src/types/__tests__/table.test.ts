@@ -21,6 +21,33 @@ describe('ColumnSchema', () => {
     expect(col.filterable).toBe(false);
   });
 
+  it("accepts 'datetime' column type", () => {
+    const result = ColumnSchema.safeParse({
+      key: 'createdAt',
+      label: 'Created At',
+      type: 'datetime',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts 'time' column type", () => {
+    const result = ColumnSchema.safeParse({
+      key: 'startTime',
+      label: 'Start Time',
+      type: 'time',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects 'datetime-local' as column type", () => {
+    const result = ColumnSchema.safeParse({
+      key: 'ts',
+      label: 'Timestamp',
+      type: 'datetime-local',
+    });
+    expect(result.success).toBe(false);
+  });
+
   it('rejects unknown column type', () => {
     const result = ColumnSchema.safeParse({
       key: 'x',

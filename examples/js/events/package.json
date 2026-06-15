@@ -1,0 +1,24 @@
+{
+  "name": "@retrofit-ui-examples/events",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc --noEmit",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@retrofit-ui/schema-builder-zod": "workspace:*",
+    "@retrofit-ui/server-solid-shoelace": "workspace:*",
+    "express": "^4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/express": "^4",
+    "@types/node": "^20",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3"
+  }
+}

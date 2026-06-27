@@ -108,9 +108,14 @@ async function fetchTableView(
   return { kind: 'table', spec, data };
 }
 
-function extractIdField(findUrl: string): string {
-  const match = findUrl.match(/\{(\w+)\}/);
-  return match?.[1] ?? 'id';
+// Prefer the spec's explicit idField; otherwise fall back to the {param} of a
+// navigating/mutating endpoint, then "id". The fallback keeps specs produced by
+// other (non-builder) backends working before they adopt idField.
+function resolveIdField(spec: TableSpec): string {
+  if (spec.idField) return spec.idField;
+  const ep =
+    spec.endpoints?.find ?? spec.endpoints?.update ?? spec.endpoints?.delete;
+  return ep?.url.match(/\{(\w+)\}/)?.[1] ?? 'id';
 }
 
 function CellInput(props: {
@@ -244,10 +249,7 @@ function DataRow(props: {
   const [deleting, setDeleting] = createSignal(false);
   const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
 
-  const idField = () =>
-    props.spec.endpoints?.find
-      ? extractIdField(props.spec.endpoints.find.url)
-      : 'id';
+  const idField = () => resolveIdField(props.spec);
 
   function startEdit() {
     setValues(rawRow(props.row));

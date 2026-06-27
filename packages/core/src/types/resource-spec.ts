@@ -17,6 +17,13 @@ export interface RowAction {
 export interface TableSpec {
   columns: Column[];
   rows?: Record<string, Cell>[];
+  /**
+   * Field used to build row links and update/delete URLs. When omitted the
+   * client falls back to the `{param}` of the find/update/delete url, then to
+   * "id". Set it (and carry the field in `rows`) only for tables that actually
+   * navigate or mutate; read-only tables can leave it undefined.
+   */
+  idField?: string;
   endpoints: {
     list?: EndpointDirective; // used by PageView filter-tables
     find?: EndpointDirective; // enables row clicks + ID extraction

@@ -39,7 +39,7 @@ describe('TableViewBuilder.columnOverride', () => {
 });
 
 describe('TableViewBuilder embedded-row id', () => {
-  it('carries the id field in rows even when hidden via visibleColumns', () => {
+  it('declares idField and carries it in rows even when hidden via visibleColumns', () => {
     const spec = TableViewBuilder.forRows(TodoSchema, [
       { id: 7, title: 'Ship it', priority: 'high' },
     ])
@@ -47,7 +47,9 @@ describe('TableViewBuilder embedded-row id', () => {
       .find({ method: 'GET', url: '/todos/{id}' })
       .build();
 
-    // id is not a displayed column...
+    // The id field is an explicit part of the spec...
+    expect(spec.idField).toBe('id');
+    // ...not a displayed column...
     expect(spec.columns.some((c) => c.key === 'id')).toBe(false);
     // ...but its value rides along so row-link navigation can resolve it.
     expect(spec.rows?.[0]?.id).toEqual({ value: 7 });
@@ -61,7 +63,32 @@ describe('TableViewBuilder embedded-row id', () => {
       .find({ method: 'GET', url: '/todos/{title}' })
       .build();
 
+    expect(spec.idField).toBe('title');
     expect(spec.columns.some((c) => c.key === 'title')).toBe(false);
     expect(spec.rows?.[0]?.title).toEqual({ value: 'Ship it' });
+  });
+
+  it('derives idField from update/delete when there is no find endpoint', () => {
+    const spec = TableViewBuilder.forRows(TodoSchema, [
+      { id: 7, title: 'Ship it', priority: 'high' },
+    ])
+      .visibleColumns(['title'])
+      .update({ method: 'PUT', url: '/todos/{id}' })
+      .delete({ method: 'DELETE', url: '/todos/{id}' })
+      .build();
+
+    expect(spec.idField).toBe('id');
+    expect(spec.rows?.[0]?.id).toEqual({ value: 7 });
+  });
+
+  it('omits idField and does not carry id for a read-only table', () => {
+    const spec = TableViewBuilder.forRows(TodoSchema, [
+      { id: 7, title: 'Ship it', priority: 'high' },
+    ])
+      .visibleColumns(['title'])
+      .build();
+
+    expect(spec.idField).toBeUndefined();
+    expect(spec.rows?.[0]?.id).toBeUndefined();
   });
 });

@@ -18,6 +18,11 @@ function unwrapOptional(schema: ZodTypeAny): ZodTypeAny {
   return def.type === 'optional' ? (def.innerType as ZodTypeAny) : schema;
 }
 
+/** The `{param}` name from an endpoint url (e.g. /todos/{id} -> "id"). */
+function idParam(endpoint: EndpointDirective | undefined): string | undefined {
+  return endpoint?.url.match(/\{(\w+)\}/)?.[1];
+}
+
 function deriveEnumOptions(schema: ZodTypeAny): FieldOption[] | undefined {
   const inner = unwrapOptional(schema);
   const def = getDef(inner);
@@ -150,13 +155,14 @@ export class TableViewBuilder<S extends ZodRawShape> {
       columns = columns.filter((c) => keySet.has(c.key));
     }
 
-    // The SPA resolves the row-link id from the find endpoint url (e.g.
-    // /expenses/{id}), falling back to "id". Carry that field in the row data
-    // even when it is hidden via visibleColumns(), otherwise clicking a row
-    // can't navigate to its detail view.
-    const idField = this._endpoints.find
-      ? (this._endpoints.find.url.match(/\{(\w+)\}/)?.[1] ?? 'id')
-      : 'id';
+    // Row links and update/delete URLs are keyed by an id field. Derive it from
+    // whichever endpoint carries a {param} (find/update/delete should agree) and
+    // expose it explicitly so the SPA doesn't have to re-parse the url. Tables
+    // with no navigating/mutating endpoint don't need an id at all.
+    const idField =
+      idParam(this._endpoints.find) ??
+      idParam(this._endpoints.update) ??
+      idParam(this._endpoints.delete);
     const columnKeys = new Set(columns.map((c) => c.key));
 
     const rows =
@@ -172,7 +178,13 @@ export class TableViewBuilder<S extends ZodRawShape> {
                 return [col.key, cell];
               }),
             );
-            if (!columnKeys.has(idField) && row[idField] !== undefined) {
+            // Carry the id even when it is hidden via visibleColumns(), so the
+            // client can still resolve a row link / mutation target.
+            if (
+              idField !== undefined &&
+              !columnKeys.has(idField) &&
+              row[idField] !== undefined
+            ) {
               cells[idField] = { value: row[idField] };
             }
             return cells;
@@ -181,6 +193,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
 
     return {
       columns,
+      ...(idField !== undefined && { idField }),
       endpoints: this._endpoints,
       ...(rows !== undefined && { rows }),
       ...(this._rowActions.length > 0 && { rowActions: this._rowActions }),

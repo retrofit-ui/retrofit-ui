@@ -1,6 +1,6 @@
 # Workflow Bundle
 
-`TableFormWorkflowBundle` combines a table view and a form view into a single builder and registers both spec endpoints for you. It is the right choice when you want a standard list-then-edit CRUD flow and do not need inline table editing.
+`TableFormWorkflowBundle` combines a table view and a form view into a single builder, producing two complementary specs you serve on a collection route and an item route. It is the right choice when you want a standard list-then-edit CRUD flow and do not need inline table editing.
 
 ## When to use it
 
@@ -13,7 +13,7 @@
 ## Basic setup
 
 ```typescript
-import { TableFormWorkflowBundle } from '@retrofit-ui/server-solid-shoelace';
+import { TableFormWorkflowBundle } from '@retrofit-ui/builder-zod';
 import { z } from 'zod';
 
 const ContactSchema = z.object({
@@ -36,11 +36,26 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
 
-// Registers GET /api/ui/contacts and GET /api/ui/contacts/:id
-bundle.register(app, retrofit, '/api/ui/contacts');
+// Serve the two specs. The table spec goes on the collection route; the form
+// spec on the item route, with the entity's values baked onto the fields for edit.
+app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+
+app.get('/api/ui/contacts/:id', (req, res) => {
+  const { id } = req.params;
+  const entity =
+    id !== 'new'
+      ? (store.find(id) as Record<string, unknown> | undefined)
+      : undefined;
+  const fields = entity
+    ? bundle.formSpec.fields.map((f) =>
+        entity[f.name] !== undefined ? { ...f, value: entity[f.name] } : f,
+      )
+    : bundle.formSpec.fields;
+  res.json({ ...bundle.formSpec, fields });
+});
 ```
 
-Two routes are registered automatically:
+The two routes you wire:
 
 | Route | Spec | Notes |
 |-------|------|-------|
@@ -92,7 +107,7 @@ If you want inline cell editing, use `TableView.schema(...).updateSchema(...)` d
 
 ## Accessing the specs directly
 
-`bundle.tableSpec` and `bundle.formSpec` are plain `TableSpec` and `FormSpec` objects if you need to inspect or extend them before registering:
+`bundle.tableSpec` and `bundle.formSpec` are plain `TableSpec` and `FormSpec` objects if you need to inspect or extend them before serving:
 
 ```typescript
 const bundle = TableFormWorkflowBundle.schema(ContactSchema)
@@ -100,5 +115,5 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .build();
 
 console.log(bundle.tableSpec.columns.map((c) => c.key));
-bundle.register(app, retrofit, '/api/ui/contacts');
+app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
 ```

@@ -5,7 +5,6 @@ import type {
   FormSpec,
   TableSpec,
 } from '@retrofit-ui/core';
-import type express from 'express';
 import type { ZodObject, ZodRawShape } from 'zod';
 import { FormSpecBuilder } from './form-builder';
 import { TableViewBuilder } from './view-builder';
@@ -34,40 +33,16 @@ export class FormCustomizer {
   }
 }
 
+/**
+ * Pure data holder produced by {@link WorkflowBundleBuilder.build}. Holds the
+ * two complementary specs (table + form). Serving them is the host server's
+ * job — see the JS examples for the plain-Express route wiring.
+ */
 export class WorkflowBundle {
   constructor(
     readonly tableSpec: TableSpec,
     readonly formSpec: FormSpec,
   ) {}
-
-  register(
-    app: express.Express,
-    retrofit: <T>(spec: T) => T,
-    path: string,
-    listFn?: () => unknown[] | Promise<unknown[]>,
-    findFn?: (id: string) => unknown | Promise<unknown>,
-  ): void {
-    app.get(path, async (_req, res) => {
-      if (listFn) {
-        const rows = (await listFn()) as Record<string, unknown>[];
-        res.json(retrofit({ ...this.tableSpec, rows }));
-      } else {
-        res.json(retrofit(this.tableSpec));
-      }
-    });
-    app.get(`${path}/:id`, async (req, res) => {
-      const { id } = req.params;
-      if (findFn && id !== 'new') {
-        const entity = (await findFn(id)) as Record<string, unknown>;
-        const fields = this.formSpec.fields.map((f) =>
-          entity[f.name] !== undefined ? { ...f, value: entity[f.name] } : f,
-        );
-        res.json(retrofit({ ...this.formSpec, fields }));
-      } else {
-        res.json(retrofit(this.formSpec));
-      }
-    });
-  }
 }
 
 export class WorkflowBundleBuilder<S extends ZodRawShape> {

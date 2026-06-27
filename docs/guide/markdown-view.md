@@ -18,7 +18,7 @@ It then fetches the entity, extracts the `body` field, parses it with [marked](h
 ## Setup (JS)
 
 ```typescript
-import type { MarkdownViewSpec } from '@retrofit-ui/server-solid-shoelace';
+import type { MarkdownViewSpec } from '@retrofit-ui/builder-zod';
 
 app.get('/api/ui/posts/:id/render', (req, res) => {
   const spec: MarkdownViewSpec = {

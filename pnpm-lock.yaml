@@ -32,9 +32,12 @@ importers:
 
   examples/js/blog:
     dependencies:
-      '@retrofit-ui/server-solid-shoelace':
+      '@retrofit-ui/builder-zod':
         specifier: workspace:*
-        version: link:../../../packages/server-solid-shoelace
+        version: link:../../../packages/builder-zod
+      '@retrofit-ui/spa-solid-shoelace':
+        specifier: workspace:*
+        version: link:../../../packages/spa-solid-shoelace
       express:
         specifier: ^4
         version: 4.22.2
@@ -60,9 +63,12 @@ importers:
 
   examples/js/contacts:
     dependencies:
-      '@retrofit-ui/server-solid-shoelace':
+      '@retrofit-ui/builder-zod':
         specifier: workspace:*
-        version: link:../../../packages/server-solid-shoelace
+        version: link:../../../packages/builder-zod
+      '@retrofit-ui/spa-solid-shoelace':
+        specifier: workspace:*
+        version: link:../../../packages/spa-solid-shoelace
       express:
         specifier: ^4
         version: 4.22.2
@@ -88,12 +94,12 @@ importers:
 
   examples/js/events:
     dependencies:
-      '@retrofit-ui/schema-builder-zod':
+      '@retrofit-ui/builder-zod':
         specifier: workspace:*
-        version: link:../../../packages/schema-builder-zod
-      '@retrofit-ui/server-solid-shoelace':
+        version: link:../../../packages/builder-zod
+      '@retrofit-ui/spa-solid-shoelace':
         specifier: workspace:*
-        version: link:../../../packages/server-solid-shoelace
+        version: link:../../../packages/spa-solid-shoelace
       express:
         specifier: ^4
         version: 4.22.2
@@ -119,9 +125,12 @@ importers:
 
   examples/js/expenses:
     dependencies:
-      '@retrofit-ui/server-solid-shoelace':
+      '@retrofit-ui/builder-zod':
         specifier: workspace:*
-        version: link:../../../packages/server-solid-shoelace
+        version: link:../../../packages/builder-zod
+      '@retrofit-ui/spa-solid-shoelace':
+        specifier: workspace:*
+        version: link:../../../packages/spa-solid-shoelace
       express:
         specifier: ^4
         version: 4.22.2
@@ -147,9 +156,12 @@ importers:
 
   examples/js/products:
     dependencies:
-      '@retrofit-ui/server-solid-shoelace':
+      '@retrofit-ui/builder-zod':
         specifier: workspace:*
-        version: link:../../../packages/server-solid-shoelace
+        version: link:../../../packages/builder-zod
+      '@retrofit-ui/spa-solid-shoelace':
+        specifier: workspace:*
+        version: link:../../../packages/spa-solid-shoelace
       express:
         specifier: ^4
         version: 4.22.2
@@ -175,12 +187,12 @@ importers:
 
   examples/js/todos:
     dependencies:
-      '@retrofit-ui/schema-builder-zod':
+      '@retrofit-ui/builder-zod':
         specifier: workspace:*
-        version: link:../../../packages/schema-builder-zod
-      '@retrofit-ui/server-solid-shoelace':
+        version: link:../../../packages/builder-zod
+      '@retrofit-ui/spa-solid-shoelace':
         specifier: workspace:*
-        version: link:../../../packages/server-solid-shoelace
+        version: link:../../../packages/spa-solid-shoelace
       express:
         specifier: ^4
         version: 4.22.2
@@ -204,6 +216,24 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/builder-zod:
+    devDependencies:
+      '@retrofit-ui/core':
+        specifier: workspace:*
+        version: link:../core
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@1.21.7)(tsx@4.22.4))
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+
   packages/core:
     devDependencies:
       tsup:
@@ -215,57 +245,6 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(vite@8.0.16(@types/node@20.19.41)(esbuild@0.27.7)(jiti@1.21.7)(tsx@4.22.4))
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-
-  packages/schema-builder-zod:
-    devDependencies:
-      '@retrofit-ui/core':
-        specifier: workspace:*
-        version: link:../core
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@1.21.7)(tsx@4.22.4))
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-
-  packages/server-solid-shoelace:
-    devDependencies:
-      '@retrofit-ui/core':
-        specifier: workspace:*
-        version: link:../core
-      '@retrofit-ui/schema-builder-zod':
-        specifier: workspace:*
-        version: link:../schema-builder-zod
-      '@retrofit-ui/spa-solid-shoelace':
-        specifier: workspace:*
-        version: link:../spa-solid-shoelace
-      '@types/express':
-        specifier: ^4
-        version: 4.17.25
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      express:
-        specifier: ^4
-        version: 4.22.2
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@1.21.7)(tsx@4.22.4))
       zod:
         specifier: ^4.3.6
         version: 4.4.3

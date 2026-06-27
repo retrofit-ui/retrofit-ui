@@ -3,9 +3,9 @@ import {
   filterForm,
   formSpec,
   pageSpec,
-  retrofitUi,
   TableView,
-} from '@retrofit-ui/server-solid-shoelace';
+} from '@retrofit-ui/builder-zod';
+import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import { CreateEventSchema, EventSchema } from './schemas';
 import { store } from './store';
@@ -27,25 +27,30 @@ app.delete('/events/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-const retrofit = retrofitUi(app, {
-  theme: {
-    cssVariables: {
-      '--sl-color-primary-50': '#eef2ff',
-      '--sl-color-primary-100': '#e0e7ff',
-      '--sl-color-primary-200': '#c7d2fe',
-      '--sl-color-primary-300': '#a5b4fc',
-      '--sl-color-primary-400': '#818cf8',
-      '--sl-color-primary-500': '#6366f1',
-      '--sl-color-primary-600': '#4f46e5',
-      '--sl-color-primary-700': '#4338ca',
-      '--sl-color-primary-800': '#3730a3',
-      '--sl-color-primary-900': '#312e81',
-      '--sl-color-primary-950': '#1e1b4b',
-    },
-    extraCss: `.retrofit-thead { background-color: #312e81; }
-.retrofit-th { color: #eef2ff; border-bottom-color: #3730a3; }`,
+// Serve the SPA bundle + its config. The SPA fetches /retrofit.json for its
+// apiBase and theme, then renders specs from /api/ui/*. Any server in any
+// language can serve the bundle the same way — see @retrofit-ui/spa-solid-shoelace.
+const theme = {
+  cssVariables: {
+    '--sl-color-primary-50': '#eef2ff',
+    '--sl-color-primary-100': '#e0e7ff',
+    '--sl-color-primary-200': '#c7d2fe',
+    '--sl-color-primary-300': '#a5b4fc',
+    '--sl-color-primary-400': '#818cf8',
+    '--sl-color-primary-500': '#6366f1',
+    '--sl-color-primary-600': '#4f46e5',
+    '--sl-color-primary-700': '#4338ca',
+    '--sl-color-primary-800': '#3730a3',
+    '--sl-color-primary-900': '#312e81',
+    '--sl-color-primary-950': '#1e1b4b',
   },
-});
+  extraCss: `.retrofit-thead { background-color: #312e81; }
+.retrofit-th { color: #eef2ff; border-bottom-color: #3730a3; }`,
+};
+app.get('/retrofit.json', (_req, res) =>
+  res.json({ apiBase: '/api/ui', theme }),
+);
+app.use(express.static(distPath));
 
 const categoryColors: Record<string, string> = {
   meeting: '#4f46e5',
@@ -57,26 +62,24 @@ const categoryColors: Record<string, string> = {
 // /calendar must be registered before /:id so Express doesn't treat 'calendar' as an id
 app.get('/api/ui/events/calendar', (_req, res) => {
   res.json(
-    retrofit(
-      CalendarView.events(
-        store.all().map((e) => ({
-          id: String(e.id),
-          title: e.title,
-          start: e.start,
-          end: e.end,
-          allDay: e.allDay ?? false,
-          color: categoryColors[e.category],
-        })),
-      )
-        .title('Events Calendar')
-        .defaultView('month')
-        .editable(true)
-        .find({ method: 'GET', url: '/events/{id}' })
-        .create({ method: 'POST', url: '/events' })
-        .update({ method: 'PUT', url: '/events/{id}' })
-        .delete({ method: 'DELETE', url: '/events/{id}' })
-        .build(),
-    ),
+    CalendarView.events(
+      store.all().map((e) => ({
+        id: String(e.id),
+        title: e.title,
+        start: e.start,
+        end: e.end,
+        allDay: e.allDay ?? false,
+        color: categoryColors[e.category],
+      })),
+    )
+      .title('Events Calendar')
+      .defaultView('month')
+      .editable(true)
+      .find({ method: 'GET', url: '/events/{id}' })
+      .create({ method: 'POST', url: '/events' })
+      .update({ method: 'PUT', url: '/events/{id}' })
+      .delete({ method: 'DELETE', url: '/events/{id}' })
+      .build(),
   );
 });
 
@@ -84,13 +87,11 @@ app.get('/api/ui/events/calendar', (_req, res) => {
 // localised strings — demonstrates the PR 102 datetime column formatting
 app.get('/api/ui/events', (_req, res) => {
   res.json(
-    retrofit(
-      TableView.forRows(EventSchema, store.all())
-        .visibleColumns(['title', 'start', 'end', 'category'])
-        .find({ method: 'GET', url: '/events/{id}' })
-        .create({ method: 'POST', url: '/events' })
-        .build(),
-    ),
+    TableView.forRows(EventSchema, store.all())
+      .visibleColumns(['title', 'start', 'end', 'category'])
+      .find({ method: 'GET', url: '/events/{id}' })
+      .create({ method: 'POST', url: '/events' })
+      .build(),
   );
 });
 
@@ -107,38 +108,36 @@ app.get('/api/ui/events/:id', (req, res) => {
     .delete({ method: 'DELETE', url: `/events/${id}` });
   if (entity) builder.values(entity as Record<string, unknown>);
   if (isNew) builder.create({ method: 'POST', url: '/events' });
-  res.json(retrofit(builder.build()));
+  res.json(builder.build());
 });
 
 // Stacked layout: category filter + events table — navigate to /#/events-by-category
 app.get('/api/ui/events-by-category', (_req, res) => {
   res.json(
-    retrofit(
-      pageSpec()
-        .title('Events by Category')
-        .filterForm(
-          filterForm()
-            .field('category', {
-              type: 'select',
-              label: 'Category',
-              placeholder: 'All Categories',
-              options: [
-                { label: 'Meeting', value: 'meeting' },
-                { label: 'Webinar', value: 'webinar' },
-                { label: 'Workshop', value: 'workshop' },
-                { label: 'Social', value: 'social' },
-              ],
-            })
-            .build(),
-        )
-        .table(
-          TableView.schema(EventSchema)
-            .visibleColumns(['title', 'start', 'end', 'category'])
-            .list({ method: 'GET', url: '/events?category={category}' })
-            .build(),
-        )
-        .build(),
-    ),
+    pageSpec()
+      .title('Events by Category')
+      .filterForm(
+        filterForm()
+          .field('category', {
+            type: 'select',
+            label: 'Category',
+            placeholder: 'All Categories',
+            options: [
+              { label: 'Meeting', value: 'meeting' },
+              { label: 'Webinar', value: 'webinar' },
+              { label: 'Workshop', value: 'workshop' },
+              { label: 'Social', value: 'social' },
+            ],
+          })
+          .build(),
+      )
+      .table(
+        TableView.schema(EventSchema)
+          .visibleColumns(['title', 'start', 'end', 'category'])
+          .list({ method: 'GET', url: '/events?category={category}' })
+          .build(),
+      )
+      .build(),
   );
 });
 

@@ -234,6 +234,9 @@ test.describe('Contacts by Type — stacked layout', () => {
     await page.locator('.retrofit-filter-form sl-option[value="work"]').click();
     await expect(page.getByText('Alice Johnson')).toBeVisible();
 
+    // Let the first filter's table refetch settle before re-opening the select,
+    // otherwise the dropdown reopen races the re-render.
+    await page.waitForLoadState('networkidle');
     await page.locator('.retrofit-filter-form sl-select').click();
     await page
       .locator('.retrofit-filter-form sl-option[value="personal"]')
@@ -268,6 +271,7 @@ test.describe('Contacts by Type — stacked layout', () => {
       page.getByRole('cell', { name: 'Bob Smith' }),
     ).not.toBeVisible();
 
+    await page.waitForLoadState('networkidle');
     await page.locator('.retrofit-filter-form sl-select').click();
     await page.locator('.retrofit-filter-form sl-option[value=""]').click();
 
@@ -300,6 +304,7 @@ test.describe('Contacts by Type — stacked layout', () => {
     await page.locator('.retrofit-filter-form sl-option[value="work"]').click();
     await page.waitForURL(/type=work/);
 
+    await page.waitForLoadState('networkidle');
     await page.locator('.retrofit-filter-form sl-select').click();
     await page
       .locator('.retrofit-filter-form sl-option[value="personal"]')
@@ -427,7 +432,9 @@ test.describe('Edit existing contact', () => {
     await expect(
       page.locator('sl-button[variant="primary"][type="submit"]'),
     ).toBeVisible();
-    await expect(page.locator('sl-button[variant="danger"]')).toBeVisible();
+    await expect(
+      page.locator('sl-button[variant="danger"]:not([slot="footer"])'),
+    ).toBeVisible();
   });
 
   test('submits an edit and navigates back to the table', async ({ page }) => {
@@ -460,7 +467,9 @@ test.describe('Delete contact', () => {
     await page.goto('/#/contacts/3');
     await waitForForm(page);
 
-    await page.locator('sl-button[variant="danger"]').click();
+    await page
+      .locator('sl-button[variant="danger"]:not([slot="footer"])')
+      .click();
     await page.locator('sl-button[slot="footer"][variant="danger"]').click();
 
     await expect(

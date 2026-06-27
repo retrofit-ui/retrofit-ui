@@ -7,12 +7,8 @@
  * it appears in the product form immediately.
  */
 
-import {
-  formSpec,
-  retrofitUi,
-  TableView,
-  TreeView,
-} from '@retrofit-ui/server-solid-shoelace';
+import { formSpec, TableView, TreeView } from '@retrofit-ui/builder-zod';
+import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import { z } from 'zod';
 import {
@@ -72,39 +68,39 @@ app.post('/test/reset', (_req, res) => {
   res.json({ ok: true });
 });
 
-// ── UI spec setup ──────────────────────────────────────────────────────────
+// ── Serve the SPA bundle + its config ───────────────────────────────────────
+// The SPA fetches /retrofit.json for its apiBase, then renders specs from
+// /api/ui/*. Any server in any language can serve the bundle the same way —
+// see @retrofit-ui/spa-solid-shoelace.
 
-const retrofit = retrofitUi(app);
+app.get('/retrofit.json', (_req, res) => res.json({ apiBase: '/api/ui' }));
+app.use(express.static(distPath));
 
 // GET /api/ui/categories/tree → TreeSpec
 app.get('/api/ui/categories/tree', (_req, res) => {
   res.json(
-    retrofit(
-      new TreeView()
-        .endpoint({ method: 'GET', url: '/categories' })
-        .idField('id')
-        .parentField('parentId')
-        .labelField('name')
-        .selection('single')
-        .create({ method: 'POST', url: '/categories' })
-        .update({ method: 'PUT', url: '/categories/{id}' })
-        .delete({ method: 'DELETE', url: '/categories/{id}' })
-        .metadata({ title: 'Category Tree' })
-        .build(),
-    ),
+    new TreeView()
+      .endpoint({ method: 'GET', url: '/categories' })
+      .idField('id')
+      .parentField('parentId')
+      .labelField('name')
+      .selection('single')
+      .create({ method: 'POST', url: '/categories' })
+      .update({ method: 'PUT', url: '/categories/{id}' })
+      .delete({ method: 'DELETE', url: '/categories/{id}' })
+      .metadata({ title: 'Category Tree' })
+      .build(),
   );
 });
 
 // GET /api/ui/categories → TableSpec (same data, flat view)
 app.get('/api/ui/categories', (_req, res) => {
   res.json(
-    retrofit(
-      TableView.forRows(CategorySchema, categoryStore.all())
-        .columnOverride('parentId', { label: 'Parent ID' })
-        .find({ method: 'GET', url: '/categories/{id}' })
-        .create({ method: 'POST', url: '/categories' })
-        .build(),
-    ),
+    TableView.forRows(CategorySchema, categoryStore.all())
+      .columnOverride('parentId', { label: 'Parent ID' })
+      .find({ method: 'GET', url: '/categories/{id}' })
+      .create({ method: 'POST', url: '/categories' })
+      .build(),
   );
 });
 
@@ -126,7 +122,7 @@ app.get('/api/ui/categories/:id', (req, res) => {
     .update({ method: 'PUT', url: '/categories/{id}' })
     .delete({ method: 'DELETE', url: '/categories/{id}' });
   if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(retrofit(builder.build()));
+  res.json(builder.build());
 });
 
 // GET /api/ui/products → TableSpec with enriched categoryName column
@@ -137,17 +133,15 @@ app.get('/api/ui/products', (_req, res) => {
       categoryStore.find(String(p.categoryId))?.name ?? String(p.categoryId),
   }));
   res.json(
-    retrofit(
-      TableView.forRows(
-        ProductSchema.extend({ categoryName: z.string().optional() }),
-        rows,
-      )
-        .visibleColumns(['name', 'sku', 'price', 'categoryName'])
-        .columnOverride('categoryName', { label: 'Category' })
-        .find({ method: 'GET', url: '/products/{id}' })
-        .create({ method: 'POST', url: '/products' })
-        .build(),
-    ),
+    TableView.forRows(
+      ProductSchema.extend({ categoryName: z.string().optional() }),
+      rows,
+    )
+      .visibleColumns(['name', 'sku', 'price', 'categoryName'])
+      .columnOverride('categoryName', { label: 'Category' })
+      .find({ method: 'GET', url: '/products/{id}' })
+      .create({ method: 'POST', url: '/products' })
+      .build(),
   );
 });
 
@@ -169,7 +163,7 @@ app.get('/api/ui/products/:id', (req, res) => {
     .update({ method: 'PUT', url: '/products/{id}' })
     .delete({ method: 'DELETE', url: '/products/{id}' });
   if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(retrofit(builder.build()));
+  res.json(builder.build());
 });
 
 const PORT = process.env.PORT ?? 3005;

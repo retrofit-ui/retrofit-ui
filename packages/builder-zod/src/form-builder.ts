@@ -4,8 +4,8 @@ import type {
   FormLayoutConfig,
   FormSpec,
 } from '@retrofit-ui/core';
-import { formFromSchema } from '@retrofit-ui/schema-builder-zod';
 import type { ZodObject, ZodRawShape } from 'zod';
+import { formFromSchema } from './FormBuilder';
 
 export class FormSpecBuilder<S extends ZodRawShape> {
   private _fieldOverrides: Record<string, Partial<Field>> = {};

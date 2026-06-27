@@ -1,63 +1,23 @@
 # JS API Reference
 
-All exports from `@retrofit-ui/server-solid-shoelace`.
+All exports from `@retrofit-ui/builder-zod`. The package produces spec JSON; your server emits it on `/api/ui/*` routes and serves the SPA bundle.
 
 ---
 
-## `retrofitUi`
+## Serving the SPA
+
+The builders only produce specs. To serve the UI, serve the pre-built bundle from `@retrofit-ui/spa-solid-shoelace` as static files and expose a `/retrofit.json` config endpoint:
 
 ```typescript
-function retrofitUi(
-  app: express.Express,
-  config?: { theme?: RetrofitTheme; apiBase?: string },
-): <T>(spec: T) => T
+import { distPath } from '@retrofit-ui/spa-solid-shoelace';
+
+app.get('/retrofit.json', (_req, res) =>
+  res.json({ apiBase: '/api/ui', theme }), // theme is optional
+);
+app.use(express.static(distPath));
 ```
 
-Mounts two things on the Express app:
-
-1. `GET /retrofit.json` — returns `{ apiBase, theme }` for the SPA to read on startup.
-2. `app.use(serveUiShell())` — serves the pre-built SPA assets at the root path.
-
-Returns a pass-through wrapper function. Wrap your spec objects with it before `res.json()` to allow future middleware hooks.
-
-```typescript
-const retrofit = retrofitUi(app, { apiBase: '/api/ui' });
-// ...
-res.json(retrofit(TableView.schema(Schema).build()));
-```
-
----
-
-## `createExpressRouter`
-
-```typescript
-function createExpressRouter(config: RetrofitConfig): express.Router
-```
-
-Creates a self-contained Express router that auto-generates spec and data routes for all declared forms and resources. Use this instead of `retrofitUi` when you prefer config-driven route registration.
-
-### Auto-generated routes
-
-**Forms** (from `config.forms`):
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/forms` | List registered forms |
-| `GET` | `/api/forms/:id/schema` | JSON schema for a form |
-| `POST` | `/api/forms/:id/submit` | Submit a form (validates with Zod) |
-
-**Resources** (from `config.resources`, one set per resource name):
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `{apiBase}/{name}` | `TableSpec` + inline data `{ ...spec, data: [...] }` |
-| `GET` | `{apiBase}/{name}/new` | `FormSpec` for create |
-| `GET` | `{apiBase}/{name}/:id` | `{ spec: FormSpec, entity }` |
-| `POST` | `{apiBase}/{name}` | Create (validates with schema) |
-| `PUT` | `{apiBase}/{name}/:id` | Update (validates with updateSchema or schema) |
-| `DELETE` | `{apiBase}/{name}/:id` | Delete |
-
-Returns `501 Not Implemented` for any CRUD operation whose handler is absent from the config.
+The SPA fetches `/retrofit.json` on startup to learn its `apiBase` and apply the optional `theme` (see [`RetrofitTheme`](#retrofittheme)). Hash-based routing means no catch-all route is needed. Any server in any language can serve the bundle the same way.
 
 ---
 
@@ -132,7 +92,6 @@ class WorkflowBundleBuilder<S extends ZodRawShape> {
 class WorkflowBundle {
   tableSpec: TableSpec
   formSpec: FormSpec
-  register(app: express.Express, retrofit: (s: unknown) => unknown, path: string): void
 }
 
 class TableCustomizer {
@@ -145,6 +104,8 @@ class FormCustomizer {
   fieldOverride(key: string, override: Partial<Field>): this
 }
 ```
+
+`build()` returns a plain `WorkflowBundle` holding the two specs. Serve them on a collection route and an item route — see [Workflow Bundle](/guide/workflow-bundle).
 
 ---
 
@@ -261,39 +222,4 @@ interface RetrofitTheme {
 }
 ```
 
-### `RetrofitConfig`
-
-```typescript
-interface RetrofitConfig {
-  forms?: Record<string, FormConfig>;
-  resources?: Record<string, ResourceConfig>;
-  theme?: RetrofitTheme;
-  apiBase?: string; // default: '/api/ui'
-}
-```
-
-### `ResourceConfig`
-
-```typescript
-interface ResourceConfig<S extends ZodRawShape = ZodRawShape> {
-  schema: ZodObject<S>;
-  updateSchema?: ZodObject<ZodRawShape>;
-  list?:   () => unknown[] | Promise<unknown[]>;
-  find?:   (id: string) => unknown | Promise<unknown>;
-  create?: (data: unknown) => unknown | Promise<unknown>;
-  update?: (id: string, data: unknown) => unknown | Promise<unknown>;
-  delete?: (id: string) => unknown | Promise<unknown>;
-  columnOverrides?: Record<string, Partial<Column>>;
-  fieldOverrides?: Record<string, Partial<Field>>;
-}
-```
-
-### `FormConfig`
-
-```typescript
-interface FormConfig {
-  schema: ZodTypeAny;
-  renderer: string;
-  onSubmit: (data: unknown) => void | Promise<void>;
-}
-```
+The SPA applies the theme client-side from `/retrofit.json`: `cssVariables` are set on `:root` and `extraCss` is injected as a `<style>` tag.

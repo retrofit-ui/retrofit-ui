@@ -5,7 +5,7 @@ The table view is driven by a `TableSpec` returned from `GET /api/ui/{resource}`
 ## Basic setup (JS)
 
 ```typescript
-import { TableView } from '@retrofit-ui/server-solid-shoelace';
+import { TableView } from '@retrofit-ui/builder-zod';
 import { z } from 'zod';
 
 const PostSchema = z.object({

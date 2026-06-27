@@ -5,7 +5,7 @@ The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{i
 ## Basic setup (JS)
 
 ```typescript
-import { formSpec } from '@retrofit-ui/server-solid-shoelace';
+import { formSpec } from '@retrofit-ui/builder-zod';
 import { z } from 'zod';
 
 const PostSchema = z.object({

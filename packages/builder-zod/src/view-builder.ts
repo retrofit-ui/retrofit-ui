@@ -6,8 +6,8 @@ import type {
   RowAction,
   TableSpec,
 } from '@retrofit-ui/core';
-import { tableFromSchema } from '@retrofit-ui/schema-builder-zod';
 import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
+import { tableFromSchema } from './TableBuilder';
 
 function getDef(schema: ZodTypeAny): Record<string, unknown> {
   return schema._def as unknown as Record<string, unknown>;

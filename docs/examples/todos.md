@@ -38,19 +38,21 @@ const CreateTodoSchema = z.object({
 ## Server
 
 ```typescript
-const retrofit = retrofitUi(app, { theme: { /* purple */ } });
+// Serve the SPA bundle + config (theme is optional)
+app.get('/retrofit.json', (_req, res) =>
+  res.json({ apiBase: '/api/ui', theme: { /* purple */ } }),
+);
+app.use(express.static(distPath));
 
 app.get('/api/ui/todos', (_req, res) => {
   res.json(
-    retrofit(
-      TableView.schema(TodoSchema)
-        .updateSchema(CreateTodoSchema) // title/done/priority become editable cells
-        .list({ method: 'GET', url: '/todos' })
-        .create({ method: 'POST', url: '/todos' })
-        .update({ method: 'PUT', url: '/todos/{id}' })
-        .delete({ method: 'DELETE', url: '/todos/{id}' })
-        .build(),
-    ),
+    TableView.schema(TodoSchema)
+      .updateSchema(CreateTodoSchema) // title/done/priority become editable cells
+      .list({ method: 'GET', url: '/todos' })
+      .create({ method: 'POST', url: '/todos' })
+      .update({ method: 'PUT', url: '/todos/{id}' })
+      .delete({ method: 'DELETE', url: '/todos/{id}' })
+      .build(),
   );
 });
 ```

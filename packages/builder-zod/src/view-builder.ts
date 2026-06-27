@@ -150,10 +150,19 @@ export class TableViewBuilder<S extends ZodRawShape> {
       columns = columns.filter((c) => keySet.has(c.key));
     }
 
+    // The SPA resolves the row-link id from the find endpoint url (e.g.
+    // /expenses/{id}), falling back to "id". Carry that field in the row data
+    // even when it is hidden via visibleColumns(), otherwise clicking a row
+    // can't navigate to its detail view.
+    const idField = this._endpoints.find
+      ? (this._endpoints.find.url.match(/\{(\w+)\}/)?.[1] ?? 'id')
+      : 'id';
+    const columnKeys = new Set(columns.map((c) => c.key));
+
     const rows =
       this._rows !== undefined
-        ? this._rows.map((row) =>
-            Object.fromEntries(
+        ? this._rows.map((row) => {
+            const cells = Object.fromEntries(
               columns.map((col) => {
                 const value = row[col.key];
                 const formatter = this._formatters.get(col.key);
@@ -162,8 +171,12 @@ export class TableViewBuilder<S extends ZodRawShape> {
                   : { value };
                 return [col.key, cell];
               }),
-            ),
-          )
+            );
+            if (!columnKeys.has(idField) && row[idField] !== undefined) {
+              cells[idField] = { value: row[idField] };
+            }
+            return cells;
+          })
         : undefined;
 
     return {

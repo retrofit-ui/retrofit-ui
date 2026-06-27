@@ -23,4 +23,45 @@ describe('TableViewBuilder.columnOverride', () => {
       high: 'danger',
     });
   });
+
+  it('emits a function format as a per-cell formatted string (Cell.formatted)', () => {
+    const spec = TableViewBuilder.forRows(TodoSchema, [
+      { id: 1, title: 'Ship it', priority: 'high' },
+    ])
+      .columnOverride('priority', { format: (v) => `[${String(v)}]` })
+      .build();
+
+    expect(spec.rows?.[0]?.priority).toEqual({
+      value: 'high',
+      formatted: '[high]',
+    });
+  });
+});
+
+describe('TableViewBuilder embedded-row id', () => {
+  it('carries the id field in rows even when hidden via visibleColumns', () => {
+    const spec = TableViewBuilder.forRows(TodoSchema, [
+      { id: 7, title: 'Ship it', priority: 'high' },
+    ])
+      .visibleColumns(['title', 'priority'])
+      .find({ method: 'GET', url: '/todos/{id}' })
+      .build();
+
+    // id is not a displayed column...
+    expect(spec.columns.some((c) => c.key === 'id')).toBe(false);
+    // ...but its value rides along so row-link navigation can resolve it.
+    expect(spec.rows?.[0]?.id).toEqual({ value: 7 });
+  });
+
+  it('respects a non-default id field name from the find url', () => {
+    const spec = TableViewBuilder.forRows(TodoSchema, [
+      { id: 7, title: 'Ship it', priority: 'high' },
+    ])
+      .visibleColumns(['priority'])
+      .find({ method: 'GET', url: '/todos/{title}' })
+      .build();
+
+    expect(spec.columns.some((c) => c.key === 'title')).toBe(false);
+    expect(spec.rows?.[0]?.title).toEqual({ value: 'Ship it' });
+  });
 });

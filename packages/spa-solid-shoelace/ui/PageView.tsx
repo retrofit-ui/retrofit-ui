@@ -27,6 +27,8 @@ import {
   Switch,
   useContext,
 } from 'solid-js';
+import { showToast } from './toast';
+import { cellFormatted, cellValue } from './utils';
 
 // ── Datetime helpers ─────────────────────────────────────────────────────────
 
@@ -42,7 +44,9 @@ function datetimeLocalToIso(local: string): string {
 // ── Cell formatting ──────────────────────────────────────────────────────────
 
 function formatCellValue(col: Column, row: Record<string, unknown>): string {
-  const raw = row[col.key];
+  const formatted = cellFormatted(row[col.key]);
+  if (formatted != null) return formatted;
+  const raw = cellValue(row[col.key]);
   if (raw == null) return '';
   if (col.type === 'boolean') return raw ? '✓' : '✗';
   if (col.type === 'date') {
@@ -288,6 +292,7 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
       }
       setValues(makeInitValues());
       setErrors({});
+      showToast('success', 'Created successfully');
       refresh();
     } catch (err) {
       setSubmitError(String(err));

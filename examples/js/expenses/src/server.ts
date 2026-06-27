@@ -71,6 +71,25 @@ app.get('/api/ui/expenses', (_req, res) => {
   );
 });
 
+// Server-formatted cells — the server decides the display string via a `format`
+// FUNCTION, so each cell ships as { value, formatted }. The SPA shows the
+// server's string verbatim (no client-side number formatting). Contrast with
+// the narrow `/api/ui/expenses` table above, which uses format:'currency' to
+// let the client render an <sl-format-number>. Navigate to /#/expenses-formatted.
+app.get('/api/ui/expenses-formatted', (_req, res) => {
+  const usd = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    currencyDisplay: 'code',
+  });
+  res.json(
+    TableView.forRows(ExpenseSchema, store.all())
+      .visibleColumns(['description', 'amount', 'date'])
+      .columnOverride('amount', { format: (v) => usd.format(Number(v)) })
+      .build(),
+  );
+});
+
 // Form with server-controlled validation rules; entity values embedded on fields
 app.get('/api/ui/expenses/:id', (req, res) => {
   const { id } = req.params;

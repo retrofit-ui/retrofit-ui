@@ -14,8 +14,8 @@ The primary renderer is **SolidJS**. React is supported as a secondary renderer.
 retrofit-ui/
 ├── packages/
 │   ├── core/                      # @retrofit-ui/core — type definitions for all UI specs
-│   ├── schema-builder-zod/        # @retrofit-ui/schema-builder-zod — Zod schema → UI spec builders
-│   └── server-solid-shoelace/     # @retrofit-ui/server-solid-shoelace — Express adapter + SolidJS/Shoelace SPA
+│   ├── builder-zod/               # @retrofit-ui/builder-zod — Zod schema → UI spec builders (table/form/page/stat/timeline/tree/calendar/workflow)
+│   └── spa-solid-shoelace/        # @retrofit-ui/spa-solid-shoelace — pre-built SolidJS/Shoelace SPA bundle (exports distPath); any server serves it
 ├── examples/
 ├── pnpm-workspace.yaml
 └── package.json

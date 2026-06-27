@@ -5,16 +5,17 @@ Get a working admin table view in under five minutes with Express.
 ## Install
 
 ```bash
-pnpm add @retrofit-ui/server-solid-shoelace @retrofit-ui/spa-solid-shoelace express
+pnpm add @retrofit-ui/builder-zod @retrofit-ui/spa-solid-shoelace express
 pnpm add -D @types/express tsx
 ```
 
-`server-solid-shoelace` contains the server helpers and builders. `spa-solid-shoelace` provides the pre-built SPA assets that get served at `/`.
+`builder-zod` contains the Zod-driven spec builders. `spa-solid-shoelace` provides the pre-built SPA bundle (exposed as `distPath`) that your server serves as static files at `/`. The server's only jobs are to emit spec JSON and serve the bundle — the same model in any language.
 
 ## Minimum working example
 
 ```typescript
-import { retrofitUi, TableView } from '@retrofit-ui/server-solid-shoelace';
+import { TableView } from '@retrofit-ui/builder-zod';
+import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import { z } from 'zod';
 
@@ -33,8 +34,9 @@ const items = [
   { id: 2, name: 'Second item', active: false },
 ];
 
-// 1. Mount the SPA and the /retrofit.json config endpoint
-const retrofit = retrofitUi(app);
+// 1. Serve the config endpoint + the SPA bundle as static files
+app.get('/retrofit.json', (_req, res) => res.json({ apiBase: '/api/ui' }));
+app.use(express.static(distPath));
 
 // 2. Your existing REST endpoint (unchanged)
 app.get('/items', (_req, res) => res.json(items));
@@ -42,11 +44,9 @@ app.get('/items', (_req, res) => res.json(items));
 // 3. The spec endpoint — tells the SPA how to render the table
 app.get('/api/ui/items', (_req, res) => {
   res.json(
-    retrofit(
-      TableView.schema(ItemSchema)
-        .list({ method: 'GET', url: '/items' })
-        .build(),
-    ),
+    TableView.schema(ItemSchema)
+      .list({ method: 'GET', url: '/items' })
+      .build(),
   );
 });
 
@@ -82,13 +82,11 @@ app.delete('/items/:id', (req, res) => {
 // Update the spec endpoint
 app.get('/api/ui/items', (_req, res) => {
   res.json(
-    retrofit(
-      TableView.schema(ItemSchema)
-        .list({ method: 'GET', url: '/items' })
-        .create({ method: 'POST', url: '/items' })
-        .delete({ method: 'DELETE', url: '/items/{id}' })
-        .build(),
-    ),
+    TableView.schema(ItemSchema)
+      .list({ method: 'GET', url: '/items' })
+      .create({ method: 'POST', url: '/items' })
+      .delete({ method: 'DELETE', url: '/items/{id}' })
+      .build(),
   );
 });
 ```

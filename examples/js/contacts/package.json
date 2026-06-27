@@ -9,7 +9,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@retrofit-ui/server-solid-shoelace": "workspace:*",
+    "@retrofit-ui/builder-zod": "workspace:*",
+    "@retrofit-ui/spa-solid-shoelace": "workspace:*",
     "express": "^4",
     "zod": "^4.3.6"
   },

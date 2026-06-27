@@ -42,11 +42,21 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
 
-// Registers GET /api/ui/contacts and GET /api/ui/contacts/:id
-bundle.register(app, retrofit, '/api/ui/contacts');
+// Serve the two specs on a collection route and an item route
+app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+app.get('/api/ui/contacts/:id', (req, res) => {
+  const { id } = req.params;
+  const entity = id !== 'new' ? store.find(id) : undefined;
+  const fields = entity
+    ? bundle.formSpec.fields.map((f) =>
+        entity[f.name] !== undefined ? { ...f, value: entity[f.name] } : f,
+      )
+    : bundle.formSpec.fields;
+  res.json({ ...bundle.formSpec, fields });
+});
 ```
 
-## What `.register()` creates
+## What the two routes serve
 
 | Route | Spec | Behaviour |
 |-------|------|-----------|
@@ -55,4 +65,4 @@ bundle.register(app, retrofit, '/api/ui/contacts');
 
 ## Key takeaway
 
-`TableFormWorkflowBundle` is two spec endpoints in one builder call. The `table()` and `form()` callbacks let you customise each independently without leaving the chain.
+`TableFormWorkflowBundle` builds two complementary specs in one builder call. The `table()` and `form()` callbacks let you customise each independently without leaving the chain; your server serves `bundle.tableSpec` and `bundle.formSpec` on the two routes.

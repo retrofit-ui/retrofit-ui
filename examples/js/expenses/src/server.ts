@@ -6,13 +6,8 @@
  * new rules automatically — no frontend deploy needed.
  */
 
-import {
-  formSpec,
-  pageSpec,
-  retrofitUi,
-  row,
-  TableView,
-} from '@retrofit-ui/server-solid-shoelace';
+import { formSpec, pageSpec, row, TableView } from '@retrofit-ui/builder-zod';
+import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import {
   CreateExpenseSchema,
@@ -39,37 +34,40 @@ app.delete('/expenses/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-const retrofit = retrofitUi(app, {
-  theme: {
-    cssVariables: {
-      '--sl-color-primary-50': '#fff7ed',
-      '--sl-color-primary-100': '#ffedd5',
-      '--sl-color-primary-200': '#fed7aa',
-      '--sl-color-primary-300': '#fdba74',
-      '--sl-color-primary-400': '#fb923c',
-      '--sl-color-primary-500': '#f97316',
-      '--sl-color-primary-600': '#ea580c',
-      '--sl-color-primary-700': '#c2410c',
-      '--sl-color-primary-800': '#9a3412',
-      '--sl-color-primary-900': '#7c2d12',
-      '--sl-color-primary-950': '#431407',
-    },
-    extraCss: `.retrofit-thead { background-color: #7c2d12; }
-.retrofit-th { color: #fff7ed; border-bottom-color: #9a3412; }`,
+// Serve the SPA bundle + its config. The SPA fetches /retrofit.json for its
+// apiBase and theme, then renders specs from /api/ui/*. Any server in any
+// language can serve the bundle the same way — see @retrofit-ui/spa-solid-shoelace.
+const theme = {
+  cssVariables: {
+    '--sl-color-primary-50': '#fff7ed',
+    '--sl-color-primary-100': '#ffedd5',
+    '--sl-color-primary-200': '#fed7aa',
+    '--sl-color-primary-300': '#fdba74',
+    '--sl-color-primary-400': '#fb923c',
+    '--sl-color-primary-500': '#f97316',
+    '--sl-color-primary-600': '#ea580c',
+    '--sl-color-primary-700': '#c2410c',
+    '--sl-color-primary-800': '#9a3412',
+    '--sl-color-primary-900': '#7c2d12',
+    '--sl-color-primary-950': '#431407',
   },
-});
+  extraCss: `.retrofit-thead { background-color: #7c2d12; }
+.retrofit-th { color: #fff7ed; border-bottom-color: #9a3412; }`,
+};
+app.get('/retrofit.json', (_req, res) =>
+  res.json({ apiBase: '/api/ui', theme }),
+);
+app.use(express.static(distPath));
 
 // Narrow table — only the 3 most actionable columns; rows embedded in response
 app.get('/api/ui/expenses', (_req, res) => {
   res.json(
-    retrofit(
-      TableView.forRows(ExpenseSchema, store.all())
-        .visibleColumns(['description', 'amount', 'date'])
-        .columnOverride('amount', { format: 'currency', currency: 'USD' })
-        .find({ method: 'GET', url: '/expenses/{id}' })
-        .create({ method: 'POST', url: '/expenses' })
-        .build(),
-    ),
+    TableView.forRows(ExpenseSchema, store.all())
+      .visibleColumns(['description', 'amount', 'date'])
+      .columnOverride('amount', { format: 'currency', currency: 'USD' })
+      .find({ method: 'GET', url: '/expenses/{id}' })
+      .create({ method: 'POST', url: '/expenses' })
+      .build(),
   );
 });
 
@@ -90,118 +88,112 @@ app.get('/api/ui/expenses/:id', (req, res) => {
     .update({ method: 'PUT', url: '/expenses/{id}' })
     .delete({ method: 'DELETE', url: '/expenses/{id}' });
   if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(retrofit(builder.build()));
+  res.json(builder.build());
 });
 
 // Stacked layout: auto-submit filter form + table — navigate to /#/expenses-filtered
 app.get('/api/ui/expenses-filtered', (_req, res) => {
   res.json(
-    retrofit(
-      pageSpec()
-        .title('Expenses')
-        .form(
-          formSpec(ExpenseFilterSchema)
-            .fieldOverride('category', { placeholder: 'All Categories' })
-            .fieldOverride('status', { placeholder: 'All Statuses' })
-            .autoSubmit()
-            .layout({ direction: 'row' })
-            .build(),
-        )
-        .table(
-          TableView.schema(ExpenseSchema)
-            .visibleColumns([
-              'description',
-              'amount',
-              'category',
-              'status',
-              'date',
-            ])
-            .list({
-              method: 'GET',
-              url: '/expenses?category={category}&status={status}',
-            })
-            .build(),
-        )
-        .build(),
-    ),
+    pageSpec()
+      .title('Expenses')
+      .form(
+        formSpec(ExpenseFilterSchema)
+          .fieldOverride('category', { placeholder: 'All Categories' })
+          .fieldOverride('status', { placeholder: 'All Statuses' })
+          .autoSubmit()
+          .layout({ direction: 'row' })
+          .build(),
+      )
+      .table(
+        TableView.schema(ExpenseSchema)
+          .visibleColumns([
+            'description',
+            'amount',
+            'category',
+            'status',
+            'date',
+          ])
+          .list({
+            method: 'GET',
+            url: '/expenses?category={category}&status={status}',
+          })
+          .build(),
+      )
+      .build(),
   );
 });
 
 // Stacked layout: create form + embedded table — navigate to /#/expenses-stacked
 app.get('/api/ui/expenses-stacked', (_req, res) => {
   res.json(
-    retrofit(
-      pageSpec()
-        .title('Expenses')
-        .form(
-          formSpec(ExpenseSchema, CreateExpenseSchema)
-            .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
-            .fieldOverride('date', {
-              placeholder: 'YYYY-MM-DD',
-              helpText: 'YYYY-MM-DD',
-              validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-            })
-            .fieldOverride('notes', { type: 'textarea' })
-            .fieldOverride('description', { validation: { min: 3 } })
-            .create({ method: 'POST', url: '/expenses' })
-            .build(),
-          'New Expense',
-        )
-        .table(
-          TableView.forRows(ExpenseSchema, store.all())
-            .visibleColumns([
-              'description',
-              'amount',
-              'category',
-              'status',
-              'date',
-            ])
-            .build(),
-        )
-        .build(),
-    ),
+    pageSpec()
+      .title('Expenses')
+      .form(
+        formSpec(ExpenseSchema, CreateExpenseSchema)
+          .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
+          .fieldOverride('date', {
+            placeholder: 'YYYY-MM-DD',
+            helpText: 'YYYY-MM-DD',
+            validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+          })
+          .fieldOverride('notes', { type: 'textarea' })
+          .fieldOverride('description', { validation: { min: 3 } })
+          .create({ method: 'POST', url: '/expenses' })
+          .build(),
+        'New Expense',
+      )
+      .table(
+        TableView.forRows(ExpenseSchema, store.all())
+          .visibleColumns([
+            'description',
+            'amount',
+            'category',
+            'status',
+            'date',
+          ])
+          .build(),
+      )
+      .build(),
   );
 });
 
 // Dashboard: create form + expense list side by side — navigate to /#/expenses-dashboard
 app.get('/api/ui/expenses-dashboard', (_req, res) => {
   res.json(
-    retrofit(
-      pageSpec()
-        .title('Expenses')
-        .add(
-          row()
-            .form(
-              formSpec(ExpenseSchema, CreateExpenseSchema)
-                .fieldOverride('amount', {
-                  validation: { min: 0.01, max: 10000 },
-                })
-                .fieldOverride('date', {
-                  placeholder: 'YYYY-MM-DD',
-                  helpText: 'YYYY-MM-DD',
-                  validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-                })
-                .fieldOverride('notes', { type: 'textarea' })
-                .fieldOverride('description', { validation: { min: 3 } })
-                .create({ method: 'POST', url: '/expenses' })
-                .build(),
-              'New Expense',
-            )
-            .table(
-              TableView.forRows(ExpenseSchema, store.all())
-                .visibleColumns([
-                  'description',
-                  'amount',
-                  'category',
-                  'status',
-                  'date',
-                ])
-                .build(),
-            )
-            .build(),
-        )
-        .build(),
-    ),
+    pageSpec()
+      .title('Expenses')
+      .add(
+        row()
+          .form(
+            formSpec(ExpenseSchema, CreateExpenseSchema)
+              .fieldOverride('amount', {
+                validation: { min: 0.01, max: 10000 },
+              })
+              .fieldOverride('date', {
+                placeholder: 'YYYY-MM-DD',
+                helpText: 'YYYY-MM-DD',
+                validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+              })
+              .fieldOverride('notes', { type: 'textarea' })
+              .fieldOverride('description', { validation: { min: 3 } })
+              .create({ method: 'POST', url: '/expenses' })
+              .build(),
+            'New Expense',
+          )
+          .table(
+            TableView.forRows(ExpenseSchema, store.all())
+              .visibleColumns([
+                'description',
+                'amount',
+                'category',
+                'status',
+                'date',
+              ])
+              .build(),
+          )
+          .build(),
+      )
+      .build(),
   );
 });
 

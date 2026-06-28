@@ -2,7 +2,8 @@ import { defineConfig } from 'vitepress';
 
 export default defineConfig({
   title: 'retrofit-ui',
-  description: 'Declarative, server-driven UI components from your existing schemas',
+  description:
+    'Declarative, server-driven UI components from your existing schemas',
 
   head: [
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],

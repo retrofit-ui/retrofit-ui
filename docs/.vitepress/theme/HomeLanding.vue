@@ -24,7 +24,9 @@ onMounted(() => {
     },
     { threshold: 0.18, rootMargin: '0px 0px -8% 0px' },
   );
-  targets.forEach((el) => observer!.observe(el));
+  targets.forEach((el) => {
+    observer?.observe(el);
+  });
 });
 
 onBeforeUnmount(() => observer?.disconnect());

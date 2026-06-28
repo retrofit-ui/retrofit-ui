@@ -38,6 +38,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["docs/.vitepress/theme/style.css"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noImportantStyles": "off"
+          }
+        }
+      }
     }
   ]
 }

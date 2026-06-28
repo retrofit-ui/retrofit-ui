@@ -6,12 +6,17 @@ import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type {
+  CalendarSpec,
   Column,
   FilterFormSpec,
   FormSpec,
   LayoutConfig,
+  MarkdownViewSpec,
   PageSpec,
+  StatSpec,
   TableSpec,
+  TimelineSpec,
+  TreeSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
 import { useSearchParams } from '@solidjs/router';
@@ -27,6 +32,11 @@ import {
   Switch,
   useContext,
 } from 'solid-js';
+import { CalendarViewComponent } from './CalendarView';
+import { MarkdownViewComponent } from './MarkdownView';
+import { StatViewComponent } from './StatView';
+import { TimelineViewComponent } from './TimelineView';
+import { TreeViewComponent } from './TreeView';
 import { showToast } from './toast';
 import { cellFormatted, cellValue } from './utils';
 
@@ -569,6 +579,40 @@ function boxStyle(lc?: LayoutConfig): Record<string, string | undefined> {
   };
 }
 
+function flexStyle(spec: {
+  direction?: 'row' | 'column';
+  gap?: string;
+  wrap?: boolean;
+  align?: string;
+  justify?: string;
+}): Record<string, string | undefined> {
+  return {
+    display: 'flex',
+    'flex-direction': spec.direction ?? 'column',
+    gap: spec.gap ?? 'var(--sl-spacing-2x-large)',
+    'flex-wrap': spec.wrap ? 'wrap' : undefined,
+    'align-items': spec.align,
+    'justify-content': spec.justify,
+  };
+}
+
+function gridStyle(spec: {
+  columns?: number;
+  columnTemplate?: string;
+  gap?: string;
+  align?: string;
+  justify?: string;
+}): Record<string, string | undefined> {
+  return {
+    display: 'grid',
+    'grid-template-columns':
+      spec.columnTemplate ?? `repeat(${String(spec.columns ?? 1)}, 1fr)`,
+    gap: spec.gap ?? 'var(--sl-spacing-2x-large)',
+    'align-items': spec.align,
+    'justify-content': spec.justify,
+  };
+}
+
 function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
   return (
     <div style={boxStyle(props.layout)}>
@@ -582,27 +626,45 @@ function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
 function ViewRenderer(props: { spec: ViewSpec }) {
   return (
     <Switch>
-      <Match when={props.spec.kind === 'box'}>
-        <BoxPane
-          layout={
-            (
-              props.spec as {
-                kind: 'box';
-                layout?: LayoutConfig;
-                children: ViewSpec[];
-              }
-            ).layout
-          }
-          children={
-            (
-              props.spec as {
-                kind: 'box';
-                layout?: LayoutConfig;
-                children: ViewSpec[];
-              }
-            ).children
-          }
-        />
+      <Match when={props.spec.kind === 'flex'}>
+        {(_item) => {
+          const s = props.spec as {
+            kind: 'flex';
+            direction?: 'row' | 'column';
+            gap?: string;
+            wrap?: boolean;
+            align?: string;
+            justify?: string;
+            children: ViewSpec[];
+          };
+          return (
+            <div style={flexStyle(s)}>
+              <For each={s.children}>
+                {(child) => <ViewRenderer spec={child} />}
+              </For>
+            </div>
+          );
+        }}
+      </Match>
+      <Match when={props.spec.kind === 'grid'}>
+        {(_item) => {
+          const s = props.spec as {
+            kind: 'grid';
+            columns?: number;
+            columnTemplate?: string;
+            gap?: string;
+            align?: string;
+            justify?: string;
+            children: ViewSpec[];
+          };
+          return (
+            <div style={gridStyle(s)}>
+              <For each={s.children}>
+                {(child) => <ViewRenderer spec={child} />}
+              </For>
+            </div>
+          );
+        }}
       </Match>
       <Match when={props.spec.kind === 'filter-form'}>
         <FilterFormPane
@@ -627,6 +689,29 @@ function ViewRenderer(props: { spec: ViewSpec }) {
         <TablePane
           spec={(props.spec as { kind: 'table'; spec: TableSpec }).spec}
         />
+      </Match>
+      <Match when={props.spec.kind === 'markdown'}>
+        {(_item) => {
+          const s = props.spec as { kind: 'markdown'; spec: MarkdownViewSpec };
+          return (
+            <MarkdownViewComponent
+              spec={s.spec}
+              entityId={s.spec.entityId ?? ''}
+            />
+          );
+        }}
+      </Match>
+      <Match when={props.spec.kind === 'stat'}>
+        <StatViewComponent spec={props.spec as StatSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'calendar'}>
+        <CalendarViewComponent spec={props.spec as CalendarSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'tree'}>
+        <TreeViewComponent spec={props.spec as TreeSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'timeline'}>
+        <TimelineViewComponent spec={props.spec as TimelineSpec} />
       </Match>
     </Switch>
   );

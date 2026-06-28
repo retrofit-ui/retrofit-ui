@@ -64,7 +64,11 @@ export class LayoutContainerBuilder {
   }
 
   build(): ViewSpec {
-    return { kind: this._kind, ...this._props, children: this._children } as ViewSpec;
+    return {
+      kind: this._kind,
+      ...this._props,
+      children: this._children,
+    } as ViewSpec;
   }
 }
 

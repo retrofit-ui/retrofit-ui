@@ -3,9 +3,16 @@ import { col, grid, row } from '../page-builder';
 
 describe('row()', () => {
   it('produces a flex spec with direction row', () => {
-    const spec = row().add({ kind: 'table', spec: { columns: [], rows: [] } }).build();
+    const spec = row()
+      .add({
+        kind: 'table',
+        spec: { kind: 'table', columns: [], endpoints: {} },
+      })
+      .build();
     expect(spec.kind).toBe('flex');
-    expect((spec as { kind: 'flex'; direction?: string }).direction).toBe('row');
+    expect((spec as { kind: 'flex'; direction?: string }).direction).toBe(
+      'row',
+    );
   });
 
   it('includes gap when provided', () => {
@@ -23,7 +30,9 @@ describe('col()', () => {
   it('produces a flex spec with direction column', () => {
     const spec = col().build();
     expect(spec.kind).toBe('flex');
-    expect((spec as { kind: 'flex'; direction?: string }).direction).toBe('column');
+    expect((spec as { kind: 'flex'; direction?: string }).direction).toBe(
+      'column',
+    );
   });
 
   it('includes gap when provided', () => {
@@ -53,8 +62,18 @@ describe('grid()', () => {
 describe('LayoutContainerBuilder.add()', () => {
   it('collects children in order', () => {
     const spec = row()
-      .add({ kind: 'table', spec: { columns: [], rows: [] } })
-      .add({ kind: 'markdown', spec: { content: '# hi' } })
+      .add({
+        kind: 'table',
+        spec: { kind: 'table', columns: [], endpoints: {} },
+      })
+      .add({
+        kind: 'markdown',
+        spec: {
+          kind: 'markdown',
+          entityEndpoint: { method: 'GET', url: '/api/content/1' },
+          field: 'body',
+        },
+      })
       .build();
     const children = (spec as { children: unknown[] }).children;
     expect(children).toHaveLength(2);

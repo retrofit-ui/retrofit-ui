@@ -129,6 +129,32 @@ issue_comments() {
     || echo "[]"
 }
 
+# Parses "Depends on #N", "Blocked by #N", or "Requires #N" from an issue body
+# and returns the referenced issue numbers, one per line.
+get_issue_dependencies() {
+  local body="$1"
+  echo "$body" | grep -oiE '(depends on|blocked by|requires)[[:space:]]+(issues?[[:space:]]+)?#[0-9]+' \
+    | grep -oE '[0-9]+$'
+}
+
+# Returns 0 (true) if any dependency issue is still open, 1 (false) otherwise.
+has_open_dependencies() {
+  local body="$1"
+  local deps
+  deps=$(get_issue_dependencies "$body")
+  [ -z "$deps" ] && return 1
+  while IFS= read -r dep; do
+    [ -z "$dep" ] && continue
+    local state
+    state=$(gh issue view "$dep" --repo "$REPO" --json state --jq '.state' 2>/dev/null || echo "OPEN")
+    if [ "$state" != "CLOSED" ]; then
+      log "  → dependency #${dep} is still ${state}"
+      return 0
+    fi
+  done <<< "$deps"
+  return 1
+}
+
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 worked_on=0
@@ -149,6 +175,11 @@ while IFS= read -r issue; do
 
   if echo "$issue" | jq -e '[.labels[].name] | contains(["needs refinement"])' > /dev/null 2>&1; then
     log "  → skipping: labelled 'needs refinement'"
+    continue
+  fi
+
+  if has_open_dependencies "$body"; then
+    log "  → skipping: has open dependencies"
     continue
   fi
 

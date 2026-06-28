@@ -61,7 +61,8 @@ async function processWithSrc(
   element: HTMLElement,
   apiBase: string,
 ): Promise<void> {
-  const src = element.getAttribute('data-retrofit-src')!;
+  const src = element.getAttribute('data-retrofit-src');
+  if (!src) return;
   try {
     const res = await fetch(src);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -85,7 +86,8 @@ async function processWithSrc(
 }
 
 function processInline(element: HTMLElement, apiBase: string): void {
-  const raw = element.getAttribute('data-retrofit')!;
+  const raw = element.getAttribute('data-retrofit');
+  if (!raw) return;
   try {
     mountIsland(JSON.parse(raw) as RootSpec, element, apiBase);
   } catch {

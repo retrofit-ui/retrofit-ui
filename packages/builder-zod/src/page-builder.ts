@@ -33,12 +33,10 @@ export function filterForm(): FilterFormSpecBuilder {
 export class LayoutContainerBuilder {
   private _children: ViewSpec[] = [];
 
-  constructor(private _layout?: LayoutConfig) {}
-
-  layout(config: LayoutConfig): this {
-    this._layout = config;
-    return this;
-  }
+  constructor(
+    private readonly _kind: 'flex' | 'grid',
+    private readonly _props: object = {},
+  ) {}
 
   add(child: ViewSpec): this {
     this._children.push(child);
@@ -67,31 +65,35 @@ export class LayoutContainerBuilder {
 
   build(): ViewSpec {
     return {
-      kind: 'box',
-      ...(this._layout !== undefined && { layout: this._layout }),
+      kind: this._kind,
+      ...this._props,
       children: this._children,
-    };
+    } as unknown as ViewSpec;
   }
-}
-
-/** Create a layout container with arbitrary flex/grid config. */
-export function layout(config?: LayoutConfig): LayoutContainerBuilder {
-  return new LayoutContainerBuilder(config);
 }
 
 /** Shorthand: flex row. */
 export function row(gap?: string): LayoutContainerBuilder {
-  return layout({ direction: 'row', ...(gap !== undefined && { gap }) });
+  return new LayoutContainerBuilder('flex', {
+    direction: 'row' as const,
+    ...(gap !== undefined && { gap }),
+  });
 }
 
 /** Shorthand: flex column. */
 export function col(gap?: string): LayoutContainerBuilder {
-  return layout({ direction: 'column', ...(gap !== undefined && { gap }) });
+  return new LayoutContainerBuilder('flex', {
+    direction: 'column' as const,
+    ...(gap !== undefined && { gap }),
+  });
 }
 
 /** Shorthand: CSS grid with n equal columns. */
 export function grid(columns: number, gap?: string): LayoutContainerBuilder {
-  return layout({ columns, ...(gap !== undefined && { gap }) });
+  return new LayoutContainerBuilder('grid', {
+    columns,
+    ...(gap !== undefined && { gap }),
+  });
 }
 
 // ── PageSpecBuilder ───────────────────────────────────────────────────────────

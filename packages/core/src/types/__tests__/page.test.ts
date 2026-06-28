@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { CalendarSpec, StatSpec, TimelineSpec, TreeSpec } from '../resource-spec';
 import type { ViewSpec } from '../page';
+import type {
+  CalendarSpec,
+  StatSpec,
+  TimelineSpec,
+  TreeSpec,
+} from '../resource-spec';
 
 describe('ViewSpec flex/grid', () => {
   it('accepts a flex container with direction row', () => {
@@ -33,12 +38,18 @@ describe('ViewSpec flex/grid', () => {
       gap: '24px',
       children: [],
     };
-    expect((spec as { kind: 'grid'; columnTemplate?: string }).columnTemplate).toBe('200px 1fr 2fr');
+    expect(
+      (spec as { kind: 'grid'; columnTemplate?: string }).columnTemplate,
+    ).toBe('200px 1fr 2fr');
   });
 
   it('flex children can be another flex (recursive nesting)', () => {
     const inner: ViewSpec = { kind: 'flex', direction: 'column', children: [] };
-    const outer: ViewSpec = { kind: 'flex', direction: 'row', children: [inner] };
+    const outer: ViewSpec = {
+      kind: 'flex',
+      direction: 'row',
+      children: [inner],
+    };
     const children = (outer as { kind: 'flex'; children: ViewSpec[] }).children;
     expect(children[0]?.kind).toBe('flex');
   });
@@ -53,7 +64,10 @@ describe('ViewSpec flex/grid', () => {
 
 describe('ViewSpec leaf types', () => {
   it('accepts StatSpec directly', () => {
-    const stat: StatSpec = { kind: 'stat', stats: [{ label: 'Revenue', value: 100 }] };
+    const stat: StatSpec = {
+      kind: 'stat',
+      stats: [{ label: 'Revenue', value: 100 }],
+    };
     const spec: ViewSpec = stat;
     expect(spec.kind).toBe('stat');
   });

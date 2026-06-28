@@ -59,6 +59,35 @@ async function fetchFormView(
   return { spec, entity };
 }
 
+export function FormViewComponent(props: {
+  spec: FormSpec;
+  entity?: Record<string, unknown>;
+  id?: string;
+  resource?: string;
+  onDone?: () => void;
+}) {
+  const entity = () => {
+    if (props.entity) return props.entity;
+    return Object.fromEntries(
+      props.spec.fields
+        .filter((f) => f.value !== undefined)
+        .map((f) => [f.name, f.value]),
+    );
+  };
+
+  return (
+    <div class="retrofit-view">
+      <FormEditor
+        spec={props.spec}
+        entity={entity()}
+        resource={props.resource ?? ''}
+        id={props.id}
+        onDone={props.onDone ?? (() => {})}
+      />
+    </div>
+  );
+}
+
 export function FormView() {
   const params = useParams<{ resource: string; id?: string }>();
   const navigate = useNavigate();

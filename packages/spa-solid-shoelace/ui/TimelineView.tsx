@@ -14,6 +14,55 @@ async function fetchTimelineSpec(specUrl: string): Promise<TimelineSpec> {
   return (await res.json()) as TimelineSpec;
 }
 
+export function TimelineViewComponent(props: { spec: TimelineSpec }) {
+  return (
+    <div class="retrofit-view">
+      <Show when={props.spec.metadata?.title}>
+        <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
+      </Show>
+      <Show
+        when={props.spec.events.length > 0}
+        fallback={<p class="retrofit-empty">No events.</p>}
+      >
+        <ul class="retrofit-timeline">
+          <For each={props.spec.events}>
+            {(event) => {
+              const eventClass = event.variant
+                ? `retrofit-timeline-event retrofit-timeline-event--${event.variant}`
+                : 'retrofit-timeline-event';
+
+              return (
+                <li class={eventClass}>
+                  <div class="retrofit-timeline-header">
+                    <Show when={event.icon}>
+                      <sl-icon name={event.icon} />
+                    </Show>
+                    <span class="retrofit-timeline-title">{event.title}</span>
+                    <Show when={event.variant}>
+                      <sl-badge variant={event.variant}>{event.variant}</sl-badge>
+                    </Show>
+                    <Show when={event.timestamp}>
+                      <sl-relative-time
+                        class="retrofit-timeline-time"
+                        date={event.timestamp}
+                      />
+                    </Show>
+                  </div>
+                  <Show when={event.description}>
+                    <p class="retrofit-timeline-description">
+                      {event.description}
+                    </p>
+                  </Show>
+                </li>
+              );
+            }}
+          </For>
+        </ul>
+      </Show>
+    </div>
+  );
+}
+
 export function TimelineView() {
   const params = useParams<{ resource: string; id?: string }>();
   const navigate = useNavigate();
@@ -59,52 +108,7 @@ export function TimelineView() {
             >
               &larr; Back
             </button>
-            <Show when={s().metadata?.title}>
-              <h1 class="retrofit-page-title">{s().metadata?.title}</h1>
-            </Show>
-            <Show
-              when={s().events.length > 0}
-              fallback={<p class="retrofit-empty">No events.</p>}
-            >
-              <ul class="retrofit-timeline">
-                <For each={s().events}>
-                  {(event) => {
-                    const eventClass = event.variant
-                      ? `retrofit-timeline-event retrofit-timeline-event--${event.variant}`
-                      : 'retrofit-timeline-event';
-
-                    return (
-                      <li class={eventClass}>
-                        <div class="retrofit-timeline-header">
-                          <Show when={event.icon}>
-                            <sl-icon name={event.icon} />
-                          </Show>
-                          <span class="retrofit-timeline-title">
-                            {event.title}
-                          </span>
-                          <Show when={event.variant}>
-                            <sl-badge variant={event.variant}>
-                              {event.variant}
-                            </sl-badge>
-                          </Show>
-                          <Show when={event.timestamp}>
-                            <sl-relative-time
-                              class="retrofit-timeline-time"
-                              date={event.timestamp}
-                            />
-                          </Show>
-                        </div>
-                        <Show when={event.description}>
-                          <p class="retrofit-timeline-description">
-                            {event.description}
-                          </p>
-                        </Show>
-                      </li>
-                    );
-                  }}
-                </For>
-              </ul>
-            </Show>
+            <TimelineViewComponent spec={s()} />
           </div>
         )}
       </Show>

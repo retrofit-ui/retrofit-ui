@@ -31,6 +31,59 @@ async function fetchMarkdownView(
   return { spec, html };
 }
 
+async function fetchMarkdownHtml(
+  spec: MarkdownViewSpec,
+  entityId: string,
+): Promise<string> {
+  const entityUrl = spec.entityEndpoint.url.replace('{id}', entityId);
+  const res = await fetch(entityUrl);
+  if (!res.ok) throw new Error(`Failed to fetch entity from ${entityUrl}`);
+  const entity = (await res.json()) as Record<string, unknown>;
+  const raw = String(entity[spec.field] ?? '');
+  return marked.parse(raw) as string;
+}
+
+export function MarkdownViewComponent(props: {
+  spec: MarkdownViewSpec;
+  entityId: string;
+}) {
+  const [html] = createResource(
+    () => ({ spec: props.spec, entityId: props.entityId }),
+    ({ spec, entityId }) => fetchMarkdownHtml(spec, entityId),
+  );
+
+  return (
+    <div class="retrofit-view">
+      <Show when={html.loading}>
+        <div
+          style={{
+            display: 'flex',
+            'flex-direction': 'column',
+            gap: 'var(--sl-spacing-medium)',
+          }}
+        >
+          <sl-skeleton effect="sheen" style={{ width: '55%' }} />
+          <sl-skeleton effect="sheen" />
+          <sl-skeleton effect="sheen" style={{ width: '80%' }} />
+        </div>
+      </Show>
+      <Show when={html.error}>
+        <p class="retrofit-error-message">Error: {String(html.error)}</p>
+      </Show>
+      <Show when={html()}>
+        {(h) => (
+          <>
+            <Show when={props.spec.metadata?.title}>
+              <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
+            </Show>
+            <div class="retrofit-markdown" innerHTML={h()} />
+          </>
+        )}
+      </Show>
+    </div>
+  );
+}
+
 export function MarkdownView() {
   const params = useParams<{ resource: string; id: string }>();
   const navigate = useNavigate();

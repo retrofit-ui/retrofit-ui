@@ -482,6 +482,339 @@ function NewRow(props: { spec: TableSpec; onCreated: () => void }) {
   );
 }
 
+// ── Standalone (no-router) row for TableViewComponent ────────────────────────
+
+function DataRowComponent(props: {
+  row: Record<string, unknown>;
+  spec: TableSpec;
+  onRefresh: () => void;
+}) {
+  const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
+  const [editing, setEditing] = createSignal(false);
+  const [values, setValues] = createSignal<Record<string, unknown>>(
+    rawRow(props.row),
+  );
+  const [saving, setSaving] = createSignal(false);
+  const [deleting, setDeleting] = createSignal(false);
+  const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
+
+  const idField = () => resolveIdField(props.spec);
+
+  function startEdit() {
+    setValues(rawRow(props.row));
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    setEditing(false);
+    setValues(rawRow(props.row));
+  }
+
+  async function saveEdit() {
+    const ep = props.spec.endpoints?.update;
+    if (!ep) return;
+    setSaving(true);
+    const id = String(cellValue(props.row[idField()]));
+    const url = ep.url.replace('{id}', id);
+    try {
+      const res = await fetch(url, {
+        method: ep.method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values()),
+      });
+      if (res.ok) {
+        setEditing(false);
+        showToast('success', 'Saved successfully');
+        props.onRefresh();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteRow() {
+    const ep = props.spec.endpoints?.delete;
+    if (!ep) return;
+    setShowDeleteDialog(false);
+    setDeleting(true);
+    const id = String(cellValue(props.row[idField()]));
+    const url = ep.url.replace('{id}', id);
+    try {
+      const res = await fetch(url, { method: ep.method });
+      if (res.ok) {
+        showToast('success', 'Deleted successfully');
+        props.onRefresh();
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const hasActions = () =>
+    hasInlineEdit() || !!props.spec.endpoints?.delete;
+
+  return (
+    <>
+      <tr class="retrofit-tr">
+        <For each={props.spec.columns}>
+          {(col) => (
+            <td
+              class="retrofit-td"
+              style={{ 'text-align': col.alignment }}
+              onClick={(e) => editing() && e.stopPropagation()}
+              onKeyDown={(e) => editing() && e.stopPropagation()}
+            >
+              <Show
+                when={editing() && col.editable}
+                fallback={<CellDisplay col={col} value={props.row[col.key]} />}
+              >
+                <CellInput
+                  col={col}
+                  value={values()[col.key]}
+                  onChange={(v) =>
+                    setValues((prev) => ({ ...prev, [col.key]: v }))
+                  }
+                />
+              </Show>
+            </td>
+          )}
+        </For>
+        <Show when={hasActions()}>
+          <td
+            class="retrofit-td"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', gap: '4px', 'flex-wrap': 'wrap' }}>
+              <Show when={!editing() && hasInlineEdit()}>
+                <sl-button size="small" variant="default" on:click={startEdit}>
+                  Edit
+                </sl-button>
+              </Show>
+              <Show when={editing()}>
+                <sl-button
+                  size="small"
+                  variant="primary"
+                  disabled={saving()}
+                  on:click={saveEdit}
+                >
+                  Save
+                </sl-button>
+                <sl-button size="small" variant="default" on:click={cancelEdit}>
+                  Cancel
+                </sl-button>
+              </Show>
+              <Show when={!!props.spec.endpoints?.delete}>
+                <sl-button
+                  size="small"
+                  variant="danger"
+                  disabled={deleting()}
+                  on:click={() => setShowDeleteDialog(true)}
+                >
+                  Delete
+                </sl-button>
+              </Show>
+            </div>
+          </td>
+        </Show>
+      </tr>
+      <sl-dialog label="Delete item?" prop:open={showDeleteDialog()}>
+        This action cannot be undone.
+        <sl-button
+          slot="footer"
+          variant="default"
+          on:click={() => setShowDeleteDialog(false)}
+        >
+          Cancel
+        </sl-button>
+        <sl-button slot="footer" variant="danger" on:click={deleteRow}>
+          Delete
+        </sl-button>
+      </sl-dialog>
+    </>
+  );
+}
+
+export function TableViewComponent(props: { spec: TableSpec }) {
+  const [currentPage, setCurrentPage] = createSignal(1);
+  const [currentPageSize, setCurrentPageSize] = createSignal<number | null>(
+    null,
+  );
+
+  const [data, { refetch }] = createResource(
+    () => [currentPage(), currentPageSize()] as const,
+    async ([page, pageSizeOverride]) => {
+      if (props.spec.rows) return props.spec.rows;
+      const ep = props.spec.endpoints?.list;
+      if (!ep) return [];
+      const pagination = props.spec.metadata?.pagination;
+      let url = ep.url;
+      if (pagination) {
+        const pageSize = pageSizeOverride ?? pagination.pageSize;
+        url = substitutePattern(url, {
+          page: String(page),
+          pageSize: String(pageSize),
+        });
+      }
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch table data');
+      const raw = (await res.json()) as Record<string, unknown>[];
+      return raw.map((row) =>
+        Object.fromEntries(
+          Object.entries(row).map(([k, v]) => [k, { value: v } satisfies Cell]),
+        ),
+      );
+    },
+  );
+
+  const hasInlineEdit = () =>
+    props.spec.columns.some((c) => c.editable);
+  const hasActions = () =>
+    hasInlineEdit() || !!props.spec.endpoints?.delete;
+
+  return (
+    <div class="retrofit-view">
+      <Show when={props.spec.metadata?.title}>
+        <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
+      </Show>
+      <Show when={data.loading}>
+        <table class="retrofit-table">
+          <tbody>
+            <For each={Array(5).fill(null)}>
+              {() => (
+                <tr class="retrofit-tr">
+                  <For each={Array(props.spec.columns.length || 4).fill(null)}>
+                    {() => (
+                      <td class="retrofit-td">
+                        <sl-skeleton effect="sheen" />
+                      </td>
+                    )}
+                  </For>
+                </tr>
+              )}
+            </For>
+          </tbody>
+        </table>
+      </Show>
+      <Show when={data.error}>
+        <p class="retrofit-error-message">Error: {String(data.error)}</p>
+      </Show>
+      <Show when={data()}>
+        {(rows) => (
+          <Show
+            when={rows().length > 0 || hasInlineEdit()}
+            fallback={<p class="retrofit-empty">No data.</p>}
+          >
+            <table class="retrofit-table">
+              <thead class="retrofit-thead">
+                <tr>
+                  <For each={props.spec.columns}>
+                    {(col) => (
+                      <th
+                        class="retrofit-th"
+                        style={{ 'text-align': col.alignment }}
+                      >
+                        {col.label}
+                      </th>
+                    )}
+                  </For>
+                  <Show when={hasActions()}>
+                    <th class="retrofit-th">Actions</th>
+                  </Show>
+                </tr>
+              </thead>
+              <tbody>
+                <For each={rows()}>
+                  {(row) => (
+                    <DataRowComponent
+                      row={row}
+                      spec={props.spec}
+                      onRefresh={() => void refetch()}
+                    />
+                  )}
+                </For>
+                <Show
+                  when={hasInlineEdit() && props.spec.endpoints?.create}
+                >
+                  <NewRow
+                    spec={props.spec}
+                    onCreated={() => void refetch()}
+                  />
+                </Show>
+              </tbody>
+            </table>
+            <Show when={props.spec.metadata?.pagination}>
+              {(pagination) => {
+                const totalPages = () =>
+                  Math.max(
+                    1,
+                    Math.ceil(
+                      pagination().totalRows /
+                        (currentPageSize() ?? pagination().pageSize),
+                    ),
+                  );
+                return (
+                  <div class="retrofit-pagination">
+                    <sl-button-group label="Page navigation">
+                      <sl-icon-button
+                        name="chevron-left"
+                        label="Previous page"
+                        disabled={currentPage() <= 1 || undefined}
+                        on:click={() => setCurrentPage((p) => p - 1)}
+                      />
+                      <sl-icon-button
+                        name="chevron-right"
+                        label="Next page"
+                        disabled={
+                          currentPage() >= totalPages() || undefined
+                        }
+                        on:click={() => setCurrentPage((p) => p + 1)}
+                      />
+                    </sl-button-group>
+                    <span class="retrofit-pagination-label">
+                      Page {currentPage()} of {totalPages()}
+                    </span>
+                    <Show
+                      when={(pagination().pageSizeOptions?.length ?? 0) > 0}
+                    >
+                      <sl-select
+                        size="small"
+                        prop:value={String(
+                          currentPageSize() ?? pagination().pageSize,
+                        )}
+                        on:sl-change={(e: Event) => {
+                          setCurrentPageSize(
+                            Number(
+                              (
+                                e.target as EventTarget & {
+                                  value: string;
+                                }
+                              ).value,
+                            ),
+                          );
+                          setCurrentPage(1);
+                        }}
+                      >
+                        <For each={pagination().pageSizeOptions ?? []}>
+                          {(size) => (
+                            <sl-option value={String(size)}>
+                              {size} per page
+                            </sl-option>
+                          )}
+                        </For>
+                      </sl-select>
+                    </Show>
+                  </div>
+                );
+              }}
+            </Show>
+          </Show>
+        )}
+      </Show>
+    </div>
+  );
+}
+
 export function TableView() {
   const params = useParams<{ resource: string }>();
   const navigate = useNavigate();
@@ -605,6 +938,7 @@ export function TableView() {
                             row={row}
                             spec={
                               tableData()?.spec ?? {
+                                kind: 'table' as const,
                                 columns: [],
                                 endpoints: {},
                               }
@@ -621,7 +955,11 @@ export function TableView() {
                       >
                         <NewRow
                           spec={
-                            tableData()?.spec ?? { columns: [], endpoints: {} }
+                            tableData()?.spec ?? {
+                              kind: 'table' as const,
+                              columns: [],
+                              endpoints: {},
+                            }
                           }
                           onCreated={() => void refetch()}
                         />

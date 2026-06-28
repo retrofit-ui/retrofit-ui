@@ -57,6 +57,21 @@ function StatCard(props: { stat: Stat }) {
   );
 }
 
+export function StatViewComponent(props: { spec: StatSpec }) {
+  return (
+    <div class="retrofit-view">
+      <Show when={props.spec.metadata?.title}>
+        <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
+      </Show>
+      <div class="retrofit-stat-grid">
+        <For each={props.spec.stats}>
+          {(stat) => <StatCard stat={stat} />}
+        </For>
+      </div>
+    </div>
+  );
+}
+
 export function StatView() {
   const params = useParams<{ resource: string }>();
   const apiBase = useContext(ApiBaseContext);
@@ -67,39 +82,32 @@ export function StatView() {
   );
 
   return (
-    <div class="retrofit-view">
+    <>
       <Show when={view.loading}>
-        <div class="retrofit-stat-grid">
-          <For each={Array(4).fill(null)}>
-            {() => (
-              <div class="retrofit-stat-card">
-                <sl-skeleton
-                  effect="sheen"
-                  style={{ height: '2.5rem', 'margin-bottom': '0.5rem' }}
-                />
-                <sl-skeleton effect="sheen" style={{ width: '60%' }} />
-              </div>
-            )}
-          </For>
+        <div class="retrofit-view">
+          <div class="retrofit-stat-grid">
+            <For each={Array(4).fill(null)}>
+              {() => (
+                <div class="retrofit-stat-card">
+                  <sl-skeleton
+                    effect="sheen"
+                    style={{ height: '2.5rem', 'margin-bottom': '0.5rem' }}
+                  />
+                  <sl-skeleton effect="sheen" style={{ width: '60%' }} />
+                </div>
+              )}
+            </For>
+          </div>
         </div>
       </Show>
       <Show when={view.error}>
-        <p class="retrofit-error-message">Error: {String(view.error)}</p>
+        <div class="retrofit-view">
+          <p class="retrofit-error-message">Error: {String(view.error)}</p>
+        </div>
       </Show>
       <Show when={view()}>
-        {(spec) => (
-          <>
-            <Show when={spec().metadata?.title}>
-              <h1 class="retrofit-page-title">{spec().metadata?.title}</h1>
-            </Show>
-            <div class="retrofit-stat-grid">
-              <For each={spec().stats}>
-                {(stat) => <StatCard stat={stat} />}
-              </For>
-            </div>
-          </>
-        )}
+        {(spec) => <StatViewComponent spec={spec()} />}
       </Show>
-    </div>
+    </>
   );
 }

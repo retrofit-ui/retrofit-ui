@@ -1,8 +1,8 @@
 # Design philosophy
 
-retrofit-ui follows one rule: **when in doubt, do the work on the server.**
+The goal is to decouple a backend and frontend using a compact and powerful contract between the two. The hypothesis of this project is that a compact and powerful contract will be sufficient to cover most needs of backend developers, and can even show sophisticated UI components and layouts. The separation of concerns should also allow both sides of a software application to evolve gracefully without the unnecessary type of coupling that slows everyone down
 
-The frontend renders what it's told. Any logic that decides *what* to render — which rows to show, how a number should be displayed, which fields a user can edit — lives on the server, where it can be tested, versioned, and applied the same way for every client.
+The spec defines what can be shown and what actions can be performed with the component. The frontend renders what it's told.
 
 ## The spec is the contract
 
@@ -107,3 +107,30 @@ TableView.schema(ExpenseSchema)
 ```
 
 The same pattern covers any future formatting concern — ordinals, file sizes, relative timestamps, custom units.
+
+## Decision: the spec renderer as a generalization of server-driven rendering
+
+Server-driven rendering and spec-driven (static) rendering look like separate modes, but they are the same model with a different action backend.
+
+In server-driven mode, every action in a spec — load rows, submit a form, delete a row — is an `EndpointDirective`: an HTTP method and a URL. The renderer calls the server. The server owns the behavior.
+
+```json
+{ "list": { "method": "GET", "url": "/contacts" },
+  "delete": { "method": "DELETE", "url": "/contacts/{id}" } }
+```
+
+The spec-driven renderer lifts that constraint. A spec can be served from a static file, inlined into HTML via `data-retrofit`, or patched client-side — no server required. The natural consequence is that the "action" concept needs to generalize too: not every action has a server to call.
+
+Actions in spec-driven rendering can also be:
+
+- **Plain JS functions** — called directly by the renderer with the current row or form values as arguments, with access to anything in the host page's scope.
+- **Scoped event handlers** — the renderer dispatches a DOM event on the container element; the host page listens and handles it however it likes.
+
+This matters for two reasons:
+
+1. **Portability.** A spec with function-backed actions renders correctly in a static site, a Storybook, or a prototype — environments where there is nothing listening on the other end of a URL.
+2. **Client-side interception.** A host page can intercept any action — confirm before delete, redirect to a custom flow, update local state — without the renderer needing to know about it.
+
+The renderer code doesn't change between modes. The spec is still the contract. The only thing that varies is what is wired to the action — an HTTP endpoint, a function, or a DOM event. This keeps the server-driven and spec-driven paths on the same abstraction, rather than forking them into separate products.
+
+> *The function and event-handler action bindings are a work in progress. Today all actions are `EndpointDirective` (HTTP). The generalization described here is the intended direction.*

@@ -59,6 +59,7 @@ export class TreeViewBuilder {
       throw new Error('TreeViewBuilder: endpoint() is required');
     }
     return {
+      kind: 'tree',
       endpoint: this._endpoint,
       idField: this._idField,
       parentField: this._parentField,

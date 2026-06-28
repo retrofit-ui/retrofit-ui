@@ -70,6 +70,7 @@ export class FormSpecBuilder<S extends ZodRawShape> {
       return withOverride;
     });
     return {
+      kind: 'form' as const,
       fields,
       endpoints: this._endpoints,
       ...((this._autoSubmit || this._layout) && {

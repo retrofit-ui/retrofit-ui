@@ -8,7 +8,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./renderer": "./dist/renderer/retrofit-ui.js"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -23,7 +24,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup && vite build",
+    "build": "tsup && vite build && vite build --config vite.renderer.config.ts",
     "dev": "vite",
     "test": "vitest run",
     "test:watch": "vitest",

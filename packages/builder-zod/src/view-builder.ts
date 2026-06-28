@@ -192,6 +192,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
         : undefined;
 
     return {
+      kind: 'table' as const,
       columns,
       ...(idField !== undefined && { idField }),
       endpoints: this._endpoints,

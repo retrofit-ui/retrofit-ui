@@ -98,6 +98,78 @@ function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
   return <div ref={el} class="retrofit-calendar" />;
 }
 
+function CalendarStandalone(props: { spec: CalendarSpec }) {
+  let el!: HTMLDivElement;
+  let cal: Calendar | undefined;
+
+  onMount(() => {
+    const spec = props.spec;
+    const isEditable = !!(spec.editable && spec.endpoints?.update);
+
+    cal = new Calendar(el, {
+      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
+      initialView: viewNameToFullCalendar(spec.defaultView),
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+      },
+      editable: isEditable,
+      events: spec.events,
+      eventDrop: async (info) => {
+        const ep = spec.endpoints?.update;
+        if (!ep) {
+          info.revert();
+          return;
+        }
+        const url = substituteParams(ep.url, { id: info.event.id });
+        const res = await fetch(url, {
+          method: ep.method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            start: info.event.startStr,
+            end: info.event.endStr,
+          }),
+        });
+        if (!res.ok) info.revert();
+      },
+      eventResize: async (info) => {
+        const ep = spec.endpoints?.update;
+        if (!ep) {
+          info.revert();
+          return;
+        }
+        const url = substituteParams(ep.url, { id: info.event.id });
+        const res = await fetch(url, {
+          method: ep.method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            start: info.event.startStr,
+            end: info.event.endStr,
+          }),
+        });
+        if (!res.ok) info.revert();
+      },
+    });
+    cal.render();
+  });
+
+  onCleanup(() => cal?.destroy());
+
+  return <div ref={el} class="retrofit-calendar" />;
+}
+
+export function CalendarViewComponent(props: { spec: CalendarSpec }) {
+  return (
+    <div class="retrofit-view">
+      <Show when={props.spec.metadata?.title}>
+        {(title) => <h1 class="retrofit-page-title">{title()}</h1>}
+      </Show>
+      <CalendarStandalone spec={props.spec} />
+    </div>
+  );
+}
+
 export function CalendarView() {
   const params = useParams<{ resource: string }>();
   const apiBase = useContext(ApiBaseContext);

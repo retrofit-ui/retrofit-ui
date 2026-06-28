@@ -49,6 +49,7 @@ export class CalendarViewBuilder {
 
   build(): CalendarSpec {
     return {
+      kind: 'calendar',
       events: this._events,
       ...(this._defaultView && { defaultView: this._defaultView }),
       ...(this._editable !== undefined && { editable: this._editable }),

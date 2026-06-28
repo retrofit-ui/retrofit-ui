@@ -20,6 +20,7 @@ const idColumn = {
 describe('TableSpec.metadata.pagination', () => {
   it('pagination is optional — spec without it compiles and has undefined pagination', () => {
     const spec: TableSpec = {
+      kind: 'table',
       columns: [idColumn],
       endpoints: {},
     };
@@ -28,6 +29,7 @@ describe('TableSpec.metadata.pagination', () => {
 
   it('accepts pagination with only required fields', () => {
     const spec: TableSpec = {
+      kind: 'table',
       columns: [idColumn],
       endpoints: {},
       metadata: { pagination: { pageSize: 20, totalRows: 100 } },
@@ -39,6 +41,7 @@ describe('TableSpec.metadata.pagination', () => {
 
   it('accepts pagination with pageSizeOptions', () => {
     const spec: TableSpec = {
+      kind: 'table',
       columns: [idColumn],
       endpoints: {},
       metadata: {
@@ -55,7 +58,7 @@ describe('TableSpec.metadata.pagination', () => {
 
 describe('StatSpec', () => {
   it('empty stats array is valid', () => {
-    const spec: StatSpec = { stats: [] };
+    const spec: StatSpec = { kind: 'stat', stats: [] };
     expect(spec.stats).toHaveLength(0);
   });
 
@@ -67,7 +70,7 @@ describe('StatSpec', () => {
       currency: 'EUR',
       description: 'vs last month',
     };
-    const spec: StatSpec = { stats: [stat] };
+    const spec: StatSpec = { kind: 'stat', stats: [stat] };
     expect(spec.stats[0]?.label).toBe('Revenue');
     expect(spec.stats[0]?.value).toBe(9800.5);
     expect(spec.stats[0]?.format).toBe('currency');
@@ -81,19 +84,19 @@ describe('StatSpec', () => {
   });
 
   it('metadata is optional on StatSpec', () => {
-    const spec: StatSpec = { stats: [] };
+    const spec: StatSpec = { kind: 'stat', stats: [] };
     expect(spec.metadata).toBeUndefined();
   });
 
   it('metadata.title is optional', () => {
-    const spec: StatSpec = { stats: [], metadata: {} };
+    const spec: StatSpec = { kind: 'stat', stats: [], metadata: {} };
     expect(spec.metadata?.title).toBeUndefined();
   });
 });
 
 describe('CalendarSpec', () => {
   it('minimal spec requires only events array', () => {
-    const spec: CalendarSpec = { events: [] };
+    const spec: CalendarSpec = { kind: 'calendar', events: [] };
     expect(spec.events).toEqual([]);
   });
 
@@ -111,6 +114,7 @@ describe('CalendarSpec', () => {
 
   it('CalendarSpec accepts all optional fields', () => {
     const spec: CalendarSpec = {
+      kind: 'calendar',
       events: [{ id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' }],
       defaultView: 'month',
       editable: true,

@@ -15,6 +15,7 @@ export interface RowAction {
 
 /** Returned by GET /api/ui/{resource} — drives the table view. */
 export interface TableSpec {
+  kind: 'table';
   columns: Column[];
   rows?: Record<string, Cell>[];
   /**
@@ -51,6 +52,7 @@ export interface FormLayoutConfig {
 
 /** Returned by GET /api/ui/{resource}/:id — drives new and edit form views. */
 export interface FormSpec {
+  kind: 'form';
   fields: Field[];
   endpoints: {
     create?: EndpointDirective;
@@ -66,13 +68,17 @@ export interface FormSpec {
 
 /** Returned by GET /api/ui/{resource}/:id/render — drives the markdown render view. */
 export interface MarkdownViewSpec {
+  kind: 'markdown';
   entityEndpoint: EndpointDirective;
   field: string;
+  /** Entity id substituted into entityEndpoint.url when using the standalone renderer. */
+  entityId?: string;
   metadata?: { title?: string };
 }
 
 /** Returned by GET /api/ui/{resource}/tree — drives the tree view. */
 export interface TreeSpec {
+  kind: 'tree';
   endpoint: EndpointDirective;
   idField: string;
   parentField: string;
@@ -96,6 +102,7 @@ export interface TimelineEvent {
 
 /** Returned by GET /api/ui/{resource}/timeline or GET /api/ui/{resource}/:id/timeline */
 export interface TimelineSpec {
+  kind: 'timeline';
   events: TimelineEvent[];
   metadata?: { title?: string };
 }
@@ -111,6 +118,7 @@ export interface Stat {
 
 /** Returned by GET /api/ui/{resource}/stats — drives the stat/KPI grid view. */
 export interface StatSpec {
+  kind: 'stat';
   stats: Stat[];
   metadata?: { title?: string };
 }
@@ -127,6 +135,7 @@ export interface CalendarEvent {
 
 /** Returned by GET /api/ui/{resource}/calendar — drives the calendar view. */
 export interface CalendarSpec {
+  kind: 'calendar';
   events: CalendarEvent[];
   defaultView?: 'month' | 'week' | 'day' | 'list';
   editable?: boolean;

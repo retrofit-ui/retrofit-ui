@@ -2,6 +2,33 @@
 
 The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{id}`. It renders a create or edit form with validation, and optionally a delete button.
 
+<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 20px; margin: 20px 0; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+  <button style="background: none; border: none; font-size: 12px; color: var(--vp-c-text-3); cursor: default; padding: 0; margin-bottom: 12px;">← Back</button>
+  <h2 style="margin: 0 0 20px; font-size: 20px; font-weight: 700; color: var(--vp-c-text-1);">Edit Post</h2>
+  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Title</label>
+      <input readonly value="Getting started with Vite" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Body</label>
+      <textarea readonly rows="3" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); resize: vertical; box-sizing: border-box;">Vite is a modern build tool...</textarea>
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Status</label>
+      <select style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);">
+        <option>draft</option>
+        <option selected>published</option>
+        <option>archived</option>
+      </select>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      <button style="padding: 7px 16px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-radius: 4px; font-size: 13px; cursor: default;">Save</button>
+      <button style="padding: 7px 16px; background: transparent; color: var(--vp-c-red-1, #ef4444); border: 1px solid var(--vp-c-red-1, #ef4444); border-radius: 4px; font-size: 13px; cursor: default;">Delete</button>
+    </div>
+  </div>
+</div>
+
 ## Basic setup (JS)
 
 ```typescript

@@ -136,6 +136,7 @@ app.get('/api/ui/posts/:id', (req, res) => {
 // Markdown render spec — 3 path segments, won't conflict with /:id above
 app.get('/api/ui/posts/:id/render', (_req, res) => {
   res.json({
+    kind: 'markdown',
     entityEndpoint: { method: 'GET', url: '/posts/{id}' },
     field: 'body',
     metadata: { title: 'Preview' },

@@ -32,6 +32,10 @@ export default defineConfig({
             { text: 'Form View', link: '/guide/form-view' },
             { text: 'Workflow Bundle', link: '/guide/workflow-bundle' },
             { text: 'Markdown View', link: '/guide/markdown-view' },
+            { text: 'Stat View', link: '/guide/stat-view' },
+            { text: 'Timeline View', link: '/guide/timeline-view' },
+            { text: 'Tree View', link: '/guide/tree-view' },
+            { text: 'Calendar View', link: '/guide/calendar-view' },
           ],
         },
         {

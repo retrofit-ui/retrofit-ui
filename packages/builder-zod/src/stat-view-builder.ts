@@ -16,6 +16,7 @@ export class StatViewBuilder {
 
   build(): StatSpec {
     return {
+      kind: 'stat',
       stats: this._stats,
       ...(this._title && { metadata: { title: this._title } }),
     };

@@ -16,6 +16,7 @@ export class TimelineViewBuilder {
 
   build(): TimelineSpec {
     return {
+      kind: 'timeline',
       events: this._events,
       ...(this._metadataTitle && { metadata: { title: this._metadataTitle } }),
     };

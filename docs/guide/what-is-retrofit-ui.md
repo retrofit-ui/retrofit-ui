@@ -12,7 +12,7 @@ retrofit-ui eliminates the third step.
 
 Instead of the browser knowing how to render your data, the **server describes the UI as JSON**. The browser's SPA reads that description and renders the appropriate component.
 
-```
+```text
 Browser ──GET /retrofit-ui──────────────► SPA (static assets, served once)
    │
    ├── GET /api/ui/todos ──────────────► TableSpec JSON

@@ -1,0 +1,76 @@
+/* ── Preview block (guide docs) ────────────────────────────────────── */
+.retrofit-preview {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 24px 0;
+}
+
+.retrofit-preview__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--vp-c-bg-soft);
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vp-c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.retrofit-preview__body {
+  padding: 20px 24px;
+  background: var(--vp-c-bg);
+  overflow-x: auto;
+}
+
+/* Strip outer margin from inline preview divs inside the wrapper */
+.retrofit-preview__body > div {
+  margin: 0;
+}
+
+/* Flush-join the ::: details Spec block below a preview */
+.retrofit-preview + details.custom-block {
+  margin-top: -8px;
+  border-radius: 0 0 10px 10px;
+  border-top: none;
+}
+
+/* ── Live demo (examples pages) ─────────────────────────────────────── */
+.live-demo-container {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 24px 0;
+}
+
+.live-demo-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--vp-c-bg-soft);
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vp-c-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.live-demo-body {
+  min-height: 200px;
+  background: var(--vp-c-bg);
+  padding: 16px;
+}
+
+.live-demo-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--vp-c-text-3);
+  font-size: 13px;
+}

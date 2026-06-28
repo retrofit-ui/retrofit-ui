@@ -4,7 +4,13 @@
 
 The contacts example shows the most common CRUD pattern: a table listing all records, clicking a row opens an edit form, a "New" button opens a create form.
 
-Run it:
+<ContactsDemo />
+
+::: tip
+The demo above is live — try editing a contact's type, adding a new contact, or deleting one. All data is mocked in the browser with MSW.
+:::
+
+Run it locally:
 ```bash
 just example js contacts   # Node.js / Express
 just example java contacts # Spring Boot

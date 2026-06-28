@@ -2,7 +2,9 @@
 
 The markdown view renders a single entity's markdown field as formatted HTML. It is useful for blog posts, notes, or any rich-text content stored as markdown.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 20px; margin: 20px 0; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+<PreviewBlock>
+
+<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
   <button style="background: none; border: none; font-size: 12px; color: var(--vp-c-text-3); cursor: default; padding: 0; margin-bottom: 12px;">← Back</button>
   <div style="max-width: 640px; line-height: 1.7; color: var(--vp-c-text-1);">
     <h1 style="font-size: 22px; font-weight: 700; margin: 0 0 8px; color: var(--vp-c-text-1);">Getting Started with Vite</h1>
@@ -13,6 +15,20 @@ The markdown view renders a single entity's markdown field as formatted HTML. It
     <pre style="background: var(--vp-c-bg-soft); padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto; margin: 10px 0 0;"><code>npm create vite@latest my-app</code></pre>
   </div>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+const spec: MarkdownViewSpec = {
+  entityEndpoint: { method: 'GET', url: '/posts/{id}' },
+  field: 'body',
+  metadata: { title: 'Post Preview' },
+};
+```
+
+:::
 
 ## How it works
 

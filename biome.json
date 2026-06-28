@@ -9,7 +9,8 @@
       "!**/node_modules",
       "!**/definitions",
       "!.claude",
-      "!**/META-INF/resources"
+      "!**/META-INF/resources",
+      "!docs/public/mockServiceWorker.js"
     ]
   },
   "linter": {

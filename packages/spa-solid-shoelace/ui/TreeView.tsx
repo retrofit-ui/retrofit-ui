@@ -7,7 +7,7 @@ import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 import type { TreeSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, createSignal, For, Show, useContext } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 import { showToast } from './toast';
 import type { TreeNode } from './tree-utils';
 import { buildTree } from './tree-utils';

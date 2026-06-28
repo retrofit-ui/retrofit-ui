@@ -6,7 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import type { CalendarSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, onCleanup, onMount, Show, useContext } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 
 function viewNameToFullCalendar(view: CalendarSpec['defaultView']): string {
   switch (view) {

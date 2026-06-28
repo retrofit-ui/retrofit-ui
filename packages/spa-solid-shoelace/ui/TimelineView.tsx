@@ -6,7 +6,7 @@ import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import type { TimelineSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, For, Show, useContext } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 
 async function fetchTimelineSpec(specUrl: string): Promise<TimelineSpec> {
   const res = await fetch(specUrl);

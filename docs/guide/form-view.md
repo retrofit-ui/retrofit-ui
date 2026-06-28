@@ -2,7 +2,9 @@
 
 The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{id}`. It renders a create or edit form with validation, and optionally a delete button.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 20px; margin: 20px 0; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+<PreviewBlock>
+
+<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
   <button style="background: none; border: none; font-size: 12px; color: var(--vp-c-text-3); cursor: default; padding: 0; margin-bottom: 12px;">← Back</button>
   <h2 style="margin: 0 0 20px; font-size: 20px; font-weight: 700; color: var(--vp-c-text-1);">Edit Post</h2>
   <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
@@ -28,6 +30,20 @@ The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{i
     </div>
   </div>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+formSpec(PostSchema, UpdatePostSchema)
+  .find({ method: 'GET', url: '/posts/{id}' })
+  .update({ method: 'PUT', url: '/posts/{id}' })
+  .delete({ method: 'DELETE', url: '/posts/{id}' })
+  .build()
+```
+
+:::
 
 ## Basic setup (JS)
 
@@ -72,6 +88,60 @@ retrofit-ui derives field types from Zod automatically:
 | `z.enum(...)` | `select` | `<sl-select>` with auto-derived options |
 | `z.date()` | `date` | `<sl-input type="date">` |
 
+<PreviewBlock title="All field types">
+
+<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Full name</label>
+      <input readonly value="Alice Kowalski" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Email</label>
+      <input readonly type="email" value="alice@example.com" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Amount</label>
+      <input readonly type="number" value="42.50" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <input type="checkbox" checked style="width: 16px; height: 16px; cursor: default;" />
+      <label style="font-size: 13px; color: var(--vp-c-text-1);">Active</label>
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Status</label>
+      <select style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);">
+        <option>draft</option>
+        <option selected>published</option>
+        <option>archived</option>
+      </select>
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Date</label>
+      <input readonly type="date" value="2026-06-27" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+    </div>
+  </div>
+</div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+const schema = z.object({
+  name:   z.string(),
+  email:  z.string().email(),
+  amount: z.number(),
+  active: z.boolean(),
+  status: z.enum(['draft', 'published', 'archived']),
+  date:   z.date(),
+});
+formSpec(schema, schema).build()
+// Zod types → field types automatically
+```
+
+:::
+
 Override the inferred type with `fieldOverride`:
 
 ```typescript
@@ -84,6 +154,45 @@ formSpec(PostSchema, UpdatePostSchema)
 | Override type | Input |
 |---|---|
 | `radio-group` | `<sl-radio-group>` with `<sl-radio-button>` children (segmented control) |
+
+<PreviewBlock title="fieldOverride type examples">
+
+<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Body (markdown)</label>
+      <textarea readonly rows="4" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); resize: vertical; box-sizing: border-box; font-family: monospace;">## Introduction
+This is **bold** text.</textarea>
+      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px; font-style: italic;">Markdown supported</div>
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Notes</label>
+      <textarea readonly rows="3" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); resize: vertical; box-sizing: border-box;">Additional context for this record.</textarea>
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Priority</label>
+      <div style="display: inline-flex; border: 1px solid var(--vp-c-divider); border-radius: 4px; overflow: hidden; font-size: 13px;">
+        <button style="padding: 6px 14px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-right: 1px solid var(--vp-c-divider); cursor: default;">Low</button>
+        <button style="padding: 6px 14px; background: var(--vp-c-bg); color: var(--vp-c-text-1); border: none; border-right: 1px solid var(--vp-c-divider); cursor: default;">Medium</button>
+        <button style="padding: 6px 14px; background: var(--vp-c-bg); color: var(--vp-c-text-1); border: none; cursor: default;">High</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+formSpec(PostSchema, UpdatePostSchema)
+  .fieldOverride('body',     { type: 'markdown' })
+  .fieldOverride('notes',    { type: 'textarea' })
+  .fieldOverride('priority', { type: 'radio-group' })
+  .build()
+```
+
+:::
 
 ## Field overrides
 
@@ -103,6 +212,43 @@ formSpec(PostSchema, UpdatePostSchema)
     validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
   })
 ```
+
+<PreviewBlock title="Field validation and helpers">
+
+<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Slug</label>
+      <input readonly value="my-post-title" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px;">lowercase letters and hyphens only</div>
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Phone</label>
+      <input placeholder="+1 555 000 0000" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-3); box-sizing: border-box;" />
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Amount</label>
+      <input readonly value="-5" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-red-1, #ef4444); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+      <div style="font-size: 11px; color: var(--vp-c-red-1, #ef4444); margin-top: 4px;">Must be at least 0.01</div>
+    </div>
+  </div>
+</div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+formSpec(PostSchema, UpdatePostSchema)
+  .fieldOverride('slug',   { helpText: 'lowercase letters and hyphens only',
+                             validation: { pattern: '^[a-z0-9-]+$' } })
+  .fieldOverride('phone',  { placeholder: '+1 555 000 0000',
+                             validation: { pattern: '^\\+?[\\d\\s\\-()]+$' } })
+  .fieldOverride('amount', { validation: { min: 0.01, max: 10_000 } })
+  .build()
+```
+
+:::
 
 | Override field | Type | Effect |
 |----------------|------|--------|
@@ -135,6 +281,57 @@ formSpec(PaymentSchema)
 Fields in the full schema but absent from the `updateSchema` are rendered as read-only on the edit form. They are hidden entirely on the create form (since they don't exist yet).
 
 This is how server-controlled fields like `id`, `createdAt`, or `status` work — users see them but cannot edit them.
+
+<PreviewBlock title="Read-only vs editable fields">
+
+<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-2); margin-bottom: 4px;">Author <span style="font-size: 11px; font-weight: 400; color: var(--vp-c-text-3);">(read-only)</span></label>
+      <input readonly value="Alice Kowalski" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-2); cursor: not-allowed; box-sizing: border-box;" />
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-2); margin-bottom: 4px;">Updated at <span style="font-size: 11px; font-weight: 400; color: var(--vp-c-text-3);">(read-only)</span></label>
+      <input readonly value="2026-06-27T14:30:00Z" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-2); cursor: not-allowed; box-sizing: border-box;" />
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Title</label>
+      <input readonly value="Getting started with Vite" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
+    </div>
+    <div>
+      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Status</label>
+      <select style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);">
+        <option>draft</option>
+        <option selected>published</option>
+        <option>archived</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+const PostSchema = z.object({
+  id:        z.number(),
+  title:     z.string(),
+  status:    z.enum(['draft', 'published', 'archived']),
+  author:    z.string(),
+  updatedAt: z.date(),
+});
+
+// author and updatedAt omitted from update schema → rendered read-only
+const UpdatePostSchema = PostSchema.pick({ title: true, status: true });
+
+formSpec(PostSchema, UpdatePostSchema)
+  .find({ method: 'GET', url: '/posts/{id}' })
+  .update({ method: 'PUT', url: '/posts/{id}' })
+  .build()
+```
+
+:::
 
 ## Endpoint wiring
 

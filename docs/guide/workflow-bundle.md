@@ -2,7 +2,9 @@
 
 `TableFormWorkflowBundle` combines a table view and a form view into a single builder, producing two complementary specs you serve on a collection route and an item route. It is the right choice when you want a standard list-then-edit CRUD flow and do not need inline table editing.
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;">
+<PreviewBlock>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
   <div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; font-family: var(--vp-font-family-base, system-ui, sans-serif);">
     <div style="padding: 10px 14px; background: var(--vp-c-bg-soft); border-bottom: 1px solid var(--vp-c-divider); font-size: 13px; font-weight: 600; color: var(--vp-c-text-1);">Contacts</div>
     <table style="width: 100%; border-collapse: collapse; font-size: 12px; background: var(--vp-c-bg);">
@@ -47,6 +49,23 @@
     </div>
   </div>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+const bundle = TableFormWorkflowBundle.schema(ContactSchema)
+  .updateSchema(UpdateContactSchema)
+  .list({ method: 'GET', url: '/contacts' })
+  .find({ method: 'GET', url: '/contacts/{id}' })
+  .create({ method: 'POST', url: '/contacts' })
+  .update({ method: 'PUT', url: '/contacts/{id}' })
+  .delete({ method: 'DELETE', url: '/contacts/{id}' })
+  .build();
+```
+
+:::
 
 ## When to use it
 

@@ -4,14 +4,20 @@
 
 The blog example is the most complete example in the repo. It uses all three view types and demonstrates the key server-driven advantage: status enum values live exclusively on the server.
 
-Run it:
+<BlogDemo />
+
+::: tip
+The demo above shows the posts table live — try adding a new post or filtering by status. All data is mocked in the browser with MSW.
+:::
+
+Run it locally:
 ```bash
 just example js blog
 ```
 
 ## What it demonstrates
 
-- Separate `TableView` and `formSpec` endpoints (not using WorkflowBundle)
+- Separate `TableView` and `formSpec` endpoints (not using `WorkflowBundle`)
 - A `rowAction` linking from the table to the markdown render view
 - `fieldOverride` for markdown textarea, custom slug validation, and max-length
 - Server-driven enums: `status` options come from `UpdatePostSchema` on the server
@@ -99,6 +105,6 @@ app.get('/api/ui/posts/:id/render', (_req, res) => {
 
 `status` is in `UpdatePostSchema`. The SPA derives the `<sl-select>` options directly from the Zod enum: `['draft', 'published', 'archived']`. To add a new status like `'review'`, change the enum in `UpdatePostSchema`. The form updates on the next request — zero frontend work.
 
-## Why not WorkflowBundle here?
+## Why not `WorkflowBundle` here?
 
-WorkflowBundle works when the table and form share the same schema and endpoints. The blog needs `rowAction` on the table (for the Preview button) and a separate markdown render endpoint. Using separate `TableView` and `formSpec` calls is more explicit and more flexible for these cases.
+`WorkflowBundle` works when the table and form share the same schema and endpoints. The blog needs `rowAction` on the table (for the Preview button) and a separate markdown render endpoint. Using separate `TableView` and `formSpec` calls is more explicit and more flexible for these cases.

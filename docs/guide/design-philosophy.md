@@ -26,7 +26,7 @@ Everything else is a candidate for the server.
 
 Tables and forms are sent from the server as a single, complete JSON payload. The SPA does not make a second request to fetch the row data separately.
 
-```
+```text
 GET /api/ui/expenses
 → {
     columns: [...],

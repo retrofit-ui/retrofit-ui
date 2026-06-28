@@ -4,7 +4,13 @@
 
 The todos example shows how to build a single-page CRUD interface entirely within the table — no separate form view, no page navigation.
 
-Run it:
+<TodosDemo />
+
+::: tip
+The demo above is live — try editing a row, adding a new todo, or deleting one. All data is mocked in the browser with MSW.
+:::
+
+Run it locally:
 ```bash
 just example js todos   # Node.js / Express
 just example java todos # Spring Boot

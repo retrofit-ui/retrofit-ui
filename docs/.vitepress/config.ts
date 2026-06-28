@@ -4,6 +4,12 @@ export default defineConfig({
   title: 'retrofit-ui',
   description: 'Server-driven admin UI from your existing schemas',
 
+  vite: {
+    optimizeDeps: {
+      exclude: ['@retrofit-ui/spa-solid-shoelace', 'msw'],
+    },
+  },
+
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/what-is-retrofit-ui' },
@@ -36,6 +42,15 @@ export default defineConfig({
             { text: 'Timeline View', link: '/guide/timeline-view' },
             { text: 'Tree View', link: '/guide/tree-view' },
             { text: 'Calendar View', link: '/guide/calendar-view' },
+          ],
+        },
+        {
+          text: 'Adoption',
+          items: [
+            { text: 'Hosted SPA', link: '/guide/hosted-spa' },
+            { text: 'Script Islands', link: '/guide/script-islands' },
+            { text: 'SolidJS Components', link: '/guide/solidjs-components' },
+            { text: 'Event Handling', link: '/guide/event-handling' },
           ],
         },
         {

@@ -2,7 +2,9 @@
 
 The timeline view renders a vertical event log — useful for audit trails, activity feeds, deployment histories, or any ordered sequence of events.
 
-<div style="padding: 20px; border: 1px solid var(--vp-c-divider); border-radius: 8px; margin: 20px 0; background: var(--vp-c-bg);">
+<PreviewBlock>
+
+<div style="padding: 20px; background: var(--vp-c-bg);">
   <ul style="list-style: none; margin: 0; padding: 0 0 0 7px; border-left: 2px solid var(--vp-c-divider);">
     <li style="position: relative; padding: 0 0 20px 20px;">
       <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #22c55e; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
@@ -32,6 +34,16 @@ The timeline view renders a vertical event log — useful for audit trails, acti
     </li>
   </ul>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+TimelineView.events(events).title('Deployment History').build()
+```
+
+:::
 
 ## How it works
 
@@ -70,7 +82,9 @@ app.get('/api/ui/deployments/timeline', async (_req, res) => {
 
 The `variant` field colours the timeline dot for at-a-glance status scanning:
 
-<div style="padding: 20px; border: 1px solid var(--vp-c-divider); border-radius: 8px; margin: 20px 0; background: var(--vp-c-bg);">
+<PreviewBlock title="Variants">
+
+<div style="padding: 20px; background: var(--vp-c-bg);">
   <ul style="list-style: none; margin: 0; padding: 0 0 0 7px; border-left: 2px solid var(--vp-c-divider);">
     <li style="position: relative; padding: 0 0 14px 20px;">
       <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #3b82f6; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
@@ -95,6 +109,10 @@ The `variant` field colours the timeline dot for at-a-glance status scanning:
   </ul>
 </div>
 
+</PreviewBlock>
+
+::: details Spec
+
 ```typescript
 TimelineView.events([
   { title: 'Deploy succeeded', timestamp: '2026-06-27T10:00:00Z', variant: 'success' },
@@ -102,6 +120,8 @@ TimelineView.events([
   { title: 'Build failed', timestamp: '2026-06-27T09:30:00Z', variant: 'danger' },
 ]).build();
 ```
+
+:::
 
 ## Icons
 

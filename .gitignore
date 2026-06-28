@@ -6,6 +6,7 @@ node_modules/
 # build output
 dist/
 *.tsbuildinfo
+**/.vitepress/cache/
 
 # environment
 .env

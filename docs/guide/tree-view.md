@@ -2,7 +2,9 @@
 
 The tree view renders a hierarchical structure from a flat list of records. It uses an `id`/`parentId` approach — you return all nodes as a flat array and the UI assembles the tree client-side.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 16px; margin: 20px 0; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; color: var(--vp-c-text-1);">
+<PreviewBlock>
+
+<div style="padding: 16px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; color: var(--vp-c-text-1);">
   <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0;">
     <span style="color: var(--vp-c-text-3); font-size: 10px;">▼</span>
     <span>Engineering</span>
@@ -32,6 +34,22 @@ The tree view renders a hierarchical structure from a flat list of records. It u
     <button style="padding: 5px 14px; border: 1px solid var(--vp-c-red-1, #ef4444); border-radius: 4px; background: transparent; color: var(--vp-c-red-1, #ef4444); font-size: 12px; cursor: default;">Delete</button>
   </div>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+new TreeView()
+  .endpoint({ method: 'GET', url: '/departments' })
+  .idField('id')
+  .parentField('parentId')
+  .labelField('name')
+  .metadata({ title: 'Department Structure' })
+  .build()
+```
+
+:::
 
 ## How it works
 
@@ -85,7 +103,9 @@ Your `/departments` endpoint returns a flat array:
 
 ## Selection modes
 
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0;">
+<PreviewBlock title="Selection modes">
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
   <div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 12px; background: var(--vp-c-bg);">
     <div style="font-size: 12px; font-weight: 600; color: var(--vp-c-text-1); margin-bottom: 6px;"><code>'single'</code></div>
     <div style="font-size: 11px; color: var(--vp-c-text-2);">One node at a time. Edit and Delete buttons require exactly one selection.</div>
@@ -100,6 +120,10 @@ Your `/departments` endpoint returns a flat array:
   </div>
 </div>
 
+</PreviewBlock>
+
+::: details Spec
+
 ```typescript
 new TreeView()
   .endpoint({ method: 'GET', url: '/employees' })
@@ -109,6 +133,8 @@ new TreeView()
   .selection('multiple')
   .build();
 ```
+
+:::
 
 ## CRUD actions
 

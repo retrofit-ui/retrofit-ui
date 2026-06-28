@@ -10,7 +10,7 @@ import type {
   TreeSpec,
 } from '@retrofit-ui/core';
 import { Match, Switch } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 import { CalendarViewComponent } from './CalendarView';
 import { FormViewComponent } from './FormView';
 import { MarkdownViewComponent } from './MarkdownView';

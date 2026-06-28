@@ -3,7 +3,7 @@ import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import type { Stat, StatSpec } from '@retrofit-ui/core';
 import { useParams } from '@solidjs/router';
 import { createResource, For, Show, useContext } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 
 function formatValue(value: number | string, stat: Stat): string {
   if (typeof value === 'string') return value;

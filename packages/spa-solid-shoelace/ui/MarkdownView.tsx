@@ -4,7 +4,7 @@ import type { MarkdownViewSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { marked } from 'marked';
 import { createResource, Show, useContext } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 
 interface MarkdownViewData {
   spec: MarkdownViewSpec;

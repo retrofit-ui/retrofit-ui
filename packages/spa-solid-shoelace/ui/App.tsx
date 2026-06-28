@@ -1,6 +1,6 @@
 import { HashRouter, Route } from '@solidjs/router';
-import { createContext } from 'solid-js';
 import { CalendarView } from './CalendarView';
+import { ApiBaseContext } from './context';
 import { FormView } from './FormView';
 import { MarkdownView } from './MarkdownView';
 import { StatView } from './StatView';
@@ -9,7 +9,7 @@ import { TimelineView } from './TimelineView';
 import { TreeView } from './TreeView';
 import { ToastContainer } from './toast';
 
-export const ApiBaseContext = createContext('/api/ui');
+export { ApiBaseContext };
 
 function Landing() {
   return (

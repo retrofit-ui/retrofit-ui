@@ -25,7 +25,7 @@ import {
   Show,
   useContext,
 } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 import { showToast } from './toast';
 
 function isoToDatetimeLocal(iso: string): string {

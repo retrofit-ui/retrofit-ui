@@ -9,7 +9,8 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./renderer": "./dist/renderer/retrofit-ui.js"
+    "./renderer": "./dist/renderer/retrofit-ui.js",
+    "./components": "./dist/components/spec-renderer.js"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -24,7 +25,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup && vite build && vite build --config vite.renderer.config.ts",
+    "build": "tsup && vite build && vite build --config vite.renderer.config.ts && vite build --config vite.components.config.ts",
     "dev": "vite",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -32,7 +33,13 @@
     "lint": "biome check src ui"
   },
   "peerDependencies": {
-    "@retrofit-ui/core": "workspace:*"
+    "@retrofit-ui/core": "workspace:*",
+    "solid-js": ">=1.9.0"
+  },
+  "peerDependenciesMeta": {
+    "solid-js": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@fullcalendar/core": "^6.0.0",

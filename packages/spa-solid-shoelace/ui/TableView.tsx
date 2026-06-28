@@ -57,7 +57,7 @@ import {
   Switch,
   useContext,
 } from 'solid-js';
-import { ApiBaseContext } from './App';
+import { ApiBaseContext } from './context';
 import { PageView } from './PageView';
 import { showToast } from './toast';
 import { cellFormatted, cellValue, rawRow, substitutePattern } from './utils';

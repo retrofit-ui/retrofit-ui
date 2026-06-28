@@ -39,6 +39,15 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Adoption',
+          items: [
+            { text: 'Hosted SPA', link: '/guide/hosted-spa' },
+            { text: 'Script Islands', link: '/guide/script-islands' },
+            { text: 'SolidJS Components', link: '/guide/solidjs-components' },
+            { text: 'Event Handling', link: '/guide/event-handling' },
+          ],
+        },
+        {
           text: 'Customisation',
           items: [{ text: 'Theming', link: '/guide/theming' }],
         },

@@ -119,6 +119,60 @@ new StatView()
 
 :::
 
+## Stat with trend
+
+Include a trend indicator in the `description` string to give at-a-glance context alongside the main value.
+
+<PreviewBlock title="Stat with trend">
+
+<div style="padding: 20px; background: var(--vp-c-bg-soft);">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;">
+    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
+      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1;">$48,290</div>
+      <div style="display: flex; align-items: center; gap: 6px; margin: 4px 0;">
+        <span style="font-size: 11px; color: var(--vp-c-green-1, #16a34a); font-weight: 600;">▲ 12%</span>
+        <span style="font-size: 11px; color: var(--vp-c-text-3);">vs last month</span>
+      </div>
+      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Revenue</div>
+    </div>
+    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
+      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1;">3.1%</div>
+      <div style="display: flex; align-items: center; gap: 6px; margin: 4px 0;">
+        <span style="font-size: 11px; color: var(--vp-c-red-1, #ef4444); font-weight: 600;">▼ 0.4%</span>
+        <span style="font-size: 11px; color: var(--vp-c-text-3);">vs last week</span>
+      </div>
+      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Conversion</div>
+    </div>
+    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
+      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1;">1,204</div>
+      <div style="display: flex; align-items: center; gap: 6px; margin: 4px 0;">
+        <span style="font-size: 11px; color: var(--vp-c-green-1, #16a34a); font-weight: 600;">▲ 48</span>
+        <span style="font-size: 11px; color: var(--vp-c-text-3);">since yesterday</span>
+      </div>
+      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Active Users</div>
+    </div>
+  </div>
+</div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+// The description field renders as muted plain text below the label.
+// Include the arrow symbol in the string to convey trend direction.
+new StatView()
+  .stat({ label: 'Revenue',      value: 48290, format: 'currency',
+          description: '▲ 12% vs last month' })
+  .stat({ label: 'Conversion',   value: 0.031, format: 'percent',
+          description: '▼ 0.4% vs last week' })
+  .stat({ label: 'Active Users', value: 1204,
+          description: '▲ 48 since yesterday' })
+  .build()
+```
+
+:::
+
 ## Page title
 
 Use `.title()` to render a heading above the grid:

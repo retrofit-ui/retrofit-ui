@@ -33,7 +33,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm --filter @retrofit-ui/docs build
+      # Build docs together with its workspace dependencies. spa-solid-shoelace
+      # provides the ./renderer + ./components bundles the live demos import;
+      # without these built, Rollup cannot resolve the import. The trailing
+      # "..." selects the package and everything it depends on, in order.
+      - run: pnpm --filter "@retrofit-ui/docs..." build
 
       - uses: actions/configure-pages@v4
 

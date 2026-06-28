@@ -2,6 +2,18 @@
 
 The markdown view renders a single entity's markdown field as formatted HTML. It is useful for blog posts, notes, or any rich-text content stored as markdown.
 
+<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 20px; margin: 20px 0; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+  <button style="background: none; border: none; font-size: 12px; color: var(--vp-c-text-3); cursor: default; padding: 0; margin-bottom: 12px;">← Back</button>
+  <div style="max-width: 640px; line-height: 1.7; color: var(--vp-c-text-1);">
+    <h1 style="font-size: 22px; font-weight: 700; margin: 0 0 8px; color: var(--vp-c-text-1);">Getting Started with Vite</h1>
+    <p style="margin: 0 0 14px; font-size: 14px; color: var(--vp-c-text-2);">Vite is a next-generation frontend build tool that dramatically improves the development experience.</p>
+    <h2 style="font-size: 16px; font-weight: 600; margin: 20px 0 8px; color: var(--vp-c-text-1);">Why Vite?</h2>
+    <p style="margin: 0 0 14px; font-size: 14px; color: var(--vp-c-text-2);">Traditional bundlers process your entire codebase before serving. Vite serves source files over native <code style="background: var(--vp-c-bg-soft); padding: 1px 5px; border-radius: 3px; font-size: 13px;">ESM</code>, making cold starts near-instant.</p>
+    <p style="margin: 0; font-size: 14px; color: var(--vp-c-text-2);">To create a new project, run:</p>
+    <pre style="background: var(--vp-c-bg-soft); padding: 12px; border-radius: 6px; font-size: 13px; overflow-x: auto; margin: 10px 0 0;"><code>npm create vite@latest my-app</code></pre>
+  </div>
+</div>
+
 ## How it works
 
 The SPA navigates to `#/{resource}/{id}/render` and fetches a `MarkdownViewSpec` from the server:

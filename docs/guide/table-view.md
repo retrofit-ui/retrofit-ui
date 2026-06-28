@@ -2,6 +2,43 @@
 
 The table view is driven by a `TableSpec` returned from `GET /api/ui/{resource}`. It renders a data table with optional inline editing, row actions, and CRUD buttons.
 
+<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 20px 0;">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--vp-c-bg-soft); border-bottom: 1px solid var(--vp-c-divider);">
+    <div style="font-weight: 600; font-size: 16px; color: var(--vp-c-text-1);">Posts</div>
+    <button style="padding: 5px 14px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: default;">New</button>
+  </div>
+  <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
+    <thead>
+      <tr style="background: var(--vp-c-bg-soft);">
+        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Title</th>
+        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Status</th>
+        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Author</th>
+        <th style="padding: 8px 16px; text-align: right; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
+        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Getting started with Vite</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">published</span></td>
+        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">Alice K.</td>
+        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
+        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Building server-driven UIs</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-bg-mute); color: var(--vp-c-text-2); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">draft</span></td>
+        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">Bob M.</td>
+        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button></td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">SolidJS reactivity explained</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-yellow-soft, rgba(245,158,11,0.12)); color: var(--vp-c-yellow-1, #d97706); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">archived</span></td>
+        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">Carol T.</td>
+        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 ## Basic setup (JS)
 
 ```typescript
@@ -84,6 +121,31 @@ TableView.schema(PostSchema)
 ```
 
 Values absent from the map fall through to plain text — partial maps are valid.
+
+<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 20px 0;">
+  <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
+    <thead>
+      <tr style="background: var(--vp-c-bg-soft);">
+        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider);">Title</th>
+        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider);">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
+        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">My first post</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 2px 9px; border-radius: 9999px; font-size: 11px; font-weight: 500;">published</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
+        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Work in progress</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-bg-mute); color: var(--vp-c-text-2); padding: 2px 9px; border-radius: 9999px; font-size: 11px; font-weight: 500;">draft</span></td>
+      </tr>
+      <tr>
+        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Old article</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-yellow-soft, rgba(245,158,11,0.12)); color: var(--vp-c-yellow-1, #d97706); padding: 2px 9px; border-radius: 9999px; font-size: 11px; font-weight: 500;">archived</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 ## Inline editing
 

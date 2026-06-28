@@ -39,7 +39,9 @@ export function TimelineViewComponent(props: { spec: TimelineSpec }) {
                     </Show>
                     <span class="retrofit-timeline-title">{event.title}</span>
                     <Show when={event.variant}>
-                      <sl-badge variant={event.variant}>{event.variant}</sl-badge>
+                      <sl-badge variant={event.variant}>
+                        {event.variant}
+                      </sl-badge>
                     </Show>
                     <Show when={event.timestamp}>
                       <sl-relative-time

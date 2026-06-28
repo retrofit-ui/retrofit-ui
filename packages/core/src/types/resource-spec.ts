@@ -147,4 +147,3 @@ export interface CalendarSpec {
   };
   metadata?: { title?: string };
 }
-

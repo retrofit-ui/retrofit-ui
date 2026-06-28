@@ -550,8 +550,7 @@ function DataRowComponent(props: {
     }
   }
 
-  const hasActions = () =>
-    hasInlineEdit() || !!props.spec.endpoints?.delete;
+  const hasActions = () => hasInlineEdit() || !!props.spec.endpoints?.delete;
 
   return (
     <>
@@ -667,10 +666,8 @@ export function TableViewComponent(props: { spec: TableSpec }) {
     },
   );
 
-  const hasInlineEdit = () =>
-    props.spec.columns.some((c) => c.editable);
-  const hasActions = () =>
-    hasInlineEdit() || !!props.spec.endpoints?.delete;
+  const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
+  const hasActions = () => hasInlineEdit() || !!props.spec.endpoints?.delete;
 
   return (
     <div class="retrofit-view">
@@ -733,13 +730,8 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                     />
                   )}
                 </For>
-                <Show
-                  when={hasInlineEdit() && props.spec.endpoints?.create}
-                >
-                  <NewRow
-                    spec={props.spec}
-                    onCreated={() => void refetch()}
-                  />
+                <Show when={hasInlineEdit() && props.spec.endpoints?.create}>
+                  <NewRow spec={props.spec} onCreated={() => void refetch()} />
                 </Show>
               </tbody>
             </table>
@@ -765,9 +757,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                       <sl-icon-button
                         name="chevron-right"
                         label="Next page"
-                        disabled={
-                          currentPage() >= totalPages() || undefined
-                        }
+                        disabled={currentPage() >= totalPages() || undefined}
                         on:click={() => setCurrentPage((p) => p + 1)}
                       />
                     </sl-button-group>

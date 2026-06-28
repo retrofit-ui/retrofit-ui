@@ -23,7 +23,9 @@ import { TreeViewComponent } from './TreeView';
 export function SpecRenderer(props: { spec: RootSpec; apiBase: string }) {
   return (
     <ApiBaseContext.Provider value={props.apiBase}>
-      <Switch fallback={<p class="retrofit-error-message">Unknown spec kind</p>}>
+      <Switch
+        fallback={<p class="retrofit-error-message">Unknown spec kind</p>}
+      >
         <Match when={props.spec.kind === 'table'}>
           <TableViewComponent spec={props.spec as TableSpec} />
         </Match>

@@ -64,9 +64,7 @@ export function StatViewComponent(props: { spec: StatSpec }) {
         <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
       </Show>
       <div class="retrofit-stat-grid">
-        <For each={props.spec.stats}>
-          {(stat) => <StatCard stat={stat} />}
-        </For>
+        <For each={props.spec.stats}>{(stat) => <StatCard stat={stat} />}</For>
       </div>
     </div>
   );
@@ -105,9 +103,7 @@ export function StatView() {
           <p class="retrofit-error-message">Error: {String(view.error)}</p>
         </div>
       </Show>
-      <Show when={view()}>
-        {(spec) => <StatViewComponent spec={spec()} />}
-      </Show>
+      <Show when={view()}>{(spec) => <StatViewComponent spec={spec()} />}</Show>
     </>
   );
 }

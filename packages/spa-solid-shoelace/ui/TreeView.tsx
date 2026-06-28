@@ -261,7 +261,9 @@ export function TreeView() {
               }}
             >
               <For each={treeRoots()}>
-                {(root) => <TreeItem treeNode={root} spec={spec()!} />}
+                {(root) => (
+                  <TreeItem treeNode={root} spec={spec() as TreeSpec} />
+                )}
               </For>
             </sl-tree>
           </Show>

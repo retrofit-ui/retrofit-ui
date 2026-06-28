@@ -26,7 +26,24 @@ export interface LayoutConfig {
 }
 
 export type ViewSpec =
-  | { kind: 'box'; layout?: LayoutConfig; children: ViewSpec[] }
+  | {
+      kind: 'flex';
+      direction?: 'row' | 'column';
+      gap?: string;
+      wrap?: boolean;
+      align?: 'start' | 'center' | 'end' | 'stretch';
+      justify?: 'start' | 'center' | 'end' | 'space-between' | 'space-around';
+      children: ViewSpec[];
+    }
+  | {
+      kind: 'grid';
+      columns?: number;
+      columnTemplate?: string;
+      gap?: string;
+      align?: 'start' | 'center' | 'end' | 'stretch';
+      justify?: 'start' | 'center' | 'end' | 'space-between' | 'space-around';
+      children: ViewSpec[];
+    }
   | { kind: 'form'; spec: FormSpec; title?: string }
   | { kind: 'filter-form'; spec: FilterFormSpec }
   | { kind: 'table'; spec: TableSpec }

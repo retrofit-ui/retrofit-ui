@@ -28,7 +28,6 @@ export {
   filterForm,
   grid,
   LayoutContainerBuilder,
-  layout,
   PageSpecBuilder,
   pageSpec,
   row,

@@ -569,6 +569,40 @@ function boxStyle(lc?: LayoutConfig): Record<string, string | undefined> {
   };
 }
 
+function flexStyle(spec: {
+  direction?: 'row' | 'column';
+  gap?: string;
+  wrap?: boolean;
+  align?: string;
+  justify?: string;
+}): Record<string, string | undefined> {
+  return {
+    display: 'flex',
+    'flex-direction': spec.direction ?? 'column',
+    gap: spec.gap ?? 'var(--sl-spacing-2x-large)',
+    'flex-wrap': spec.wrap ? 'wrap' : undefined,
+    'align-items': spec.align,
+    'justify-content': spec.justify,
+  };
+}
+
+function gridStyle(spec: {
+  columns?: number;
+  columnTemplate?: string;
+  gap?: string;
+  align?: string;
+  justify?: string;
+}): Record<string, string | undefined> {
+  return {
+    display: 'grid',
+    'grid-template-columns':
+      spec.columnTemplate ?? `repeat(${String(spec.columns ?? 1)}, 1fr)`,
+    gap: spec.gap ?? 'var(--sl-spacing-2x-large)',
+    'align-items': spec.align,
+    'justify-content': spec.justify,
+  };
+}
+
 function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
   return (
     <div style={boxStyle(props.layout)}>
@@ -582,27 +616,59 @@ function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
 function ViewRenderer(props: { spec: ViewSpec }) {
   return (
     <Switch>
-      <Match when={props.spec.kind === 'box'}>
-        <BoxPane
-          layout={
-            (
-              props.spec as {
-                kind: 'box';
-                layout?: LayoutConfig;
-                children: ViewSpec[];
-              }
-            ).layout
-          }
-          children={
-            (
-              props.spec as {
-                kind: 'box';
-                layout?: LayoutConfig;
-                children: ViewSpec[];
-              }
-            ).children
-          }
-        />
+      <Match when={props.spec.kind === 'flex'}>
+        <div
+          style={flexStyle(
+            props.spec as {
+              kind: 'flex';
+              direction?: 'row' | 'column';
+              gap?: string;
+              wrap?: boolean;
+              align?: string;
+              justify?: string;
+            },
+          )}
+        >
+          <For
+            each={
+              (
+                props.spec as {
+                  kind: 'flex';
+                  children: ViewSpec[];
+                }
+              ).children
+            }
+          >
+            {(child) => <ViewRenderer spec={child} />}
+          </For>
+        </div>
+      </Match>
+      <Match when={props.spec.kind === 'grid'}>
+        <div
+          style={gridStyle(
+            props.spec as {
+              kind: 'grid';
+              columns?: number;
+              columnTemplate?: string;
+              gap?: string;
+              align?: string;
+              justify?: string;
+            },
+          )}
+        >
+          <For
+            each={
+              (
+                props.spec as {
+                  kind: 'grid';
+                  children: ViewSpec[];
+                }
+              ).children
+            }
+          >
+            {(child) => <ViewRenderer spec={child} />}
+          </For>
+        </div>
       </Match>
       <Match when={props.spec.kind === 'filter-form'}>
         <FilterFormPane

@@ -117,9 +117,15 @@ The stat view can be embedded outside the SPA using the [renderer bundle](/guide
 
 ```html
 <script src="retrofit-ui.iife.js"></script>
+
+<!-- declarative island — auto-mounted by init() -->
+<div data-retrofit='{"kind":"stat","stats":[{"label":"Revenue","value":48290.50,"format":"currency"},{"label":"Users","value":1204}],"metadata":{"title":"Overview"}}'></div>
+
+<!-- or mount explicitly in JS -->
 <div id="dashboard"></div>
 <script>
-  RetrofitUI.mount(
+  const ui = RetrofitUI.init({ rootElement: document.body, apiBase: '/api' });
+  ui.mount(
     {
       kind: 'stat',
       stats: [
@@ -129,7 +135,6 @@ The stat view can be embedded outside the SPA using the [renderer bundle](/guide
       metadata: { title: 'Overview' },
     },
     document.getElementById('dashboard'),
-    { apiBase: '/api' }
   );
 </script>
 ```

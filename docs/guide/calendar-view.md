@@ -164,9 +164,15 @@ CalendarView.events(events)
 
 ```html
 <script src="retrofit-ui.iife.js"></script>
+
+<!-- declarative island — auto-mounted by init() -->
+<div data-retrofit-src="/specs/calendar.json"></div>
+
+<!-- or mount explicitly in JS -->
 <div id="cal" style="height: 600px;"></div>
 <script>
-  RetrofitUI.mount(
+  const ui = RetrofitUI.init({ rootElement: document.body, apiBase: '/api' });
+  ui.mount(
     {
       kind: 'calendar',
       events: [
@@ -176,7 +182,6 @@ CalendarView.events(events)
       metadata: { title: 'Product Roadmap' },
     },
     document.getElementById('cal'),
-    { apiBase: '/api' }
   );
 </script>
 ```

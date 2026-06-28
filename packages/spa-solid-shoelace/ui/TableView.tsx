@@ -60,7 +60,7 @@ import {
 import { ApiBaseContext } from './App';
 import { PageView } from './PageView';
 import { showToast } from './toast';
-import { substitutePattern } from './utils';
+import { cellFormatted, cellValue, rawRow, substitutePattern } from './utils';
 
 type ResourceData =
   | { kind: 'page'; spec: PageSpec }
@@ -108,9 +108,14 @@ async function fetchTableView(
   return { kind: 'table', spec, data };
 }
 
-function extractIdField(findUrl: string): string {
-  const match = findUrl.match(/\{(\w+)\}/);
-  return match?.[1] ?? 'id';
+// Prefer the spec's explicit idField; otherwise fall back to the {param} of a
+// navigating/mutating endpoint, then "id". The fallback keeps specs produced by
+// other (non-builder) backends working before they adopt idField.
+function resolveIdField(spec: TableSpec): string {
+  if (spec.idField) return spec.idField;
+  const ep =
+    spec.endpoints?.find ?? spec.endpoints?.update ?? spec.endpoints?.delete;
+  return ep?.url.match(/\{(\w+)\}/)?.[1] ?? 'id';
 }
 
 function CellInput(props: {
@@ -192,16 +197,18 @@ function CellInput(props: {
 }
 
 function CellDisplay(props: { col: Column; value: unknown }) {
+  const raw = () => cellValue(props.value);
   const display = () =>
-    formatCellValue(props.col, { [props.col.key]: props.value });
-  const strVal = () => String(props.value ?? '');
+    cellFormatted(props.value) ??
+    formatCellValue(props.col, { [props.col.key]: raw() });
+  const strVal = () => String(raw() ?? '');
   const badgeVariant = () => props.col.badgeVariants?.[strVal()];
-  const numVal = () => Number(props.value ?? 0);
+  const numVal = () => Number(raw() ?? 0);
 
   return (
     <Switch fallback={<span>{display()}</span>}>
       <Match when={props.col.type === 'boolean'}>
-        <span>{props.value ? '✓' : '✗'}</span>
+        <span>{raw() ? '✓' : '✗'}</span>
       </Match>
       <Match when={badgeVariant()}>
         {(variant) => <sl-badge variant={variant()}>{strVal()}</sl-badge>}
@@ -235,33 +242,30 @@ function DataRow(props: {
   const navigate = useNavigate();
   const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
   const [editing, setEditing] = createSignal(false);
-  const [values, setValues] = createSignal<Record<string, unknown>>({
-    ...props.row,
-  });
+  const [values, setValues] = createSignal<Record<string, unknown>>(
+    rawRow(props.row),
+  );
   const [saving, setSaving] = createSignal(false);
   const [deleting, setDeleting] = createSignal(false);
   const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
 
-  const idField = () =>
-    props.spec.endpoints?.find
-      ? extractIdField(props.spec.endpoints.find.url)
-      : 'id';
+  const idField = () => resolveIdField(props.spec);
 
   function startEdit() {
-    setValues({ ...props.row });
+    setValues(rawRow(props.row));
     setEditing(true);
   }
 
   function cancelEdit() {
     setEditing(false);
-    setValues({ ...props.row });
+    setValues(rawRow(props.row));
   }
 
   async function saveEdit() {
     const ep = props.spec.endpoints?.update;
     if (!ep) return;
     setSaving(true);
-    const id = String(props.row[idField()]);
+    const id = String(cellValue(props.row[idField()]));
     const url = ep.url.replace('{id}', id);
     try {
       const res = await fetch(url, {
@@ -284,7 +288,7 @@ function DataRow(props: {
     if (!ep) return;
     setShowDeleteDialog(false);
     setDeleting(true);
-    const id = String(props.row[idField()]);
+    const id = String(cellValue(props.row[idField()]));
     const url = ep.url.replace('{id}', id);
     try {
       const res = await fetch(url, { method: ep.method });
@@ -309,7 +313,7 @@ function DataRow(props: {
         onClick={() => {
           if (editing()) return;
           if (!props.spec.endpoints?.find) return;
-          const id = props.row[idField()];
+          const id = cellValue(props.row[idField()]);
           if (id != null) navigate(`/${props.resource}/${String(id)}`);
         }}
       >
@@ -379,7 +383,7 @@ function DataRow(props: {
                     on:click={() => {
                       const resolved = substitutePattern(
                         action.routePattern,
-                        props.row,
+                        rawRow(props.row),
                       );
                       navigate(`/${props.resource}${resolved}`);
                     }}

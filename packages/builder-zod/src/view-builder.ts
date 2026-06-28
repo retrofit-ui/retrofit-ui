@@ -18,6 +18,11 @@ function unwrapOptional(schema: ZodTypeAny): ZodTypeAny {
   return def.type === 'optional' ? (def.innerType as ZodTypeAny) : schema;
 }
 
+/** The `{param}` name from an endpoint url (e.g. /todos/{id} -> "id"). */
+function idParam(endpoint: EndpointDirective | undefined): string | undefined {
+  return endpoint?.url.match(/\{(\w+)\}/)?.[1];
+}
+
 function deriveEnumOptions(schema: ZodTypeAny): FieldOption[] | undefined {
   const inner = unwrapOptional(schema);
   const def = getDef(inner);
@@ -150,10 +155,20 @@ export class TableViewBuilder<S extends ZodRawShape> {
       columns = columns.filter((c) => keySet.has(c.key));
     }
 
+    // Row links and update/delete URLs are keyed by an id field. Derive it from
+    // whichever endpoint carries a {param} (find/update/delete should agree) and
+    // expose it explicitly so the SPA doesn't have to re-parse the url. Tables
+    // with no navigating/mutating endpoint don't need an id at all.
+    const idField =
+      idParam(this._endpoints.find) ??
+      idParam(this._endpoints.update) ??
+      idParam(this._endpoints.delete);
+    const columnKeys = new Set(columns.map((c) => c.key));
+
     const rows =
       this._rows !== undefined
-        ? this._rows.map((row) =>
-            Object.fromEntries(
+        ? this._rows.map((row) => {
+            const cells = Object.fromEntries(
               columns.map((col) => {
                 const value = row[col.key];
                 const formatter = this._formatters.get(col.key);
@@ -162,12 +177,23 @@ export class TableViewBuilder<S extends ZodRawShape> {
                   : { value };
                 return [col.key, cell];
               }),
-            ),
-          )
+            );
+            // Carry the id even when it is hidden via visibleColumns(), so the
+            // client can still resolve a row link / mutation target.
+            if (
+              idField !== undefined &&
+              !columnKeys.has(idField) &&
+              row[idField] !== undefined
+            ) {
+              cells[idField] = { value: row[idField] };
+            }
+            return cells;
+          })
         : undefined;
 
     return {
       columns,
+      ...(idField !== undefined && { idField }),
       endpoints: this._endpoints,
       ...(rows !== undefined && { rows }),
       ...(this._rowActions.length > 0 && { rowActions: this._rowActions }),

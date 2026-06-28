@@ -10,13 +10,37 @@ setBasePath(
   'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/',
 );
 
+interface RetrofitTheme {
+  cssVariables?: Record<string, string>;
+  extraCss?: string;
+}
+
+// Apply theme client-side from /retrofit.json. The bundle is self-contained:
+// any backend just serves the static files plus a /retrofit.json describing
+// apiBase + theme — no server-side HTML injection required.
+function applyTheme(theme: RetrofitTheme | undefined) {
+  if (!theme) return;
+  if (theme.cssVariables) {
+    for (const [key, value] of Object.entries(theme.cssVariables)) {
+      document.documentElement.style.setProperty(key, value);
+    }
+  }
+  if (theme.extraCss) {
+    const style = document.createElement('style');
+    style.textContent = theme.extraCss;
+    document.head.appendChild(style);
+  }
+}
+
 async function init() {
   let apiBase = '/api/ui';
   try {
     const cfg = (await fetch('/retrofit.json').then((r) => r.json())) as {
       apiBase?: string;
+      theme?: RetrofitTheme;
     };
     apiBase = cfg.apiBase ?? '/api/ui';
+    applyTheme(cfg.theme);
   } catch {
     // fall back to same-origin default
   }

@@ -29,6 +29,30 @@ test.describe('Formatted number columns', () => {
   });
 });
 
+test.describe('Server-formatted cells (Cell.formatted)', () => {
+  const FORMATTED_URL = '/#/expenses-formatted';
+
+  test('renders the server-provided formatted string verbatim', async ({
+    page,
+  }) => {
+    await page.goto(FORMATTED_URL);
+    await waitForTable(page);
+    // Server formats amount with currencyDisplay:'code' → "USD 450.00".
+    // The client would never produce that string on its own. (Rows 1 and 3
+    // are never mutated by other tests, unlike the deletable "Team lunch".)
+    await expect(page.getByText('USD 450.00')).toBeVisible();
+    await expect(page.getByText('USD 199.99')).toBeVisible();
+  });
+
+  test('does not fall back to client-side <sl-format-number>', async ({
+    page,
+  }) => {
+    await page.goto(FORMATTED_URL);
+    await waitForTable(page);
+    await expect(page.locator('sl-format-number')).toHaveCount(0);
+  });
+});
+
 test.describe('Expenses narrow table', () => {
   test('renders only description, amount, date columns (not status/notes/id)', async ({
     page,
@@ -255,7 +279,9 @@ test.describe('Expenses simple form', () => {
     await page.goto('/#/expenses/2');
     await waitForForm(page);
 
-    await page.locator('sl-button[variant="danger"]').click();
+    // The confirm dialog also renders a danger button in the DOM (closed), so
+    // scope the first click to the form's own Delete button.
+    await page.locator('form sl-button[variant="danger"]').click();
     await page.locator('sl-button[slot="footer"][variant="danger"]').click();
 
     await expect(

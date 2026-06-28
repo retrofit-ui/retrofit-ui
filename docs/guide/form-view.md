@@ -2,7 +2,9 @@
 
 The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{id}`. It renders a create or edit form with validation, and optionally a delete button.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 20px; margin: 20px 0; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
+<PreviewBlock>
+
+<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
   <button style="background: none; border: none; font-size: 12px; color: var(--vp-c-text-3); cursor: default; padding: 0; margin-bottom: 12px;">← Back</button>
   <h2 style="margin: 0 0 20px; font-size: 20px; font-weight: 700; color: var(--vp-c-text-1);">Edit Post</h2>
   <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
@@ -28,6 +30,20 @@ The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{i
     </div>
   </div>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+formSpec(PostSchema, UpdatePostSchema)
+  .find({ method: 'GET', url: '/posts/{id}' })
+  .update({ method: 'PUT', url: '/posts/{id}' })
+  .delete({ method: 'DELETE', url: '/posts/{id}' })
+  .build()
+```
+
+:::
 
 ## Basic setup (JS)
 

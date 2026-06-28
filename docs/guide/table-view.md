@@ -2,7 +2,9 @@
 
 The table view is driven by a `TableSpec` returned from `GET /api/ui/{resource}`. It renders a data table with optional inline editing, row actions, and CRUD buttons.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 20px 0;">
+<PreviewBlock>
+
+<div>
   <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--vp-c-bg-soft); border-bottom: 1px solid var(--vp-c-divider);">
     <div style="font-weight: 600; font-size: 16px; color: var(--vp-c-text-1);">Posts</div>
     <button style="padding: 5px 14px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: default;">New</button>
@@ -38,6 +40,18 @@ The table view is driven by a `TableSpec` returned from `GET /api/ui/{resource}`
     </tbody>
   </table>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+const spec = TableView.schema(PostSchema)
+  .list({ method: 'GET', url: '/posts' })
+  .build();
+```
+
+:::
 
 ## Basic setup (JS)
 
@@ -122,7 +136,9 @@ TableView.schema(PostSchema)
 
 Values absent from the map fall through to plain text — partial maps are valid.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 20px 0;">
+<PreviewBlock title="Status badges">
+
+<div>
   <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
     <thead>
       <tr style="background: var(--vp-c-bg-soft);">
@@ -146,6 +162,25 @@ Values absent from the map fall through to plain text — partial maps are valid
     </tbody>
   </table>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+TableView.schema(PostSchema)
+  .columnOverride('status', {
+    badgeVariants: {
+      draft:     'neutral',
+      published: 'success',
+      archived:  'warning',
+    },
+  })
+  .list({ method: 'GET', url: '/posts' })
+  .build();
+```
+
+:::
 
 ## Inline editing
 

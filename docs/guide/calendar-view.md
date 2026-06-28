@@ -2,7 +2,9 @@
 
 The calendar view renders an interactive calendar powered by [FullCalendar](https://fullcalendar.io/). Events are embedded in the spec by the server — the UI displays them and optionally supports drag-drop rescheduling and date-click creation.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; overflow: hidden; margin: 20px 0; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px;">
+<PreviewBlock>
+
+<div style="font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px;">
   <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--vp-c-bg-soft); border-bottom: 1px solid var(--vp-c-divider);">
     <div style="display: flex; gap: 6px; align-items: center;">
       <button style="padding: 3px 9px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg); color: var(--vp-c-text-1); font-size: 12px; cursor: default;">‹</button>
@@ -43,6 +45,19 @@ The calendar view renders an interactive calendar powered by [FullCalendar](http
     <div style="padding: 6px; min-height: 60px; border-bottom: 1px solid var(--vp-c-divider); font-size: 12px; color: var(--vp-c-text-1);">13</div>
   </div>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+CalendarView.events(events)
+  .defaultView('month')
+  .title('Team Calendar')
+  .build()
+```
+
+:::
 
 ## How it works
 
@@ -142,7 +157,9 @@ CalendarView.events(events)
 
 ## Editable calendar
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 14px; margin: 20px 0; background: var(--vp-c-bg-soft);">
+<PreviewBlock title="Editable calendar">
+
+<div style="padding: 14px; background: var(--vp-c-bg-soft);">
   <div style="font-size: 13px; color: var(--vp-c-text-1);">
     <strong>Editable mode</strong> enables two interactions:
   </div>
@@ -153,12 +170,18 @@ CalendarView.events(events)
   <div style="margin-top: 8px; font-size: 12px; color: var(--vp-c-text-3);">Both revert immediately if the API call fails.</div>
 </div>
 
+</PreviewBlock>
+
+::: details Spec
+
 ```typescript
 CalendarView.events(events)
   .update({ method: 'PATCH', url: '/events/{id}' })
   .editable()
   .build();
 ```
+
+:::
 
 ## Using the standalone renderer
 

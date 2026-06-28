@@ -2,7 +2,9 @@
 
 The stat view renders a responsive grid of KPI cards. Values are computed server-side and embedded in the spec — the UI only formats and displays them.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 20px; margin: 20px 0; background: var(--vp-c-bg-soft);">
+<PreviewBlock>
+
+<div style="padding: 20px; background: var(--vp-c-bg-soft);">
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
     <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
       <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">$48,290</div>
@@ -24,6 +26,22 @@ The stat view renders a responsive grid of KPI cards. Values are computed server
     </div>
   </div>
 </div>
+
+</PreviewBlock>
+
+::: details Spec
+
+```typescript
+const spec = new StatView()
+  .stat({ label: 'Revenue', value: 48290.50, format: 'currency' })
+  .stat({ label: 'Active Users', value: 1204, description: 'active this month' })
+  .stat({ label: 'Conversion', value: 0.0312, format: 'percent' })
+  .stat({ label: 'Storage Used', value: 5368709120, format: 'bytes' })
+  .title('Dashboard Overview')
+  .build();
+```
+
+:::
 
 ## How it works
 
@@ -71,7 +89,9 @@ Locale formatting uses `Intl.NumberFormat` with the browser's locale — numbers
 
 Each card accepts an optional `description` rendered below the label in muted text — useful for context like "vs last month" or units.
 
-<div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 20px; margin: 20px 0; background: var(--vp-c-bg-soft);">
+<PreviewBlock title="Description text">
+
+<div style="padding: 20px; background: var(--vp-c-bg-soft);">
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
     <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
       <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">$9,800.50</div>
@@ -86,10 +106,18 @@ Each card accepts an optional `description` rendered below the label in muted te
   </div>
 </div>
 
+</PreviewBlock>
+
+::: details Spec
+
 ```typescript
-.stat({ label: 'Revenue', value: 9800.50, format: 'currency', currency: 'EUR', description: 'vs last month' })
-.stat({ label: 'Open Issues', value: 42, description: '↑ 3 since yesterday' })
+new StatView()
+  .stat({ label: 'Revenue', value: 9800.50, format: 'currency', description: 'vs last month' })
+  .stat({ label: 'Open Issues', value: 42, description: '↑ 3 since yesterday' })
+  .build();
 ```
+
+:::
 
 ## Page title
 

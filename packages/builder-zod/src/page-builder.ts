@@ -63,6 +63,11 @@ export class LayoutContainerBuilder {
     return this.add({ kind: 'markdown', spec });
   }
 
+  /** Extract the layout configuration for use with PageSpecBuilder.layout(). */
+  layoutConfig(): LayoutConfig {
+    return { ...this._props } as LayoutConfig;
+  }
+
   build(): ViewSpec {
     return {
       kind: this._kind,
@@ -109,8 +114,11 @@ export class PageSpecBuilder {
   }
 
   /** Set the layout for the root container. */
-  layout(config: LayoutConfig): this {
-    this._layout = config;
+  layout(config: LayoutConfig | LayoutContainerBuilder): this {
+    this._layout =
+      config instanceof LayoutContainerBuilder
+        ? config.layoutConfig()
+        : config;
     return this;
   }
 

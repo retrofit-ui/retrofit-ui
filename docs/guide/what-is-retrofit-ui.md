@@ -1,29 +1,23 @@
 # What is retrofit-ui?
 
-retrofit-ui is a server-driven admin UI framework. You define your data schemas on the server — using Zod (JS) or plain Java — and retrofit-ui renders a full-featured admin interface in the browser with no frontend code required.
+retrofit-ui is a framework for **declarative, server-driven UI**. Your server describes a piece of UI as JSON — a table, a form, a timeline — and the browser renders it, with no frontend code required. You declare the components on the backend, often straight from your existing Zod (JS) or Java schemas.
+
+Admin and internal tools are the obvious fit, but they're just one use case: anything you can describe declaratively is fair game.
 
 ## The problem it solves
 
-Every time you add a field to a database table, you repeat the same work in three places: the backend model, the API response, and the frontend form. If the admin UI is separate from the main app, that frontend step often lags behind or gets skipped entirely.
+Every time you add a field to a database table, you repeat the same work in three places: the backend model, the API response, and the frontend that displays it. When that UI lives in a separate frontend codebase, the third step lags behind or gets skipped entirely.
 
-retrofit-ui eliminates the third step.
+retrofit-ui eliminates the third step — the server that owns the data also describes the UI.
 
 ## How it works
 
 Instead of the browser knowing how to render your data, the **server describes the UI as JSON**. The browser's SPA reads that description and renders the appropriate component.
 
-```text
-Browser ──GET /retrofit-ui──────────────► SPA (static assets, served once)
-   │
-   ├── GET /api/ui/todos ──────────────► TableSpec JSON
-   │                                      { columns: [...], endpoints: {...} }
-   │                                              │
-   │                                              └──► SPA renders <table>
-   │
-   └── GET /todos ─────────────────────► [{ id:1, title:"Buy milk", ... }]
-                                                  │
-                                                  └──► SPA fills table rows
-```
+<figure class="img-placeholder">
+  <span class="img-placeholder__label">Image placeholder · request flow</span>
+  <p class="img-placeholder__brief"><strong>A sequence diagram, Browser ↔ Server.</strong> Three labelled round-trips stacked top to bottom: (1) <code>GET /retrofit-ui</code> → returns the SPA static bundle ("served once"); (2) <code>GET /api/ui/todos</code> → returns <strong>TableSpec JSON</strong> (<code>{ columns, endpoints }</code>), annotated "SPA renders the table shell"; (3) <code>GET /todos</code> → returns the row array <code>[{ id, title, … }]</code>, annotated "SPA fills the rows." Emphasise that only the spec + data change over time — the bundle is static. Light + dark variants.</p>
+</figure>
 
 The SPA itself never changes. When you add a column to your schema, the `TableSpec` JSON changes, and the browser renders the new column automatically on the next load.
 
@@ -59,6 +53,6 @@ This tells the SPA where your spec endpoints live and which Shoelace theme to ap
 
 ## What retrofit-ui is not
 
-- It is not a general-purpose UI framework. It renders admin-style CRUD interfaces.
+- It is not a general-purpose web app framework for hand-authored, pixel-perfect marketing pages. It renders declarative components your server describes — CRUD tools being the most common.
 - It does not generate code. The SPA is a pre-built bundle you serve as static assets.
 - It does not replace your REST API. Your existing endpoints stay unchanged; the spec endpoints sit alongside them.

@@ -1,6 +1,6 @@
 # JS Quickstart
 
-Get a working admin table view in under five minutes with Express.
+Get a working table view in under five minutes with Express.
 
 ## Install
 

@@ -1,6 +1,6 @@
 # Hosted SPA
 
-**Best for:** dedicated admin panels where retrofit-ui owns the entire page at a URL like `/admin`.
+**Best for:** dedicated internal tools or admin panels where retrofit-ui owns the entire page at a URL like `/admin`.
 
 In this style, your server serves the pre-built SPA bundle as static files. The browser loads it once, reads `/retrofit.json` to learn where your spec endpoints live, and handles all routing and rendering through a hash router. You never touch frontend code — every change to your schema is immediately reflected in the UI on the next page load.
 

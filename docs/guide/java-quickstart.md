@@ -1,6 +1,6 @@
 # Java Quickstart
 
-Get a working admin table view with Spring Boot in under five minutes.
+Get a working table view with Spring Boot in under five minutes.
 
 ## Add the dependency
 

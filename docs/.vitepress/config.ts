@@ -2,7 +2,22 @@ import { defineConfig } from 'vitepress';
 
 export default defineConfig({
   title: 'retrofit-ui',
-  description: 'Server-driven admin UI from your existing schemas',
+  description: 'Declarative, server-driven UI components from your existing schemas',
+
+  head: [
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
+    [
+      'link',
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+    ],
+    [
+      'link',
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap',
+      },
+    ],
+  ],
 
   vite: {
     optimizeDeps: {

@@ -4,7 +4,13 @@
 
 The blog example is the most complete example in the repo. It uses all three view types and demonstrates the key server-driven advantage: status enum values live exclusively on the server.
 
-Run it:
+<BlogDemo />
+
+::: tip
+The demo above shows the posts table live — try adding a new post or filtering by status. All data is mocked in the browser with MSW.
+:::
+
+Run it locally:
 ```bash
 just example js blog
 ```

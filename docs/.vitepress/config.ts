@@ -4,6 +4,12 @@ export default defineConfig({
   title: 'retrofit-ui',
   description: 'Server-driven admin UI from your existing schemas',
 
+  vite: {
+    optimizeDeps: {
+      exclude: ['@retrofit-ui/spa-solid-shoelace', 'msw'],
+    },
+  },
+
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/what-is-retrofit-ui' },

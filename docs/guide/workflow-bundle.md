@@ -1,5 +1,11 @@
 # Workflow Bundle
 
+::: tip Part of the Higher-Order Components family
+`TableFormWorkflowBundle` is one of retrofit-ui's HOCs — builders that compose multiple specs
+into a single unit. See the [Higher-Order Components overview](/guide/higher-order-components)
+for how it relates to `pageSpec`.
+:::
+
 `TableFormWorkflowBundle` combines a table view and a form view into a single builder, producing two complementary specs you serve on a collection route and an item route. It is the right choice when you want a standard list-then-edit CRUD flow and do not need inline table editing.
 
 <PreviewBlock>

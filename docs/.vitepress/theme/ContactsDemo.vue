@@ -39,31 +39,40 @@ const _contacts = [
 let _nextId = 5;
 
 const spec = {
-  kind: 'table',
+  kind: 'page',
   title: 'Contacts',
-  columns: [
-    { key: 'id', label: 'ID', type: 'number' },
-    { key: 'name', label: 'Name', type: 'string', sortable: true },
-    { key: 'email', label: 'Email', type: 'string', filterable: true },
-    { key: 'phone', label: 'Phone', type: 'string' },
+  layout: { direction: 'column' },
+  children: [
     {
-      key: 'type',
-      label: 'Type',
-      type: 'enum',
-      options: [
-        { label: 'Customer', value: 'customer' },
-        { label: 'Partner', value: 'partner' },
-        { label: 'Lead', value: 'lead' },
-      ],
-      editable: true,
+      kind: 'table',
+      spec: {
+        kind: 'table',
+        columns: [
+          { key: 'id', label: 'ID', type: 'number' },
+          { key: 'name', label: 'Name', type: 'string', sortable: true },
+          { key: 'email', label: 'Email', type: 'string', filterable: true },
+          { key: 'phone', label: 'Phone', type: 'string' },
+          {
+            key: 'type',
+            label: 'Type',
+            type: 'enum',
+            options: [
+              { label: 'Customer', value: 'customer' },
+              { label: 'Partner', value: 'partner' },
+              { label: 'Lead', value: 'lead' },
+            ],
+            editable: true,
+          },
+        ],
+        endpoints: {
+          list: { method: 'GET', url: '/contacts' },
+          create: { method: 'POST', url: '/contacts' },
+          update: { method: 'PUT', url: '/contacts/{id}' },
+          delete: { method: 'DELETE', url: '/contacts/{id}' },
+        },
+      },
     },
   ],
-  endpoints: {
-    list: { method: 'GET', url: '/contacts' },
-    create: { method: 'POST', url: '/contacts' },
-    update: { method: 'PUT', url: '/contacts/{id}' },
-    delete: { method: 'DELETE', url: '/contacts/{id}' },
-  },
 };
 
 onMounted(async () => {

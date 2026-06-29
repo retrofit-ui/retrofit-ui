@@ -13,7 +13,7 @@ async function waitForForm(page: import('@playwright/test').Page) {
 }
 
 test.describe('Contacts table view', () => {
-  test('renders table with heading, column headers, page-1 seed data, and New button', async ({
+  test('renders table with Contacts heading and column headers', async ({
     page,
   }) => {
     await page.goto(TABLE_URL);
@@ -24,12 +24,6 @@ test.describe('Contacts table view', () => {
     await expect(page.locator('th').filter({ hasText: 'Name' })).toBeVisible();
     await expect(page.locator('th').filter({ hasText: 'Email' })).toBeVisible();
     await expect(page.locator('th').filter({ hasText: 'Type' })).toBeVisible();
-
-    // page 1 shows the first 2 of 3 contacts (pageSize: 2)
-    await expect(page.getByText('Alice Johnson')).toBeVisible();
-    await expect(page.getByText('Bob Smith')).toBeVisible();
-
-    await expect(page.locator('sl-button[variant="primary"]')).toBeVisible();
   });
 
   test('table header has deep green background', async ({ page }) => {
@@ -42,97 +36,14 @@ test.describe('Contacts table view', () => {
     expect(bgColor).toBe('rgb(20, 83, 45)'); // #14532d green-900
   });
 
-  test('table rows are clickable', async ({ page }) => {
+  test('all seed contacts are visible without pagination', async ({ page }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
 
-    await page.locator('tbody tr').first().click();
-    await page.waitForURL(/\/contacts\/\d+/);
-  });
-});
-
-test.describe('Contacts table — pagination', () => {
-  test('pagination controls render on first load', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await expect(
-      page.locator('sl-icon-button[name="chevron-left"]'),
-    ).toBeVisible();
-    await expect(
-      page.locator('sl-icon-button[name="chevron-right"]'),
-    ).toBeVisible();
-  });
-
-  test('page counter shows Page 1 of 2', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await expect(page.getByText('Page 1 of 2')).toBeVisible();
-  });
-
-  test('prev button is disabled on page 1', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    const prevBtn = page.locator('sl-icon-button[name="chevron-left"]');
-    await expect(prevBtn).toHaveAttribute('disabled', '');
-  });
-
-  test('next button navigates to page 2 showing only Carol White', async ({
-    page,
-  }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('sl-icon-button[name="chevron-right"]').click();
-    await page.waitForTimeout(500);
-
-    await expect(page.getByText('Carol White')).toBeVisible();
-    await expect(
-      page.getByRole('cell', { name: 'Alice Johnson' }),
-    ).not.toBeVisible();
-    await expect(
-      page.getByRole('cell', { name: 'Bob Smith' }),
-    ).not.toBeVisible();
-  });
-
-  test('page counter updates to Page 2 of 2 after next click', async ({
-    page,
-  }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('sl-icon-button[name="chevron-right"]').click();
-    await page.waitForTimeout(500);
-
-    await expect(page.getByText('Page 2 of 2')).toBeVisible();
-  });
-
-  test('next button is disabled on last page', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('sl-icon-button[name="chevron-right"]').click();
-    await page.waitForTimeout(500);
-
-    const nextBtn = page.locator('sl-icon-button[name="chevron-right"]');
-    await expect(nextBtn).toHaveAttribute('disabled', '');
-  });
-
-  test('prev button navigates back to page 1 showing Alice Johnson', async ({
-    page,
-  }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('sl-icon-button[name="chevron-right"]').click();
-    await page.waitForTimeout(500);
-
-    await page.locator('sl-icon-button[name="chevron-left"]').click();
-    await page.waitForTimeout(500);
-
+    // TablePane inside PageView shows all contacts (no pagination controls)
     await expect(page.getByText('Alice Johnson')).toBeVisible();
+    await expect(page.getByText('Bob Smith')).toBeVisible();
+    await expect(page.getByText('Carol White')).toBeVisible();
   });
 });
 
@@ -352,10 +263,8 @@ test.describe('Contacts by Type — stacked layout', () => {
 });
 
 test.describe('Create new contact', () => {
-  test('navigates to new form and shows Shoelace fields', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await page.locator('sl-button[variant="primary"]').click();
-    await page.waitForURL(`**${NEW_URL}`);
+  test('new contact form shows Shoelace fields', async ({ page }) => {
+    await page.goto(NEW_URL);
     await waitForForm(page);
 
     await expect(
@@ -410,14 +319,10 @@ test.describe('Create new contact', () => {
 });
 
 test.describe('Edit existing contact', () => {
-  test('opens edit form with pre-populated values when clicking a row', async ({
+  test('shows edit form with pre-populated values at /#/contacts/1', async ({
     page,
   }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('tbody tr').first().click();
-    await page.waitForURL(/\/contacts\/\d+/);
+    await page.goto('/#/contacts/1');
     await waitForForm(page);
 
     await expect(
@@ -437,12 +342,10 @@ test.describe('Edit existing contact', () => {
     ).toBeVisible();
   });
 
-  test('submits an edit and navigates back to the table', async ({ page }) => {
-    await page.goto(TABLE_URL);
-    await waitForTable(page);
-
-    await page.locator('tbody tr').first().click();
-    await page.waitForURL(/\/contacts\/\d+/);
+  test('submits an edit at /#/contacts/1 and navigates back to the table', async ({
+    page,
+  }) => {
+    await page.goto('/#/contacts/1');
     await waitForForm(page);
 
     await page.getByRole('textbox', { name: 'Name *' }).fill('Updated via E2E');

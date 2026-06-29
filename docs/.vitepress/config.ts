@@ -61,9 +61,7 @@ export default defineConfig({
         },
         {
           text: 'Layouts',
-          items: [
-            { text: 'Flex & Grid Layouts', link: '/guide/layouts' },
-          ],
+          items: [{ text: 'Flex & Grid Layouts', link: '/guide/layouts' }],
         },
         {
           text: 'Higher-Order Components',

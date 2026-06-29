@@ -22,6 +22,7 @@ just example java contacts # Spring Boot
 - Column and field customisation via the `table()` and `form()` callbacks
 - Custom field validation (`pattern`) and display overrides (`placeholder`, `helpText`)
 - `updateSchema` to keep `id` read-only on the edit form
+- Using `pageSpec().layout(col())` to plug a table component into a column layout container
 
 ## Server
 
@@ -48,8 +49,16 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
 
-// Serve the two specs on a collection route and an item route
-app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+// Collection: PageSpec with col() layout wrapping the table
+app.get('/api/ui/contacts', (_req, res) =>
+  res.json(
+    pageSpec()
+      .title('Contacts')
+      .layout(col())
+      .table(bundle.tableSpec)
+      .build(),
+  ),
+);
 app.get('/api/ui/contacts/:id', (req, res) => {
   const { id } = req.params;
   const entity = id !== 'new' ? store.find(id) : undefined;
@@ -66,7 +75,7 @@ app.get('/api/ui/contacts/:id', (req, res) => {
 
 | Route | Spec | Behaviour |
 |-------|------|-----------|
-| `GET /api/ui/contacts` | `TableSpec` | Table with Name, Email, Phone, Type columns. Rows are clickable (find is wired). "New" button present (create is wired). |
+| `GET /api/ui/contacts` | `PageSpec` (`layout: col`, child: table) | Column layout wrapping a contacts table. Rows fetched client-side from `/contacts`. |
 | `GET /api/ui/contacts/:id` | `FormSpec` | Edit form when id is a number. Create form when id is `"new"`. Delete button present (delete is wired). |
 
 ## Key takeaway

@@ -116,9 +116,7 @@ export class PageSpecBuilder {
   /** Set the layout for the root container. */
   layout(config: LayoutConfig | LayoutContainerBuilder): this {
     this._layout =
-      config instanceof LayoutContainerBuilder
-        ? config.layoutConfig()
-        : config;
+      config instanceof LayoutContainerBuilder ? config.layoutConfig() : config;
     return this;
   }
 

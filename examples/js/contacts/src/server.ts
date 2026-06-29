@@ -1,4 +1,5 @@
 import {
+  col,
   filterForm,
   formSpec,
   pageSpec,
@@ -17,9 +18,9 @@ app.use(express.json());
 app.get('/contacts', (req, res) => {
   const type = req.query.type as string | undefined;
   const all = type ? store.byType(type) : store.all();
-  if (req.query.page !== undefined || req.query.pageSize !== undefined) {
-    const page = Number(req.query.page ?? 1);
-    const pageSize = Number(req.query.pageSize ?? 2);
+  const page = Number(req.query.page);
+  const pageSize = Number(req.query.pageSize);
+  if (page > 0 && pageSize > 0) {
     const start = (page - 1) * pageSize;
     res.json(all.slice(start, start + pageSize));
   } else {
@@ -85,8 +86,12 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
 
-// Collection route → table spec (rows are fetched client-side via its list endpoint)
-app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+// Collection route → PageSpec: demonstrates layout (col) → component (table) composition
+app.get('/api/ui/contacts', (_req, res) =>
+  res.json(
+    pageSpec().title('Contacts').layout(col()).table(bundle.tableSpec).build(),
+  ),
+);
 
 // Item route → form spec; bake the entity's values onto the fields for edit
 app.get('/api/ui/contacts/:id', (req, res) => {

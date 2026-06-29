@@ -134,3 +134,28 @@ This matters for two reasons:
 The renderer code doesn't change between modes. The spec is still the contract. The only thing that varies is what is wired to the action — an HTTP endpoint, a function, or a DOM event. This keeps the server-driven and spec-driven paths on the same abstraction, rather than forking them into separate products.
 
 > *The function and event-handler action bindings are a work in progress. Today all actions are `EndpointDirective` (HTTP). The generalization described here is the intended direction.*
+
+## Decision: three-tier spec model
+
+Specs fall into three tiers based on how much they coordinate with other specs. The tiers are a backend authoring concept — a way to reason about what you are declaring — not a runtime distinction.
+
+### Components
+
+A component spec is the atomic unit: one spec, one route, one rendered view. `TableSpec`, `FormSpec`, `TimelineSpec`, `StatSpec` are all components. The backend declares it; the renderer mounts it. Nothing else is involved.
+
+### Layouts
+
+Layouts (`flex`, `grid`) are composable containers that carry only positional intent. They have no data, no endpoints, and no `kind` of their own that maps to a business-domain view. Their only job is to arrange what is placed inside them.
+
+Layouts are arbitrarily nestable: `flex > grid > flex` is valid. The renderer does not need to know what is inside a layout to render it — it just allocates space and recurses.
+
+### Higher-order components
+
+Higher-order components are orchestrators: named specs that compose layouts and component specs into a larger, reusable unit.
+
+- **`PageSpec`** composes layouts and component specs into a named page. A single `PageSpec` can place a stat bar, a table, and a filter form in a grid — the backend declares the arrangement once; the renderer mounts the whole page from one spec.
+- **`TableFormWorkflowBundle`** pairs a `TableSpec` and a `FormSpec` for a CRUD route pair. The bundle coordinates the two specs so that selecting a table row populates the form, and submitting the form refreshes the table — behavior that would otherwise require repetitive boilerplate wiring.
+
+### The runtime view
+
+The renderer dispatches on `kind` identically for all three tiers. A `TableSpec` component and a `PageSpec` higher-order component are both just specs with a `kind` field; the renderer does not consult a tier label. Tiers are a vocabulary for backend authors, not a runtime concern.

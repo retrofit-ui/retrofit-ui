@@ -34,7 +34,9 @@ Three patterns this solves:
 
 The spec is the contract between your server and the browser. Your server produces a spec JSON object; the browser renders it without any frontend code on your side.
 
-retrofit-ui ships eight spec types in core:
+retrofit-ui organises its spec types into three tiers:
+
+**Components** — atomic views, each rendering one data shape:
 
 | Spec | Renders |
 |---|---|
@@ -45,7 +47,19 @@ retrofit-ui ships eight spec types in core:
 | `TimelineSpec` | Vertical timeline of events with status variants (success, warning, danger) |
 | `TreeSpec` | Hierarchical tree view with configurable selection and actions |
 | `MarkdownViewSpec` | Markdown or HTML content fetched from an endpoint |
-| `PageSpec` | Composite layout that stacks any combination of the above |
+
+**Layouts** — containers that position components without owning data:
+
+| Spec | Renders |
+|---|---|
+| `flex` / `grid` | Flex row/column or CSS grid that holds any combination of components |
+
+**Higher-Order Components** — specs that compose other specs:
+
+| Spec | Renders |
+|---|---|
+| `PageSpec` | A page with a title and a flex/grid root that holds any combination of components and layouts |
+| `WorkflowBundle` | A table paired with a form for side-by-side create/edit workflows |
 
 Column and field types are inferred from your schema automatically — `z.string().email()` becomes an email input, `z.enum(...)` becomes a select. You can override any individual column or field without touching the defaults.
 

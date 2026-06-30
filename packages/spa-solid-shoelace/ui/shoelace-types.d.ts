@@ -242,6 +242,38 @@ declare module 'solid-js' {
       'sl-card': JSX.HTMLAttributes<HTMLElement> & {
         children?: JSX.Element;
       };
+      'sl-tab-group': JSX.HTMLAttributes<HTMLElement> & {
+        placement?: 'top' | 'bottom' | 'start' | 'end';
+        activation?: 'auto' | 'manual';
+        'no-scroll-controls'?: boolean;
+        children?: JSX.Element;
+        'on:sl-tab-show'?: SlEventHandler;
+        'on:sl-tab-hide'?: SlEventHandler;
+      };
+      'sl-tab': JSX.HTMLAttributes<HTMLElement> & {
+        panel?: string;
+        slot?: string;
+        active?: boolean;
+        disabled?: boolean;
+        closable?: boolean;
+        children?: JSX.Element;
+      };
+      'sl-tab-panel': JSX.HTMLAttributes<HTMLElement> & {
+        name?: string;
+        active?: boolean;
+        children?: JSX.Element;
+      };
+      'sl-details': JSX.HTMLAttributes<HTMLElement> & {
+        summary?: string;
+        open?: boolean;
+        'prop:open'?: boolean;
+        disabled?: boolean;
+        children?: JSX.Element;
+        'on:sl-show'?: SlEventHandler;
+        'on:sl-hide'?: SlEventHandler;
+        'on:sl-after-show'?: SlEventHandler;
+        'on:sl-after-hide'?: SlEventHandler;
+      };
     }
   }
 }

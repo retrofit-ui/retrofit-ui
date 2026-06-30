@@ -4,6 +4,7 @@ import BlogDemo from './BlogDemo.vue';
 import ContactsDemo from './ContactsDemo.vue';
 import HomeLanding from './HomeLanding.vue';
 import InteractiveChatDemo from './InteractiveChatDemo.vue';
+import LandingDemo from './LandingDemo.vue';
 import LiveDemo from './LiveDemo.vue';
 import PreviewBlock from './PreviewBlock.vue';
 import TodosDemo from './TodosDemo.vue';
@@ -16,6 +17,7 @@ export default {
     app.component('ContactsDemo', ContactsDemo);
     app.component('HomeLanding', HomeLanding);
     app.component('InteractiveChatDemo', InteractiveChatDemo);
+    app.component('LandingDemo', LandingDemo);
     app.component('LiveDemo', LiveDemo);
     app.component('PreviewBlock', PreviewBlock);
     app.component('TodosDemo', TodosDemo);

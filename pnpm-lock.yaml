@@ -160,6 +160,37 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  examples/js/interactive-chat:
+    dependencies:
+      '@retrofit-ui/builder-zod':
+        specifier: workspace:*
+        version: link:../../../packages/builder-zod
+      '@retrofit-ui/spa-solid-shoelace':
+        specifier: workspace:*
+        version: link:../../../packages/spa-solid-shoelace
+      express:
+        specifier: ^4
+        version: 4.22.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.49.0
+        version: 1.60.0
+      '@types/express':
+        specifier: ^4
+        version: 4.17.25
+      '@types/node':
+        specifier: ^20
+        version: 20.19.41
+      tsx:
+        specifier: ^4.19.4
+        version: 4.22.4
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   examples/js/products:
     dependencies:
       '@retrofit-ui/builder-zod':
@@ -235,7 +266,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.18
-        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@20.19.41)(typescript@5.9.3))(vite@8.0.16(@types/node@20.19.41)(esbuild@0.27.7)(jiti@1.21.7)(tsx@4.22.4))
+        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@20.19.41)(typescript@5.9.3))(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@1.21.7)(tsx@4.22.4))
       zod:
         specifier: ^4.3.6
         version: 4.4.3
@@ -250,7 +281,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.0.18
-        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@20.19.41)(typescript@5.9.3))(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@1.21.7)(tsx@4.22.4))
+        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@20.19.41)(typescript@5.9.3))(vite@8.0.16(@types/node@20.19.41)(esbuild@0.27.7)(jiti@1.21.7)(tsx@4.22.4))
       zod:
         specifier: ^4.3.6
         version: 4.4.3

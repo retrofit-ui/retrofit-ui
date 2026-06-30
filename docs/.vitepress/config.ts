@@ -100,6 +100,7 @@ export default defineConfig({
             { text: 'Todos', link: '/examples/todos' },
             { text: 'Contacts', link: '/examples/contacts' },
             { text: 'Blog', link: '/examples/blog' },
+            { text: 'Interactive Chat', link: '/examples/interactive-chat' },
           ],
         },
       ],

@@ -156,6 +156,11 @@ app.get('/api/ui/dashboard/stats', (_req, res) => {
         value: store.all().length,
         format: 'number',
       })
+      .stat({
+        label: 'Sync Status',
+        value: '—',
+        description: 'External sync unavailable',
+      })
       .build(),
   );
 });

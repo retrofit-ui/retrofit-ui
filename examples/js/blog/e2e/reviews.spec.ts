@@ -63,8 +63,10 @@ test.describe('Reviews rating field', () => {
     await waitForForm(page);
     const rating = page.locator('sl-rating');
     await expect(rating).toBeVisible();
-    const max = await rating.evaluate((el) => el.getAttribute('max'));
-    expect(max).toBe('5');
+    const max = await rating.evaluate(
+      (el) => (el as HTMLElement & { max?: number }).max,
+    );
+    expect(max).toBe(5);
   });
 
   test('can create a review with a star rating', async ({ page, request }) => {

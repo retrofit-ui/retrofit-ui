@@ -143,7 +143,7 @@ export function FormView() {
 
 function TooltipIcon(props: { tip: string }) {
   return (
-    <sl-tooltip content={props.tip}>
+    <sl-tooltip attr:content={props.tip}>
       <sl-icon-button
         name="question-circle"
         label="Help"
@@ -639,8 +639,8 @@ function FormEditor(props: FormEditorProps) {
                       id={`${field.name}-rating`}
                       label={fieldLabel()}
                       prop:value={Number(values()[field.name] ?? 0)}
-                      max={field.ratingMax ?? 5}
-                      precision={field.ratingPrecision ?? 1}
+                      attr:max={field.ratingMax ?? 5}
+                      attr:precision={field.ratingPrecision ?? 1}
                       readonly={field.readOnly || undefined}
                       on:sl-change={(e: Event) =>
                         setValue(

@@ -149,7 +149,9 @@ declare module 'solid-js' {
         value?: number;
         'prop:value'?: number;
         max?: number;
+        'attr:max'?: number;
         precision?: number;
+        'attr:precision'?: number;
         readonly?: boolean;
         'on:sl-change'?: SlEventHandler;
         'on:sl-hover'?: SlEventHandler;
@@ -166,6 +168,7 @@ declare module 'solid-js' {
       };
       'sl-tooltip': JSX.HTMLAttributes<HTMLElement> & {
         content?: string;
+        'attr:content'?: string;
         placement?:
           | 'top'
           | 'top-start'

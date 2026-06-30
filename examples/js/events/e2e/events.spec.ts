@@ -76,7 +76,7 @@ test.describe('Events table view', () => {
     await page.goto(TABLE_URL);
     await page.waitForSelector('table');
     const firstRow = page.locator('tbody tr').first();
-    await firstRow.locator('sl-button').filter({ hasText: 'Edit' }).click();
+    await firstRow.click();
     await expect(page).toHaveURL(/\/#\/events\/\d+/);
   });
 });
@@ -92,7 +92,7 @@ test.describe('Events form view — datetime pickers', () => {
   test('form is pre-populated with the event title', async ({ page }) => {
     await page.goto(EDIT_URL);
     await page.waitForSelector('form');
-    const titleInput = page.locator('sl-input').first();
+    const titleInput = page.locator('sl-input[type="text"]').first();
     const value = await titleInput.evaluate(
       (el: HTMLElement & { value: string }) => el.value,
     );

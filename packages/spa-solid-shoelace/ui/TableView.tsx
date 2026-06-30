@@ -698,10 +698,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
       </Show>
       <Show when={data()}>
         {(rows) => (
-          <Show
-            when={rows().length > 0 || hasInlineEdit()}
-            fallback={<p class="retrofit-empty">No data.</p>}
-          >
+          <>
             <table class="retrofit-table">
               <thead class="retrofit-thead">
                 <tr>
@@ -721,21 +718,45 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                 </tr>
               </thead>
               <tbody>
-                <For each={rows()}>
-                  {(row) => (
-                    <DataRowComponent
-                      row={row}
+                <Show
+                  when={rows().length > 0 || hasInlineEdit()}
+                  fallback={
+                    <tr>
+                      <td
+                        colspan={
+                          props.spec.columns.length + (hasActions() ? 1 : 0)
+                        }
+                        class="retrofit-empty"
+                      >
+                        No data.
+                      </td>
+                    </tr>
+                  }
+                >
+                  <For each={rows()}>
+                    {(row) => (
+                      <DataRowComponent
+                        row={row}
+                        spec={props.spec}
+                        onRefresh={() => void refetch()}
+                      />
+                    )}
+                  </For>
+                  <Show when={hasInlineEdit() && props.spec.endpoints?.create}>
+                    <NewRow
                       spec={props.spec}
-                      onRefresh={() => void refetch()}
+                      onCreated={() => void refetch()}
                     />
-                  )}
-                </For>
-                <Show when={hasInlineEdit() && props.spec.endpoints?.create}>
-                  <NewRow spec={props.spec} onCreated={() => void refetch()} />
+                  </Show>
                 </Show>
               </tbody>
             </table>
-            <Show when={props.spec.metadata?.pagination}>
+            <Show
+              when={
+                (rows().length > 0 || hasInlineEdit()) &&
+                props.spec.metadata?.pagination
+              }
+            >
               {(pagination) => {
                 const totalPages = () =>
                   Math.max(
@@ -798,7 +819,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                 );
               }}
             </Show>
-          </Show>
+          </>
         )}
       </Show>
     </div>
@@ -899,29 +920,43 @@ export function TableView() {
                     </sl-button>
                   </Show>
                 </div>
-                <Show
-                  when={(tableData()?.data.length ?? 0) > 0 || hasInlineEdit()}
-                  fallback={<p class="retrofit-empty">No data.</p>}
-                >
-                  <table class="retrofit-table">
-                    <thead class="retrofit-thead">
-                      <tr>
-                        <For each={tableData()?.spec.columns ?? []}>
-                          {(col) => (
-                            <th
-                              class="retrofit-th"
-                              style={{ 'text-align': col.alignment }}
-                            >
-                              {col.label}
-                            </th>
-                          )}
-                        </For>
-                        <Show when={hasActions()}>
-                          <th class="retrofit-th">Actions</th>
-                        </Show>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <table class="retrofit-table">
+                  <thead class="retrofit-thead">
+                    <tr>
+                      <For each={tableData()?.spec.columns ?? []}>
+                        {(col) => (
+                          <th
+                            class="retrofit-th"
+                            style={{ 'text-align': col.alignment }}
+                          >
+                            {col.label}
+                          </th>
+                        )}
+                      </For>
+                      <Show when={hasActions()}>
+                        <th class="retrofit-th">Actions</th>
+                      </Show>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <Show
+                      when={
+                        (tableData()?.data.length ?? 0) > 0 || hasInlineEdit()
+                      }
+                      fallback={
+                        <tr>
+                          <td
+                            colspan={
+                              (tableData()?.spec.columns.length ?? 0) +
+                              (hasActions() ? 1 : 0)
+                            }
+                            class="retrofit-empty"
+                          >
+                            No data.
+                          </td>
+                        </tr>
+                      }
+                    >
                       <For each={tableData()?.data ?? []}>
                         {(row) => (
                           <DataRow
@@ -954,75 +989,78 @@ export function TableView() {
                           onCreated={() => void refetch()}
                         />
                       </Show>
-                    </tbody>
-                  </table>
-                  <Show when={tableData()?.spec.metadata?.pagination}>
-                    {(pagination) => {
-                      const totalPages = () =>
-                        Math.max(
-                          1,
-                          Math.ceil(
-                            pagination().totalRows /
-                              (currentPageSize() ?? pagination().pageSize),
-                          ),
-                        );
-                      return (
-                        <div class="retrofit-pagination">
-                          <sl-button-group label="Page navigation">
-                            <sl-icon-button
-                              name="chevron-left"
-                              label="Previous page"
-                              disabled={currentPage() <= 1 || undefined}
-                              on:click={() => setCurrentPage((p) => p - 1)}
-                            />
-                            <sl-icon-button
-                              name="chevron-right"
-                              label="Next page"
-                              disabled={
-                                currentPage() >= totalPages() || undefined
-                              }
-                              on:click={() => setCurrentPage((p) => p + 1)}
-                            />
-                          </sl-button-group>
-                          <span class="retrofit-pagination-label">
-                            Page {currentPage()} of {totalPages()}
-                          </span>
-                          <Show
-                            when={
-                              (pagination().pageSizeOptions?.length ?? 0) > 0
-                            }
-                          >
-                            <sl-select
-                              size="small"
-                              prop:value={String(
-                                currentPageSize() ?? pagination().pageSize,
-                              )}
-                              on:sl-change={(e: Event) => {
-                                setCurrentPageSize(
-                                  Number(
-                                    (
-                                      e.target as EventTarget & {
-                                        value: string;
-                                      }
-                                    ).value,
-                                  ),
-                                );
-                                setCurrentPage(1);
-                              }}
-                            >
-                              <For each={pagination().pageSizeOptions ?? []}>
-                                {(size) => (
-                                  <sl-option value={String(size)}>
-                                    {size} per page
-                                  </sl-option>
-                                )}
-                              </For>
-                            </sl-select>
-                          </Show>
-                        </div>
+                    </Show>
+                  </tbody>
+                </table>
+                <Show
+                  when={
+                    ((tableData()?.data.length ?? 0) > 0 || hasInlineEdit()) &&
+                    tableData()?.spec.metadata?.pagination
+                  }
+                >
+                  {(pagination) => {
+                    const totalPages = () =>
+                      Math.max(
+                        1,
+                        Math.ceil(
+                          pagination().totalRows /
+                            (currentPageSize() ?? pagination().pageSize),
+                        ),
                       );
-                    }}
-                  </Show>
+                    return (
+                      <div class="retrofit-pagination">
+                        <sl-button-group label="Page navigation">
+                          <sl-icon-button
+                            name="chevron-left"
+                            label="Previous page"
+                            disabled={currentPage() <= 1 || undefined}
+                            on:click={() => setCurrentPage((p) => p - 1)}
+                          />
+                          <sl-icon-button
+                            name="chevron-right"
+                            label="Next page"
+                            disabled={
+                              currentPage() >= totalPages() || undefined
+                            }
+                            on:click={() => setCurrentPage((p) => p + 1)}
+                          />
+                        </sl-button-group>
+                        <span class="retrofit-pagination-label">
+                          Page {currentPage()} of {totalPages()}
+                        </span>
+                        <Show
+                          when={(pagination().pageSizeOptions?.length ?? 0) > 0}
+                        >
+                          <sl-select
+                            size="small"
+                            prop:value={String(
+                              currentPageSize() ?? pagination().pageSize,
+                            )}
+                            on:sl-change={(e: Event) => {
+                              setCurrentPageSize(
+                                Number(
+                                  (
+                                    e.target as EventTarget & {
+                                      value: string;
+                                    }
+                                  ).value,
+                                ),
+                              );
+                              setCurrentPage(1);
+                            }}
+                          >
+                            <For each={pagination().pageSizeOptions ?? []}>
+                              {(size) => (
+                                <sl-option value={String(size)}>
+                                  {size} per page
+                                </sl-option>
+                              )}
+                            </For>
+                          </sl-select>
+                        </Show>
+                      </div>
+                    );
+                  }}
                 </Show>
               </div>
             </Match>

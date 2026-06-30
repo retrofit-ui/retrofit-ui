@@ -1,7 +1,6 @@
 export type {
   CalendarEvent,
   CalendarSpec,
-  CardFooterButton,
   CardSpec,
   EndpointDirective,
   FilterField,

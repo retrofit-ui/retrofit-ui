@@ -1,9 +1,9 @@
-import type { CardFooterButton, CardSpec, ViewSpec } from '@retrofit-ui/core';
+import type { CardSpec, ViewSpec } from '@retrofit-ui/core';
 
 export class CardViewBuilder {
   private _header?: string;
   private _children: ViewSpec[] = [];
-  private _footer: CardFooterButton[] = [];
+  private _footer?: ViewSpec;
 
   header(text: string): this {
     this._header = text;
@@ -15,8 +15,8 @@ export class CardViewBuilder {
     return this;
   }
 
-  footerButton(btn: CardFooterButton): this {
-    this._footer.push(btn);
+  footer(spec: ViewSpec): this {
+    this._footer = spec;
     return this;
   }
 
@@ -25,7 +25,7 @@ export class CardViewBuilder {
       kind: 'card',
       ...(this._header !== undefined && { header: this._header }),
       children: this._children,
-      ...(this._footer.length > 0 && { footer: this._footer }),
+      ...(this._footer !== undefined && { footer: this._footer }),
     };
   }
 }

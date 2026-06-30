@@ -27,13 +27,11 @@ test.describe('Card wrapper structure', () => {
     await expect(assistantHeaders).toHaveCount(3);
   });
 
-  test('every card has a Download button in the footer', async ({ page }) => {
+  test('every card footer contains a form', async ({ page }) => {
     await page.goto(CHAT_URL);
     await page.waitForSelector('sl-card');
-    const downloadButtons = page
-      .locator('sl-card [slot="footer"] sl-button')
-      .filter({ hasText: 'Download' });
-    await expect(downloadButtons).toHaveCount(6);
+    const footerForms = page.locator('sl-card [slot="footer"] form');
+    await expect(footerForms).toHaveCount(6);
   });
 });
 

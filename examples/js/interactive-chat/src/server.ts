@@ -36,12 +36,13 @@ app.get('/api/chat-messages/:id', (req, res) => {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const DOWNLOAD_BUTTON = {
-  label: 'Download',
-  icon: 'download',
-  size: 'small' as const,
-  variant: 'neutral' as const,
-  outline: true,
+const DOWNLOAD_FOOTER: ViewSpec = {
+  kind: 'form',
+  spec: {
+    kind: 'form',
+    fields: [],
+    endpoints: { create: { url: '/api/chat-messages/export', method: 'POST' } },
+  },
 };
 
 function userMessage(id: string): ViewSpec {
@@ -54,7 +55,7 @@ function userMessage(id: string): ViewSpec {
   return new CardViewBuilder()
     .header('You')
     .add({ kind: 'markdown', spec })
-    .footerButton(DOWNLOAD_BUTTON)
+    .footer(DOWNLOAD_FOOTER)
     .build();
 }
 
@@ -62,7 +63,7 @@ function assistantReply(content: ViewSpec): ViewSpec {
   return new CardViewBuilder()
     .header('Assistant')
     .add(content)
-    .footerButton(DOWNLOAD_BUTTON)
+    .footer(DOWNLOAD_FOOTER)
     .build();
 }
 

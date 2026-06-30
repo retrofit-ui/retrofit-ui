@@ -302,12 +302,6 @@
   margin-top: var(--sl-spacing-medium);
 }
 
-.retrofit-card-footer {
-  display: flex;
-  gap: var(--sl-spacing-small);
-  align-items: center;
-}
-
 /* Calendar view */
 .retrofit-calendar {
   font-family: var(--sl-font-sans);

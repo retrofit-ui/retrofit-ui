@@ -1,7 +1,6 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
-import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
@@ -639,24 +638,12 @@ export function CardViewComponent(props: { spec: CardSpec }) {
           {(child) => <ViewRenderer spec={child} />}
         </For>
       </div>
-      <Show when={props.spec.footer?.length}>
-        <div slot="footer" class="retrofit-card-footer">
-          <For each={props.spec.footer ?? []}>
-            {(btn) => (
-              <sl-button
-                size={btn.size ?? 'small'}
-                variant={btn.variant ?? 'default'}
-                outline={btn.outline}
-                href={btn.href}
-              >
-                <Show when={btn.icon}>
-                  <sl-icon slot="prefix" name={btn.icon} />
-                </Show>
-                {btn.label}
-              </sl-button>
-            )}
-          </For>
-        </div>
+      <Show when={props.spec.footer}>
+        {(footer) => (
+          <div slot="footer">
+            <ViewRenderer spec={footer()} />
+          </div>
+        )}
       </Show>
     </sl-card>
   );

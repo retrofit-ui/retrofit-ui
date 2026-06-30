@@ -10,6 +10,15 @@ const MESSAGES: Record<string, string> = {
   '3': 'How does my workload this week **compare to last week**?',
 };
 
+const DOWNLOAD_FOOTER = {
+  kind: 'form',
+  spec: {
+    kind: 'form',
+    fields: [],
+    endpoints: { create: { url: '/api/chat-messages/export', method: 'POST' } },
+  },
+};
+
 const spec = {
   kind: 'page',
   title: 'Agenda Assistant',
@@ -30,15 +39,7 @@ const spec = {
           },
         },
       ],
-      footer: [
-        {
-          label: 'Download',
-          icon: 'download',
-          size: 'small',
-          variant: 'neutral',
-          outline: true,
-        },
-      ],
+      footer: DOWNLOAD_FOOTER,
     },
     // Turn 1 — assistant: stat overview + timeline
     {
@@ -106,15 +107,7 @@ const spec = {
           ],
         },
       ],
-      footer: [
-        {
-          label: 'Download',
-          icon: 'download',
-          size: 'small',
-          variant: 'neutral',
-          outline: true,
-        },
-      ],
+      footer: DOWNLOAD_FOOTER,
     },
     // Turn 2 — user
     {
@@ -131,15 +124,7 @@ const spec = {
           },
         },
       ],
-      footer: [
-        {
-          label: 'Download',
-          icon: 'download',
-          size: 'small',
-          variant: 'neutral',
-          outline: true,
-        },
-      ],
+      footer: DOWNLOAD_FOOTER,
     },
     // Turn 2 — assistant: deadline stats + table
     {
@@ -228,15 +213,7 @@ const spec = {
           ],
         },
       ],
-      footer: [
-        {
-          label: 'Download',
-          icon: 'download',
-          size: 'small',
-          variant: 'neutral',
-          outline: true,
-        },
-      ],
+      footer: DOWNLOAD_FOOTER,
     },
     // Turn 3 — user
     {
@@ -253,15 +230,7 @@ const spec = {
           },
         },
       ],
-      footer: [
-        {
-          label: 'Download',
-          icon: 'download',
-          size: 'small',
-          variant: 'neutral',
-          outline: true,
-        },
-      ],
+      footer: DOWNLOAD_FOOTER,
     },
     // Turn 3 — assistant: 3-column comparison grid
     {
@@ -306,15 +275,7 @@ const spec = {
           ],
         },
       ],
-      footer: [
-        {
-          label: 'Download',
-          icon: 'download',
-          size: 'small',
-          variant: 'neutral',
-          outline: true,
-        },
-      ],
+      footer: DOWNLOAD_FOOTER,
     },
   ],
 };

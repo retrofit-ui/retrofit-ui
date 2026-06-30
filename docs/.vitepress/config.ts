@@ -21,6 +21,11 @@ export default defineConfig({
   ],
 
   vite: {
+    server: {
+      fs: {
+        allow: ['..'],
+      },
+    },
     optimizeDeps: {
       exclude: ['@retrofit-ui/spa-solid-shoelace', 'msw'],
     },

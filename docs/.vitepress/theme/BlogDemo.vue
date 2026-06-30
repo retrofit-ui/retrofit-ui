@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { getController } from './useRetrofitController';
 
 const root = ref<HTMLElement>();
@@ -62,7 +62,9 @@ const spec = {
 };
 
 onMounted(async () => {
-  if (typeof window === 'undefined' || !root.value) return;
+  if (typeof window === 'undefined') return;
+  await nextTick();
+  if (!root.value) return;
 
   if (!_worker) {
     const { setupWorker } = await import('msw/browser');

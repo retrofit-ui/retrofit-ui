@@ -3,6 +3,7 @@ import '@shoelace-style/shoelace/dist/themes/light.css';
 import '@shoelace-style/shoelace/dist/components/alert/alert.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import type { RootSpec } from '@retrofit-ui/core';
+import { HashRouter, Route } from '@solidjs/router';
 import { render } from 'solid-js/web';
 import { SpecRenderer } from './SpecRenderer';
 import './layout.css';
@@ -50,7 +51,11 @@ function mountIsland(
 ): () => void {
   mounted.get(element)?.();
   const dispose = render(
-    () => <SpecRenderer spec={spec} apiBase={apiBase} />,
+    () => (
+      <HashRouter>
+        <Route path="/*all" component={() => <SpecRenderer spec={spec} apiBase={apiBase} />} />
+      </HashRouter>
+    ),
     element,
   );
   mounted.set(element, dispose);

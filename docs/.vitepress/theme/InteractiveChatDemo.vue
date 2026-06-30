@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { getController } from './useRetrofitController';
 
 const root = ref<HTMLElement>();
@@ -225,20 +225,52 @@ const spec = {
   ],
 };
 
+const THEME_CSS_VARS: Record<string, string> = {
+  '--sl-color-primary-50': '#eef2ff',
+  '--sl-color-primary-100': '#e0e7ff',
+  '--sl-color-primary-200': '#c7d2fe',
+  '--sl-color-primary-300': '#a5b4fc',
+  '--sl-color-primary-400': '#818cf8',
+  '--sl-color-primary-500': '#6366f1',
+  '--sl-color-primary-600': '#4f46e5',
+  '--sl-color-primary-700': '#4338ca',
+  '--sl-color-primary-800': '#3730a3',
+  '--sl-color-primary-900': '#312e81',
+  '--sl-color-primary-950': '#1e1b4b',
+};
+const THEME_EXTRA_CSS = `.retrofit-thead { background-color: #312e81; }
+.retrofit-th { color: #eef2ff; border-bottom-color: #3730a3; }`;
+
+let _worker: { stop: () => void } | null = null;
+let _styleEl: HTMLStyleElement | null = null;
+
 onMounted(async () => {
-  if (typeof window === 'undefined' || !root.value) return;
+  if (typeof window === 'undefined') return;
+  await nextTick(); // wait for <ClientOnly> to render its slot
+  if (!root.value) return;
 
-  const { setupWorker } = await import('msw/browser');
-  const { http, HttpResponse } = await import('msw');
+  // Apply indigo theme to the island container (Shoelace inherits via cascade)
+  for (const [key, value] of Object.entries(THEME_CSS_VARS)) {
+    root.value.style.setProperty(key, value);
+  }
+  if (!_styleEl) {
+    _styleEl = document.createElement('style');
+    _styleEl.textContent = THEME_EXTRA_CSS;
+    document.head.appendChild(_styleEl);
+  }
 
-  const worker = setupWorker(
-    http.get('/api/chat-messages/:id', ({ params }) => {
-      const text = MESSAGES[params.id as string];
-      if (!text) return new HttpResponse(null, { status: 404 });
-      return HttpResponse.json({ id: params.id, text });
-    }),
-  );
-  await worker.start({ onUnhandledRequest: 'bypass', quiet: true });
+  if (!_worker) {
+    const { setupWorker } = await import('msw/browser');
+    const { http, HttpResponse } = await import('msw');
+    _worker = setupWorker(
+      http.get('/api/chat-messages/:id', ({ params }) => {
+        const text = MESSAGES[params.id as string];
+        if (!text) return new HttpResponse(null, { status: 404 });
+        return HttpResponse.json({ id: params.id, text });
+      }),
+    );
+    await _worker.start({ onUnhandledRequest: 'bypass', quiet: true });
+  }
 
   const controller = await getController();
   controller.mount(spec, root.value);
@@ -249,6 +281,8 @@ onBeforeUnmount(() => {
   if (el) {
     getController().then((ctrl) => ctrl.unmount(el));
   }
+  _styleEl?.remove();
+  _styleEl = null;
 });
 </script>
 

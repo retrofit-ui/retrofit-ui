@@ -1,15 +1,20 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
 import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/details/details.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
+import '@shoelace-style/shoelace/dist/components/tab-group/tab-group.js';
+import '@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js';
+import '@shoelace-style/shoelace/dist/components/tab/tab.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type {
   CalendarSpec,
   CardSpec,
   Column,
+  DetailsSpec,
   FilterFormSpec,
   FormSpec,
   LayoutConfig,
@@ -17,6 +22,8 @@ import type {
   PageSpec,
   StatSpec,
   TableSpec,
+  TabsSpec,
+  TextSpec,
   TimelineSpec,
   TreeSpec,
   ViewSpec,
@@ -625,6 +632,66 @@ function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
   );
 }
 
+// ── TextPane ──────────────────────────────────────────────────────────────────
+
+function TextPane(props: { spec: TextSpec }) {
+  const style = (): Record<string, string> => {
+    if (props.spec.variant === 'muted')
+      return { color: 'var(--sl-color-neutral-600)', margin: '0' };
+    if (props.spec.variant === 'small')
+      return {
+        fontSize: 'var(--sl-font-size-small)',
+        color: 'var(--sl-color-neutral-600)',
+        margin: '0',
+      };
+    return { margin: '0' };
+  };
+  return <p style={style()}>{props.spec.content}</p>;
+}
+
+// ── TabsPane ──────────────────────────────────────────────────────────────────
+
+function TabsPane(props: { spec: TabsSpec }) {
+  return (
+    <sl-tab-group placement={props.spec.placement ?? 'top'}>
+      <For each={props.spec.tabs}>
+        {(tab, i) => (
+          <sl-tab slot="nav" panel={`panel-${i()}`}>
+            {tab.label}
+          </sl-tab>
+        )}
+      </For>
+      <For each={props.spec.tabs}>
+        {(tab, i) => (
+          <sl-tab-panel name={`panel-${i()}`}>
+            <For each={tab.children}>
+              {(child) => <ViewRenderer spec={child} />}
+            </For>
+          </sl-tab-panel>
+        )}
+      </For>
+    </sl-tab-group>
+  );
+}
+
+// ── DetailsPane ───────────────────────────────────────────────────────────────
+
+function DetailsPane(props: { spec: DetailsSpec }) {
+  return (
+    <div>
+      <For each={props.spec.items}>
+        {(item) => (
+          <sl-details summary={item.summary} prop:open={item.open ?? false}>
+            {item.body}
+          </sl-details>
+        )}
+      </For>
+    </div>
+  );
+}
+
+// ── CardViewComponent ─────────────────────────────────────────────────────────
+
 export function CardViewComponent(props: { spec: CardSpec }) {
   return (
     <sl-card style={{ display: 'block' }}>
@@ -741,6 +808,15 @@ function ViewRenderer(props: { spec: ViewSpec }) {
       </Match>
       <Match when={props.spec.kind === 'card'}>
         <CardViewComponent spec={props.spec as CardSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'text'}>
+        <TextPane spec={props.spec as TextSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'tabs'}>
+        <TabsPane spec={props.spec as TabsSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'details'}>
+        <DetailsPane spec={props.spec as DetailsSpec} />
       </Match>
     </Switch>
   );

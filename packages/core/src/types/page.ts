@@ -40,6 +40,34 @@ export interface CardSpec {
   footer?: ViewSpec;
 }
 
+export interface TextSpec {
+  kind: 'text';
+  content: string;
+  variant?: 'body' | 'muted' | 'small';
+}
+
+export interface TabItem {
+  label: string;
+  children: ViewSpec[];
+}
+
+export interface TabsSpec {
+  kind: 'tabs';
+  placement?: 'top' | 'bottom' | 'start' | 'end';
+  tabs: TabItem[];
+}
+
+export interface DetailsItem {
+  summary: string;
+  body: string;
+  open?: boolean;
+}
+
+export interface DetailsSpec {
+  kind: 'details';
+  items: DetailsItem[];
+}
+
 export type ViewSpec =
   | {
       kind: 'flex';
@@ -64,6 +92,9 @@ export type ViewSpec =
   | { kind: 'table'; spec: TableSpec }
   | { kind: 'markdown'; spec: MarkdownViewSpec }
   | CardSpec
+  | TextSpec
+  | TabsSpec
+  | DetailsSpec
   | StatSpec
   | CalendarSpec
   | TreeSpec

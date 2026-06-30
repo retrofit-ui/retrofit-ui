@@ -117,104 +117,20 @@ onBeforeUnmount(() => observer?.disconnect());
       </div>
     </section>
 
-    <!-- ── LIVE DEMO ───────────────────────────────────────────────── -->
-    <section class="rf-section rf-proof" data-reveal>
+    <!-- ── SPEC-RENDERED SHOWCASE ────────────────────────────────── -->
+    <section class="rf-showcase" data-reveal>
       <header class="rf-head">
-        <span class="rf-kicker">// the proof</span>
-        <h2>See it actually run</h2>
+        <span class="rf-kicker">// the system renders this page</span>
+        <h2>Dogfooding the spec</h2>
         <p>
-          The table below is the real renderer driving a JSON spec against mock
-          data in your browser. Edit a row, add a todo, delete one &mdash; every
-          interaction is wired by the spec, not hand-written.
+          Everything below — the stat cards, feature grid, tabbed demos, and
+          FAQ — is driven by a single <code>page</code> spec mounted via
+          <code>controller.mount()</code>. No hand-written HTML.
         </p>
       </header>
-
-      <div class="rf-screen">
-        <div class="rf-screen__bar" aria-hidden="true">
-          <span /><span /><span />
-          <em>rendered output</em>
-        </div>
-        <div class="rf-screen__body">
-          <TodosDemo />
-        </div>
+      <div class="rf-showcase__body">
+        <LandingDemo />
       </div>
-
-      <p class="rf-proof__foot">
-        This is the <a href="/examples/todos">todos example</a> verbatim &mdash;
-        see it built end to end, or browse
-        <a href="/examples/contacts">contacts</a> and
-        <a href="/examples/blog">blog</a>.
-      </p>
-    </section>
-
-    <!-- ── HOW IT WORKS ────────────────────────────────────────────── -->
-    <section class="rf-section rf-how" data-reveal>
-      <header class="rf-head">
-        <span class="rf-kicker">// three moves</span>
-        <h2>The whole loop</h2>
-      </header>
-
-      <ol class="rf-steps">
-        <li>
-          <span class="rf-steps__n">01</span>
-          <h3>Describe it once</h3>
-          <p>
-            Define the shape in Zod or Java. retrofit-ui derives columns,
-            fields, validation, and enum options &mdash; no duplication.
-          </p>
-        </li>
-        <li>
-          <span class="rf-steps__n">02</span>
-          <h3>Serve a spec</h3>
-          <p>
-            Your endpoint returns plain JSON. Any language that can emit the
-            contract gets the full UI &mdash; JS, Java, Go, Python.
-          </p>
-        </li>
-        <li>
-          <span class="rf-steps__n">03</span>
-          <h3>Render anywhere</h3>
-          <p>
-            Host the SPA, mount a component, or hydrate an island. Change the
-            schema and the UI follows on the next request &mdash; no redeploy.
-          </p>
-        </li>
-      </ol>
-    </section>
-
-    <!-- ── FEATURES (spec sheet) ───────────────────────────────────── -->
-    <section class="rf-section rf-spec" data-reveal>
-      <header class="rf-head">
-        <span class="rf-kicker">// spec sheet</span>
-        <h2>What you get</h2>
-      </header>
-
-      <dl class="rf-specgrid">
-        <div class="rf-specgrid__item">
-          <dt>Schema-driven</dt>
-          <dd>One source of truth in Zod or Java. Columns, fields, and validation are derived, never duplicated.</dd>
-        </div>
-        <div class="rf-specgrid__item">
-          <dt>Server-owned</dt>
-          <dd>The server returns specs describing the UI. Change the schema, the UI changes on the next request.</dd>
-        </div>
-        <div class="rf-specgrid__item">
-          <dt>Polyglot</dt>
-          <dd>The SPA is language-agnostic. Any server emitting the contract gets the full UI &mdash; JS, Java, anything.</dd>
-        </div>
-        <div class="rf-specgrid__item">
-          <dt>Seven view types</dt>
-          <dd>Table, form, stat, timeline, tree, calendar, and markdown &mdash; alone or as a workflow bundle.</dd>
-        </div>
-        <div class="rf-specgrid__item">
-          <dt>Themeable</dt>
-          <dd>Built on Shoelace web components. Override CSS custom properties &mdash; no framework conflicts.</dd>
-        </div>
-        <div class="rf-specgrid__item">
-          <dt>Incremental</dt>
-          <dd>Adopt as a hosted SPA, script islands, or SolidJS components. Take as much or as little as you need.</dd>
-        </div>
-      </dl>
     </section>
 
     <!-- ── CTA ─────────────────────────────────────────────────────── -->
@@ -562,130 +478,33 @@ onBeforeUnmount(() => observer?.disconnect());
   line-height: 1.6;
 }
 
-/* ── proof / live demo ────────────────────────────────────────────────── */
-.rf-proof { background: linear-gradient(180deg, var(--ink), var(--ink-1)); border-block: 1px solid var(--edge); }
-.rf-screen {
+/* ── showcase (spec-rendered section) ────────────────────────────────── */
+.rf-showcase {
+  background: #f6f8fc;
+  border-top: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+}
+.rf-showcase .rf-head { color: var(--ink); }
+.rf-showcase .rf-head h2 { color: var(--ink); }
+.rf-showcase .rf-head p { color: #4a5571; }
+.rf-showcase .rf-kicker { color: #6b7fa3; }
+.rf-showcase code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  background: rgba(100, 130, 200, 0.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #3a5080;
+}
+.rf-showcase__body {
   max-width: 1080px;
   margin: 0 auto;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid var(--edge-2);
-  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.02);
+  padding-bottom: var(--sl-spacing-4x-large, 3rem);
 }
-.rf-screen__bar {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 12px 16px;
-  background: #0a1122;
-  border-bottom: 1px solid var(--edge-2);
-}
-.rf-screen__bar span {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: rgba(196, 216, 255, 0.2);
-}
-.rf-screen__bar span:first-child { background: var(--warm); opacity: 0.9; }
-.rf-screen__bar em {
-  margin-left: 10px;
-  font-family: var(--mono);
-  font-style: normal;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-/* the rendered UI is a light "output window", regardless of site theme.
-   custom props inherit into the globally-registered TodosDemo. */
-.rf-screen__body {
-  --vp-c-bg: #ffffff;
-  --vp-c-bg-soft: #f5f6fb;
-  --vp-c-bg-alt: #f0f2f9;
-  --vp-c-divider: #e3e6f0;
-  --vp-c-text-1: #1b2236;
-  --vp-c-text-2: #4a5571;
-  --vp-c-text-3: #7b85a0;
-  background: #fff;
-  padding: 8px;
-}
-.rf-screen__body :deep(.live-demo-container) {
-  border: 0;
-  border-radius: 10px;
-  margin: 0;
-}
-.rf-proof__foot {
-  max-width: 1080px;
-  margin: 26px auto 0;
-  font-size: 14.5px;
-  color: var(--muted);
-}
-
-/* ── steps ────────────────────────────────────────────────────────────── */
-.rf-steps {
-  max-width: 1080px;
-  margin: 0 auto;
-  list-style: none;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--edge);
-  border: 1px solid var(--edge);
-  border-radius: 16px;
-  overflow: hidden;
-}
-.rf-steps li {
-  background: var(--ink-1);
-  padding: 30px 26px 34px;
-}
-.rf-steps__n {
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--warm);
-  letter-spacing: 0.08em;
-}
-.rf-steps h3 {
-  font-family: var(--display);
-  font-weight: 500;
-  font-size: 1.45rem;
-  margin: 14px 0 10px;
-  letter-spacing: -0.01em;
-}
-.rf-steps p { margin: 0; color: var(--muted); line-height: 1.6; }
-
-/* ── spec sheet ───────────────────────────────────────────────────────── */
-.rf-specgrid {
-  max-width: 1080px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--edge);
-  border: 1px solid var(--edge);
-  border-radius: 16px;
-  overflow: hidden;
-}
-.rf-specgrid__item {
-  background: var(--ink-1);
-  padding: 24px;
-  transition: background 0.2s ease;
-}
-.rf-specgrid__item:hover { background: var(--ink-2); }
-.rf-specgrid dt {
-  font-family: var(--mono);
-  font-size: 12.5px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cool-bright);
-  padding-left: 14px;
-  border-left: 2px solid var(--warm);
-}
-.rf-specgrid dd {
-  margin: 12px 0 0;
-  color: var(--muted);
-  line-height: 1.6;
-  font-size: 0.97rem;
+.rf-showcase__body :deep(.rf-showcase-loading) {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7fa3;
 }
 
 /* ── final cta ────────────────────────────────────────────────────────── */

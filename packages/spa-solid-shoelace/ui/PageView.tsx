@@ -656,14 +656,14 @@ function TabsPane(props: { spec: TabsSpec }) {
     <sl-tab-group placement={props.spec.placement ?? 'top'}>
       <For each={props.spec.tabs}>
         {(tab, i) => (
-          <sl-tab slot="nav" panel={`panel-${i()}`}>
+          <sl-tab slot="nav" panel={`panel-${i()}`} active={i() === 0}>
             {tab.label}
           </sl-tab>
         )}
       </For>
       <For each={props.spec.tabs}>
         {(tab, i) => (
-          <sl-tab-panel name={`panel-${i()}`}>
+          <sl-tab-panel name={`panel-${i()}`} active={i() === 0}>
             <For each={tab.children}>
               {(child) => <ViewRenderer spec={child} />}
             </For>

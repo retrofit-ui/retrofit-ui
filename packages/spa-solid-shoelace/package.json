@@ -10,6 +10,7 @@
       "require": "./dist/index.cjs"
     },
     "./renderer": "./dist/renderer/retrofit-ui.js",
+    "./renderer.css": "./dist/renderer/spa-solid-shoelace.css",
     "./components": "./dist/components/spec-renderer.js"
   },
   "main": "./dist/index.cjs",

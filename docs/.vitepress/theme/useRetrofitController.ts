@@ -2,6 +2,8 @@
 // init() can only be called once per page — cache the result here so all
 // demo components share the same controller across SPA navigations.
 
+import '@retrofit-ui/spa-solid-shoelace/renderer.css';
+
 type Controller = {
   mount: (spec: unknown, el: HTMLElement) => () => void;
   unmount: (el: HTMLElement) => void;

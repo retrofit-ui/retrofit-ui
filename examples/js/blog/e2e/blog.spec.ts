@@ -256,7 +256,7 @@ test.describe('Badge variants on enum column', () => {
     let foundPlainText = false;
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i);
-      const statusCell = row.locator('td').nth(3);
+      const statusCell = row.locator('td').nth(4);
       const hasBadge = await statusCell.locator('sl-badge').count();
       if (hasBadge === 0) {
         foundPlainText = true;

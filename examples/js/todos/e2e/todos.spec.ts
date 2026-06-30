@@ -193,9 +193,11 @@ test.describe('Field tooltip', () => {
       'sl-tooltip[content="Enter a short description of the task"]',
     );
     await expect(tooltip).toBeAttached();
-    const titleInput = page.locator('sl-input').filter({ hasText: '' }).first();
+    const titleInput = page
+      .locator('sl-input')
+      .filter({ has: page.locator('sl-tooltip') });
     const helpText = await titleInput.evaluate(
-      (el: HTMLElement & { helpText?: string }) => el.getAttribute('help-text'),
+      (el: HTMLElement & { helpText?: string }) => el.helpText,
     );
     expect(helpText).toBe('Keep it brief');
   });

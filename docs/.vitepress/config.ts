@@ -61,9 +61,7 @@ export default defineConfig({
         },
         {
           text: 'Layouts',
-          items: [
-            { text: 'Flex & Grid Layouts', link: '/guide/layouts' },
-          ],
+          items: [{ text: 'Flex & Grid Layouts', link: '/guide/layouts' }],
         },
         {
           text: 'Higher-Order Components',
@@ -102,6 +100,7 @@ export default defineConfig({
             { text: 'Todos', link: '/examples/todos' },
             { text: 'Contacts', link: '/examples/contacts' },
             { text: 'Blog', link: '/examples/blog' },
+            { text: 'Interactive Chat', link: '/examples/interactive-chat' },
           ],
         },
       ],

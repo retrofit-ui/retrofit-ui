@@ -28,7 +28,9 @@ test.describe('Category tree view', () => {
       .locator('sl-tree-item')
       .filter({ hasText: 'Electronics' })
       .first();
-    await electronicsItem.click();
+    await electronicsItem.evaluate(
+      (el) => ((el as HTMLElement & { expanded: boolean }).expanded = true),
+    );
     await expect(page.getByText('Phones')).toBeVisible();
     await expect(page.getByText('Laptops')).toBeVisible();
   });
@@ -56,7 +58,7 @@ test.describe('Category table view', () => {
     await expect(page.getByText('Clothing')).toBeVisible();
     await expect(page.getByText('Phones')).toBeVisible();
     await expect(page.getByText('Laptops')).toBeVisible();
-    await expect(page.getByText('Tops')).toBeVisible();
+    await expect(page.getByText('Tops', { exact: true })).toBeVisible();
     await expect(page.getByText('Footwear')).toBeVisible();
   });
 
@@ -81,7 +83,9 @@ test.describe('Category form', () => {
   }) => {
     await page.goto('/#/categories/new');
     await page.waitForSelector('form');
-    await expect(page.locator('sl-select[name="parentId"]')).toBeVisible();
+    await expect(
+      page.locator('sl-select[aria-label="Parent Category"]'),
+    ).toBeVisible();
   });
 });
 
@@ -105,7 +109,7 @@ test.describe('Product table view', () => {
     ).toBeVisible();
     await expect(page.getByText('Phones')).toBeVisible();
     await expect(page.getByText('Laptops')).toBeVisible();
-    await expect(page.getByText('Tops')).toBeVisible();
+    await expect(page.getByText('Tops', { exact: true })).toBeVisible();
     await expect(page.getByText('Footwear')).toBeVisible();
   });
 
@@ -130,6 +134,8 @@ test.describe('Product form', () => {
   }) => {
     await page.goto('/#/products/new');
     await page.waitForSelector('form');
-    await expect(page.locator('sl-select[name="categoryId"]')).toBeVisible();
+    await expect(
+      page.locator('sl-select[aria-label="Category *"]'),
+    ).toBeVisible();
   });
 });

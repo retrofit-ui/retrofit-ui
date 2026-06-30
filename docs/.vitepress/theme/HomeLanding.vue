@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
-// Scroll-reveal for sections below the fold. Guarded for SSR and
-// prefers-reduced-motion so the page is fully visible without JS / motion.
 const root = ref<HTMLElement>();
 let observer: IntersectionObserver | null = null;
 
@@ -10,8 +8,7 @@ onMounted(() => {
   if (typeof window === 'undefined' || !root.value) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const targets = root.value.querySelectorAll<HTMLElement>('[data-reveal]');
-  if (reduce || !('IntersectionObserver' in window)) return; // stay visible
-  // Opt into the hidden-then-reveal animation only now that JS can undo it.
+  if (reduce || !('IntersectionObserver' in window)) return;
   root.value.classList.add('rf--anim');
   observer = new IntersectionObserver(
     (entries) => {
@@ -22,11 +19,9 @@ onMounted(() => {
         }
       }
     },
-    { threshold: 0.18, rootMargin: '0px 0px -8% 0px' },
+    { threshold: 0.14, rootMargin: '0px 0px -6% 0px' },
   );
-  targets.forEach((el) => {
-    observer?.observe(el);
-  });
+  for (const el of targets) observer?.observe(el);
 });
 
 onBeforeUnmount(() => observer?.disconnect());
@@ -36,23 +31,24 @@ onBeforeUnmount(() => observer?.disconnect());
   <div class="rf" ref="root">
     <!-- ── HERO ─────────────────────────────────────────────────────── -->
     <section class="rf-hero">
-      <div class="rf-grid" aria-hidden="true" />
-      <div class="rf-glow" aria-hidden="true" />
-
       <div class="rf-hero__inner">
         <p class="rf-eyebrow rf-load" style="--d: 0ms">
           <span class="rf-tick" />Open source · Declarative UI · JS&nbsp;+&nbsp;Java
         </p>
 
         <h1 class="rf-title">
-          <span class="rf-load" style="--d: 60ms">Your server</span>{{ ' ' }}<span class="rf-load" style="--d: 140ms">describes</span>{{ ' ' }}<span class="rf-load rf-title__accent" style="--d: 220ms">the UI.</span>
+          <span class="rf-load" style="--d: 60ms">Your server</span>{{ ' ' }}<span
+            class="rf-load"
+            style="--d: 140ms"
+            >describes</span
+          >{{ ' ' }}<span class="rf-load rf-title__accent" style="--d: 220ms">the UI.</span>
         </h1>
 
         <p class="rf-lede rf-load" style="--d: 320ms">
           A framework for declarative, server-driven components. Return a JSON
-          spec from your backend &mdash; tables, forms, timelines, and more
-          &mdash; and the browser renders it. No frontend code to write, no
-          frontend to deploy.
+          spec from your backend&thinsp;&mdash;&thinsp;tables, forms, timelines,
+          and more&thinsp;&mdash;&thinsp;and the browser renders it. No frontend
+          code to write, no frontend to deploy.
         </p>
 
         <div class="rf-cta rf-load" style="--d: 400ms">
@@ -134,8 +130,7 @@ onBeforeUnmount(() => observer?.disconnect());
     </section>
 
     <!-- ── CTA ─────────────────────────────────────────────────────── -->
-    <section class="rf-section rf-final" data-reveal>
-      <div class="rf-grid rf-grid--soft" aria-hidden="true" />
+    <section class="rf-final" data-reveal>
       <div class="rf-final__inner">
         <h2>Wire up your first view<br />in five minutes.</h2>
         <div class="rf-cta">
@@ -152,201 +147,157 @@ onBeforeUnmount(() => observer?.disconnect());
 </template>
 
 <style scoped>
-/* ── palette: a self-contained dark blueprint, independent of site theme ── */
+/* ── palette ──────────────────────────────────────────────────────────── */
 .rf {
-  --ink: #080b16;
-  --ink-1: #0b1020;
-  --ink-2: #10182e;
-  --edge: rgba(126, 166, 255, 0.14);
-  --edge-2: rgba(126, 166, 255, 0.28);
-  --cool: #8fb4ff;
-  --cool-bright: #c4d8ff;
-  --warm: #ff9e6b;
-  --warm-bright: #ffbf9b;
-  --text: #e3e9f7;
-  --muted: #8e9bbd;
+  --bg:      #ffffff;
+  --bg-dim:  #f8f7f4;
+  --ink:     #111110;
+  --ink-2:   #1e1e1c;
+  --muted:   #69695e;
+  --warm:    #c85c24;
+  --warm-2:  #e8763e;
+  --cool:    #1c3a6b;
+  --edge:    rgba(17, 17, 16, 0.1);
+  --edge-2:  rgba(17, 17, 16, 0.18);
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --display: 'Fraunces', 'IBM Plex Sans', Georgia, serif;
 
-  background: var(--ink);
-  color: var(--text);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--sans);
-  overflow: clip;
 }
 
-/* full-bleed, since the host page container is width-constrained */
 .rf section {
   position: relative;
   padding-inline: 24px;
 }
 
-/* ── shared bits ──────────────────────────────────────────────────────── */
-.rf-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--edge) 1px, transparent 1px),
-    linear-gradient(90deg, var(--edge) 1px, transparent 1px);
-  background-size: 34px 34px;
-  background-position: center;
-  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
-  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
-  pointer-events: none;
-}
-.rf-grid--soft {
-  -webkit-mask-image: radial-gradient(90% 120% at 50% 50%, #000 10%, transparent 70%);
-  mask-image: radial-gradient(90% 120% at 50% 50%, #000 10%, transparent 70%);
-  opacity: 0.7;
-}
-.rf-glow {
-  position: absolute;
-  inset: -20% -10% auto -10%;
-  height: 620px;
-  background:
-    radial-gradient(46% 60% at 24% 28%, rgba(120, 162, 255, 0.22), transparent 70%),
-    radial-gradient(40% 55% at 82% 16%, rgba(255, 158, 107, 0.16), transparent 72%);
-  filter: blur(6px);
-  pointer-events: none;
-}
-
+/* ── buttons ──────────────────────────────────────────────────────────── */
 .rf-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 18px;
-  border-radius: 9px;
+  padding: 11px 20px;
+  border-radius: 8px;
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: 14px;
   letter-spacing: -0.01em;
   text-decoration: none;
-  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
   white-space: nowrap;
+  border: none;
 }
-.rf-btn svg { transition: transform 0.18s ease; }
+.rf-btn svg { transition: transform 0.16s ease; }
 .rf-btn--warm {
-  background: linear-gradient(180deg, var(--warm-bright), var(--warm));
-  color: #2a160c;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset, 0 10px 26px -12px rgba(255, 158, 107, 0.7);
+  background: var(--warm);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(200, 92, 36, 0.35), 0 4px 16px -4px rgba(200, 92, 36, 0.4);
 }
-.rf-btn--warm:hover { transform: translateY(-2px); }
+.rf-btn--warm:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(200, 92, 36, 0.4), 0 8px 24px -4px rgba(200, 92, 36, 0.35); }
 .rf-btn--warm:hover svg { transform: translateX(3px); }
 .rf-btn--ghost {
-  background: rgba(143, 180, 255, 0.06);
-  color: var(--cool-bright);
-  border: 1px solid var(--edge-2);
+  background: transparent;
+  color: var(--ink-2);
+  border: 1.5px solid var(--edge-2);
 }
 .rf-btn--ghost:hover {
-  background: rgba(143, 180, 255, 0.12);
-  border-color: var(--cool);
-  transform: translateY(-2px);
-}
-
-.rf-kicker {
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--cool);
+  background: var(--bg-dim);
+  border-color: var(--ink);
+  transform: translateY(-1px);
 }
 
 /* ── hero ─────────────────────────────────────────────────────────────── */
 .rf-hero {
-  padding-top: calc(var(--vp-nav-height, 64px) + 86px);
-  padding-bottom: 92px;
+  padding-top: calc(var(--vp-nav-height, 64px) + 80px);
+  padding-bottom: 88px;
   border-bottom: 1px solid var(--edge);
 }
 .rf-hero__inner {
-  position: relative;
   max-width: 1080px;
   margin: 0 auto;
 }
+
 .rf-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 9px;
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   color: var(--muted);
-  padding: 6px 13px 6px 11px;
-  border: 1px solid var(--edge);
+  padding: 5px 12px 5px 10px;
+  border: 1px solid var(--edge-2);
   border-radius: 999px;
-  background: rgba(143, 180, 255, 0.04);
 }
 .rf-tick {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--warm);
-  box-shadow: 0 0 0 4px rgba(255, 158, 107, 0.18);
+  flex-shrink: 0;
 }
+
 .rf-title {
   font-family: var(--display);
   font-weight: 450;
-  font-size: clamp(2.9rem, 7.2vw, 5.6rem);
-  line-height: 0.98;
-  letter-spacing: -0.025em;
-  margin: 26px 0 0;
+  font-size: clamp(3rem, 7.4vw, 5.8rem);
+  line-height: 0.97;
+  letter-spacing: -0.028em;
+  margin: 24px 0 0;
   max-width: 16ch;
+  color: var(--ink);
 }
 .rf-title span { display: inline; }
 .rf-title__accent {
   font-style: italic;
   color: transparent;
-  background: linear-gradient(96deg, var(--warm-bright), var(--warm));
+  background: linear-gradient(110deg, var(--warm-2), var(--warm));
   -webkit-background-clip: text;
   background-clip: text;
 }
+
 .rf-lede {
-  margin: 28px 0 0;
-  max-width: 60ch;
-  font-size: clamp(1.05rem, 1.6vw, 1.28rem);
-  line-height: 1.6;
+  margin: 26px 0 0;
+  max-width: 58ch;
+  font-size: clamp(1.05rem, 1.5vw, 1.22rem);
+  line-height: 1.65;
   color: var(--muted);
 }
+
 .rf-cta {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 34px;
+  gap: 10px;
+  margin-top: 32px;
 }
 
-/* ── pipeline ─────────────────────────────────────────────────────────── */
+/* ── pipeline diagram ─────────────────────────────────────────────────── */
 .rf-pipe {
-  margin-top: 68px;
+  margin-top: 64px;
   display: grid;
   grid-template-columns: 1fr auto 1fr auto 1fr;
   align-items: stretch;
   gap: 4px;
 }
+
 .rf-stage {
   margin: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: linear-gradient(180deg, var(--ink-2), var(--ink-1));
+  background: var(--bg);
   border: 1px solid var(--edge-2);
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 16px;
   position: relative;
+  box-shadow: 0 1px 4px rgba(17, 17, 16, 0.06);
 }
-/* corner ticks — blueprint detail */
-.rf-stage::before,
-.rf-stage::after {
-  content: '';
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  border: 1.5px solid var(--cool);
-  opacity: 0.5;
-}
-.rf-stage::before { top: 7px; left: 7px; border-right: 0; border-bottom: 0; }
-.rf-stage::after { bottom: 7px; right: 7px; border-left: 0; border-top: 0; }
+
 .rf-stage__cap {
   font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--cool);
   display: flex;
@@ -356,12 +307,13 @@ onBeforeUnmount(() => observer?.disconnect());
 .rf-stage__cap i {
   font-style: normal;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10.5px;
 }
+
 .rf-stage__body {
   flex: 1;
-  border-radius: 9px;
-  background: rgba(4, 7, 16, 0.6);
+  border-radius: 8px;
+  background: var(--bg-dim);
   border: 1px solid var(--edge);
   display: flex;
   align-items: center;
@@ -369,19 +321,20 @@ onBeforeUnmount(() => observer?.disconnect());
 .rf-stage__body--code { align-items: stretch; }
 .rf-stage__body pre {
   margin: 0;
-  padding: 13px 14px;
+  padding: 12px 14px;
   overflow: auto;
   width: 100%;
 }
 .rf-stage__body code {
   font-family: var(--mono);
-  font-size: 12.5px;
-  line-height: 1.7;
-  color: var(--cool-bright);
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--ink-2);
   white-space: pre;
 }
-.rf-stage__body .t-key { color: var(--warm); }
-.rf-stage__body .t-str { color: #9be6c0; }
+.rf-stage__body .t-key { color: var(--warm); font-weight: 500; }
+.rf-stage__body .t-str { color: #1e6640; }
+
 .rf-stage__note {
   font-family: var(--mono);
   font-size: 11px;
@@ -390,14 +343,16 @@ onBeforeUnmount(() => observer?.disconnect());
   color: var(--muted);
 }
 .rf-stage__note--warm { color: var(--warm); }
-.rf-stage--ui { border-color: rgba(255, 158, 107, 0.42); }
-.rf-stage--ui::before,
-.rf-stage--ui::after { border-color: var(--warm); opacity: 0.7; }
+
+.rf-stage--ui {
+  border-color: rgba(200, 92, 36, 0.3);
+}
 .rf-stage--ui .rf-stage__body {
-  box-shadow: 0 0 50px -18px rgba(255, 158, 107, 0.6) inset;
+  background: #fff8f4;
+  border-color: rgba(200, 92, 36, 0.14);
 }
 
-/* mini rendered table */
+/* mini rendered table inside stage 03 */
 .rf-mini {
   width: 100%;
   padding: 12px;
@@ -412,32 +367,35 @@ onBeforeUnmount(() => observer?.disconnect());
   align-items: center;
 }
 .rf-mini__row b {
-  height: 8px;
+  height: 7px;
   border-radius: 3px;
-  background: rgba(196, 216, 255, 0.18);
+  background: rgba(17, 17, 16, 0.1);
 }
-.rf-mini__row--head b { background: var(--warm); opacity: 0.85; height: 7px; }
+.rf-mini__row--head b {
+  background: var(--warm);
+  opacity: 0.7;
+  height: 6px;
+}
 .rf-mini__row b:nth-child(3) {
-  background: rgba(255, 158, 107, 0.4);
+  background: rgba(200, 92, 36, 0.28);
   border-radius: 999px;
 }
 
-/* flow connector */
+/* flow connectors */
 .rf-flow {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-width: 84px;
+  gap: 7px;
+  min-width: 80px;
   padding: 0 6px;
 }
 .rf-flow__line {
   position: relative;
   width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, var(--edge-2), var(--cool), var(--edge-2));
-  border-radius: 2px;
+  height: 1px;
+  background: var(--edge-2);
   overflow: hidden;
 }
 .rf-flow__pulse {
@@ -446,12 +404,12 @@ onBeforeUnmount(() => observer?.disconnect());
   left: -40%;
   width: 40%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--warm-bright), transparent);
+  background: linear-gradient(90deg, transparent, var(--warm), transparent);
   animation: rf-pulse 2.6s linear infinite;
 }
 .rf-flow__verb {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--warm);
   letter-spacing: 0.02em;
 }
@@ -459,85 +417,115 @@ onBeforeUnmount(() => observer?.disconnect());
   to { left: 120%; }
 }
 
-/* ── generic section ──────────────────────────────────────────────────── */
-.rf-section { padding-top: 92px; padding-bottom: 92px; }
-.rf-head { max-width: 1080px; margin: 0 auto 40px; }
+/* ── section / head shared ────────────────────────────────────────────── */
+.rf-head {
+  max-width: 1080px;
+  margin: 0 auto 40px;
+}
 .rf-head h2 {
   font-family: var(--display);
   font-weight: 450;
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.03;
-  letter-spacing: -0.02em;
-  margin: 12px 0 0;
+  letter-spacing: -0.022em;
+  margin: 10px 0 0;
+  color: var(--ink);
 }
 .rf-head p {
-  margin: 16px 0 0;
+  margin: 14px 0 0;
   max-width: 56ch;
   color: var(--muted);
-  font-size: 1.08rem;
-  line-height: 1.6;
+  font-size: 1.06rem;
+  line-height: 1.65;
+}
+.rf-kicker {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
-/* ── showcase (spec-rendered section) ────────────────────────────────── */
+/* ── showcase ─────────────────────────────────────────────────────────── */
 .rf-showcase {
-  background: #f6f8fc;
+  padding-top: 80px;
+  padding-bottom: 80px;
+  background: var(--bg-dim);
   border-top: 1px solid var(--edge);
   border-bottom: 1px solid var(--edge);
 }
-.rf-showcase .rf-head { color: var(--ink); }
-.rf-showcase .rf-head h2 { color: var(--ink); }
-.rf-showcase .rf-head p { color: #4a5571; }
-.rf-showcase .rf-kicker { color: #6b7fa3; }
 .rf-showcase code {
   font-family: var(--mono);
-  font-size: 0.88em;
-  background: rgba(100, 130, 200, 0.1);
+  font-size: 0.87em;
+  background: rgba(17, 17, 16, 0.06);
   border-radius: 4px;
   padding: 1px 5px;
-  color: #3a5080;
+  color: var(--cool);
 }
 .rf-showcase__body {
   max-width: 1080px;
   margin: 0 auto;
-  padding-bottom: var(--sl-spacing-4x-large, 3rem);
-}
-.rf-showcase__body :deep(.rf-showcase-loading) {
-  padding: 2rem;
-  text-align: center;
-  color: #6b7fa3;
 }
 
 /* ── final cta ────────────────────────────────────────────────────────── */
 .rf-final {
+  padding: 92px 24px;
   text-align: center;
+  background: var(--bg);
   border-top: 1px solid var(--edge);
-  background: linear-gradient(180deg, var(--ink-1), var(--ink));
 }
-.rf-final__inner { position: relative; max-width: 760px; margin: 0 auto; }
+.rf-final__inner {
+  max-width: 680px;
+  margin: 0 auto;
+}
 .rf-final h2 {
   font-family: var(--display);
   font-weight: 450;
-  font-size: clamp(2.1rem, 5vw, 3.4rem);
-  line-height: 1.04;
-  letter-spacing: -0.025em;
-  margin: 0 0 30px;
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  line-height: 1.03;
+  letter-spacing: -0.026em;
+  margin: 0 0 28px;
+  color: var(--ink);
 }
 .rf-final .rf-cta { justify-content: center; }
-.rf-final__alt { margin-top: 26px; color: var(--muted); font-size: 14.5px; }
+.rf-final__alt {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
 
-.rf a:not(.rf-btn) { color: var(--cool-bright); text-decoration: none; border-bottom: 1px solid var(--edge-2); transition: border-color 0.15s ease; }
+/* ── links ────────────────────────────────────────────────────────────── */
+.rf a:not(.rf-btn) {
+  color: var(--cool);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(28, 58, 107, 0.25);
+  transition: border-color 0.14s ease;
+}
 .rf a:not(.rf-btn):hover { border-color: var(--cool); }
 
 /* ── motion ───────────────────────────────────────────────────────────── */
-.rf-load { opacity: 0; transform: translateY(14px); animation: rf-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: var(--d, 0ms); }
-/* progressive enhancement: content is visible by default; the hidden start
-   state is applied only once JS adds .rf--anim, so no-JS users see everything. */
-.rf--anim [data-reveal] { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.rf-load {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: rf-rise 0.65s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+.rf--anim [data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
 .rf--anim [data-reveal].is-in { opacity: 1; transform: none; }
 @keyframes rf-rise { to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .rf-load, [data-reveal] { animation: none !important; opacity: 1 !important; transform: none !important; transition: none !important; }
+  .rf-load,
+  [data-reveal] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
   .rf-flow__pulse { display: none; }
 }
 
@@ -546,11 +534,11 @@ onBeforeUnmount(() => observer?.disconnect());
   .rf-pipe { grid-template-columns: 1fr; }
   .rf-flow { flex-direction: row; min-width: 0; padding: 8px 0; gap: 12px; }
   .rf-flow__line { width: 60%; }
-  .rf-steps, .rf-specgrid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .rf section { padding-inline: 18px; }
-  .rf-section { padding-top: 64px; padding-bottom: 64px; }
-  .rf-hero { padding-top: calc(var(--vp-nav-height, 64px) + 48px); }
+  .rf-hero { padding-top: calc(var(--vp-nav-height, 64px) + 44px); padding-bottom: 60px; }
+  .rf-showcase { padding-top: 60px; padding-bottom: 60px; }
+  .rf-final { padding-top: 64px; padding-bottom: 64px; }
 }
 </style>

@@ -312,10 +312,31 @@ const spec = {
   ],
 };
 
+// Warm orange palette mapped onto Shoelace's primary scale so the
+// spec-rendered area (tab indicators, focus rings, primary buttons)
+// matches the landing-page brand instead of the default indigo.
+const WARM_PRIMARY: Record<string, string> = {
+  '--sl-color-primary-50': '#fdf4ee',
+  '--sl-color-primary-100': '#fbe6d3',
+  '--sl-color-primary-200': '#f5c89e',
+  '--sl-color-primary-300': '#eea766',
+  '--sl-color-primary-400': '#e8763e',
+  '--sl-color-primary-500': '#d56428',
+  '--sl-color-primary-600': '#c85c24',
+  '--sl-color-primary-700': '#a64a1d',
+  '--sl-color-primary-800': '#823917',
+  '--sl-color-primary-900': '#5e2a11',
+  '--sl-color-primary-950': '#3a1a0a',
+};
+
 onMounted(async () => {
   if (typeof window === 'undefined') return;
   await nextTick();
   if (!root.value) return;
+
+  for (const [key, value] of Object.entries(WARM_PRIMARY)) {
+    root.value.style.setProperty(key, value);
+  }
 
   if (!_worker) {
     const { setupWorker } = await import('msw/browser');

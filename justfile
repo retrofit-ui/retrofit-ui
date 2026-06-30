@@ -116,6 +116,18 @@ spa-assets:
 
 # ── docs ──────────────────────────────────────────────────────────────────────
 # Start the VitePress dev server, build, or preview the documentation site.
+# `just docs dev` also runs the renderer in watch mode so changes to
+# packages/spa-solid-shoelace/ui/ are picked up without a manual rebuild.
 
 docs cmd="dev":
-    cd docs && pnpm {{cmd}}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "{{cmd}}" = "dev" ]; then
+        pnpm -C packages/spa-solid-shoelace exec vite build \
+            --watch --config vite.renderer.config.ts &
+        RENDERER_PID=$!
+        trap "kill $RENDERER_PID 2>/dev/null" EXIT INT TERM
+        cd docs && pnpm dev
+    else
+        cd docs && pnpm {{cmd}}
+    fi

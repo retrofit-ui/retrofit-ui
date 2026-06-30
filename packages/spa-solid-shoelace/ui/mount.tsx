@@ -53,7 +53,10 @@ function mountIsland(
   const dispose = render(
     () => (
       <HashRouter>
-        <Route path="/*all" component={() => <SpecRenderer spec={spec} apiBase={apiBase} />} />
+        <Route
+          path="/*all"
+          component={() => <SpecRenderer spec={spec} apiBase={apiBase} />}
+        />
       </HashRouter>
     ),
     element,

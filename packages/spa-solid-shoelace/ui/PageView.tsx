@@ -1,5 +1,7 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
+import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
@@ -7,6 +9,7 @@ import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type {
   CalendarSpec,
+  CardSpec,
   Column,
   FilterFormSpec,
   FormSpec,
@@ -623,6 +626,42 @@ function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
   );
 }
 
+export function CardViewComponent(props: { spec: CardSpec }) {
+  return (
+    <sl-card style={{ display: 'block' }}>
+      <Show when={props.spec.header}>
+        <div slot="header" class="retrofit-card-header">
+          {props.spec.header}
+        </div>
+      </Show>
+      <div class="retrofit-card-body">
+        <For each={props.spec.children}>
+          {(child) => <ViewRenderer spec={child} />}
+        </For>
+      </div>
+      <Show when={props.spec.footer?.length}>
+        <div slot="footer" class="retrofit-card-footer">
+          <For each={props.spec.footer ?? []}>
+            {(btn) => (
+              <sl-button
+                size={btn.size ?? 'small'}
+                variant={btn.variant ?? 'default'}
+                outline={btn.outline}
+                href={btn.href}
+              >
+                <Show when={btn.icon}>
+                  <sl-icon slot="prefix" name={btn.icon} />
+                </Show>
+                {btn.label}
+              </sl-button>
+            )}
+          </For>
+        </div>
+      </Show>
+    </sl-card>
+  );
+}
+
 function ViewRenderer(props: { spec: ViewSpec }) {
   return (
     <Switch>
@@ -712,6 +751,9 @@ function ViewRenderer(props: { spec: ViewSpec }) {
       </Match>
       <Match when={props.spec.kind === 'timeline'}>
         <TimelineViewComponent spec={props.spec as TimelineSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'card'}>
+        <CardViewComponent spec={props.spec as CardSpec} />
       </Match>
     </Switch>
   );

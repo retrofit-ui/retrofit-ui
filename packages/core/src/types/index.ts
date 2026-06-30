@@ -5,7 +5,7 @@ export * from './page';
 export * from './resource-spec';
 export * from './table';
 
-import type { PageSpec } from './page';
+import type { CardSpec, PageSpec } from './page';
 import type {
   CalendarSpec,
   FormSpec,
@@ -25,4 +25,5 @@ export type RootSpec =
   | TreeSpec
   | TimelineSpec
   | MarkdownViewSpec
+  | CardSpec
   | PageSpec;

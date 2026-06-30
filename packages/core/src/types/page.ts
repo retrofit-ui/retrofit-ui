@@ -33,6 +33,28 @@ export interface LayoutConfig {
   columnTemplate?: string;
 }
 
+export interface CardFooterButton {
+  label: string;
+  icon?: string;
+  href?: string;
+  variant?:
+    | 'default'
+    | 'primary'
+    | 'neutral'
+    | 'success'
+    | 'warning'
+    | 'danger';
+  outline?: boolean;
+  size?: 'small' | 'medium' | 'large';
+}
+
+export interface CardSpec {
+  kind: 'card';
+  header?: string;
+  children: ViewSpec[];
+  footer?: CardFooterButton[];
+}
+
 export type ViewSpec =
   | {
       kind: 'flex';
@@ -56,6 +78,7 @@ export type ViewSpec =
   | { kind: 'filter-form'; spec: FilterFormSpec }
   | { kind: 'table'; spec: TableSpec }
   | { kind: 'markdown'; spec: MarkdownViewSpec }
+  | CardSpec
   | StatSpec
   | CalendarSpec
   | TreeSpec

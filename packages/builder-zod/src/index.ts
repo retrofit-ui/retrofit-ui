@@ -1,6 +1,8 @@
 export type {
   CalendarEvent,
   CalendarSpec,
+  CardFooterButton,
+  CardSpec,
   EndpointDirective,
   FilterField,
   FilterFormSpec,
@@ -20,6 +22,7 @@ export type {
   ViewSpec,
 } from '@retrofit-ui/core';
 export { CalendarView, CalendarViewBuilder } from './calendar-builder';
+export { CardView, CardViewBuilder } from './card-builder';
 export { FormBuilder, formFromSchema } from './FormBuilder';
 export { FormSpecBuilder, formSpec } from './form-builder';
 export {

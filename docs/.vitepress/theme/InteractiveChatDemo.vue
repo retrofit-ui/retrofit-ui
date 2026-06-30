@@ -31,7 +31,13 @@ const spec = {
         },
       ],
       footer: [
-        { label: 'Download', icon: 'download', size: 'small', variant: 'neutral', outline: true },
+        {
+          label: 'Download',
+          icon: 'download',
+          size: 'small',
+          variant: 'neutral',
+          outline: true,
+        },
       ],
     },
     // Turn 1 — assistant: stat overview + timeline
@@ -101,7 +107,13 @@ const spec = {
         },
       ],
       footer: [
-        { label: 'Download', icon: 'download', size: 'small', variant: 'neutral', outline: true },
+        {
+          label: 'Download',
+          icon: 'download',
+          size: 'small',
+          variant: 'neutral',
+          outline: true,
+        },
       ],
     },
     // Turn 2 — user
@@ -120,7 +132,13 @@ const spec = {
         },
       ],
       footer: [
-        { label: 'Download', icon: 'download', size: 'small', variant: 'neutral', outline: true },
+        {
+          label: 'Download',
+          icon: 'download',
+          size: 'small',
+          variant: 'neutral',
+          outline: true,
+        },
       ],
     },
     // Turn 2 — assistant: deadline stats + table
@@ -136,7 +154,11 @@ const spec = {
             {
               kind: 'stat',
               stats: [
-                { label: 'Overdue', value: 1, description: '1 task past due date' },
+                {
+                  label: 'Overdue',
+                  value: 1,
+                  description: '1 task past due date',
+                },
                 {
                   label: 'Due This Week',
                   value: 2,
@@ -207,7 +229,13 @@ const spec = {
         },
       ],
       footer: [
-        { label: 'Download', icon: 'download', size: 'small', variant: 'neutral', outline: true },
+        {
+          label: 'Download',
+          icon: 'download',
+          size: 'small',
+          variant: 'neutral',
+          outline: true,
+        },
       ],
     },
     // Turn 3 — user
@@ -226,7 +254,13 @@ const spec = {
         },
       ],
       footer: [
-        { label: 'Download', icon: 'download', size: 'small', variant: 'neutral', outline: true },
+        {
+          label: 'Download',
+          icon: 'download',
+          size: 'small',
+          variant: 'neutral',
+          outline: true,
+        },
       ],
     },
     // Turn 3 — assistant: 3-column comparison grid
@@ -273,7 +307,13 @@ const spec = {
         },
       ],
       footer: [
-        { label: 'Download', icon: 'download', size: 'small', variant: 'neutral', outline: true },
+        {
+          label: 'Download',
+          icon: 'download',
+          size: 'small',
+          variant: 'neutral',
+          outline: true,
+        },
       ],
     },
   ],

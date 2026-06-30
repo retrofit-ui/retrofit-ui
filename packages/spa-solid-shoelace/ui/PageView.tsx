@@ -1,4 +1,5 @@
 import '@shoelace-style/shoelace/dist/components/button/button.js';
+import '@shoelace-style/shoelace/dist/components/card/card.js';
 import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/input/input.js';
 import '@shoelace-style/shoelace/dist/components/option/option.js';
@@ -7,6 +8,7 @@ import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type {
   CalendarSpec,
+  CardSpec,
   Column,
   FilterFormSpec,
   FormSpec,
@@ -623,6 +625,30 @@ function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
   );
 }
 
+export function CardViewComponent(props: { spec: CardSpec }) {
+  return (
+    <sl-card style={{ display: 'block' }}>
+      <Show when={props.spec.header}>
+        <div slot="header" class="retrofit-card-header">
+          {props.spec.header}
+        </div>
+      </Show>
+      <div class="retrofit-card-body">
+        <For each={props.spec.children}>
+          {(child) => <ViewRenderer spec={child} />}
+        </For>
+      </div>
+      <Show when={props.spec.footer}>
+        {(footer) => (
+          <div slot="footer">
+            <ViewRenderer spec={footer()} />
+          </div>
+        )}
+      </Show>
+    </sl-card>
+  );
+}
+
 function ViewRenderer(props: { spec: ViewSpec }) {
   return (
     <Switch>
@@ -712,6 +738,9 @@ function ViewRenderer(props: { spec: ViewSpec }) {
       </Match>
       <Match when={props.spec.kind === 'timeline'}>
         <TimelineViewComponent spec={props.spec as TimelineSpec} />
+      </Match>
+      <Match when={props.spec.kind === 'card'}>
+        <CardViewComponent spec={props.spec as CardSpec} />
       </Match>
     </Switch>
   );

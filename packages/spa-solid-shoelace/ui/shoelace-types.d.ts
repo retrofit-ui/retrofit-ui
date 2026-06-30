@@ -239,6 +239,9 @@ declare module 'solid-js' {
         numeric?: 'always' | 'auto';
         sync?: boolean;
       };
+      'sl-card': JSX.HTMLAttributes<HTMLElement> & {
+        children?: JSX.Element;
+      };
     }
   }
 }

@@ -2,6 +2,39 @@ import { expect, test } from '@playwright/test';
 
 const CHAT_URL = '/#/chat';
 
+test.describe('Card wrapper structure', () => {
+  test('renders 6 sl-card elements — one per turn', async ({ page }) => {
+    await page.goto(CHAT_URL);
+    await page.waitForSelector('sl-card');
+    await expect(page.locator('sl-card')).toHaveCount(6);
+  });
+
+  test('user turns have "You" header', async ({ page }) => {
+    await page.goto(CHAT_URL);
+    await page.waitForSelector('sl-card');
+    const youHeaders = page
+      .locator('sl-card [slot="header"]')
+      .filter({ hasText: 'You' });
+    await expect(youHeaders).toHaveCount(3);
+  });
+
+  test('assistant turns have "Assistant" header', async ({ page }) => {
+    await page.goto(CHAT_URL);
+    await page.waitForSelector('sl-card');
+    const assistantHeaders = page
+      .locator('sl-card [slot="header"]')
+      .filter({ hasText: 'Assistant' });
+    await expect(assistantHeaders).toHaveCount(3);
+  });
+
+  test('every card footer contains a form', async ({ page }) => {
+    await page.goto(CHAT_URL);
+    await page.waitForSelector('sl-card');
+    const footerForms = page.locator('sl-card [slot="footer"] form');
+    await expect(footerForms).toHaveCount(6);
+  });
+});
+
 test.describe('Chat page structure', () => {
   test('renders the Agenda Assistant page title', async ({ page }) => {
     await page.goto(CHAT_URL);

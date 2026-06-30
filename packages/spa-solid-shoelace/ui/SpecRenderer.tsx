@@ -1,5 +1,6 @@
 import type {
   CalendarSpec,
+  CardSpec,
   FormSpec,
   MarkdownViewSpec,
   PageSpec,
@@ -14,7 +15,7 @@ import { CalendarViewComponent } from './CalendarView';
 import { ApiBaseContext } from './context';
 import { FormViewComponent } from './FormView';
 import { MarkdownViewComponent } from './MarkdownView';
-import { PageView } from './PageView';
+import { CardViewComponent, PageView } from './PageView';
 import { StatViewComponent } from './StatView';
 import { TableViewComponent } from './TableView';
 import { TimelineViewComponent } from './TimelineView';
@@ -52,6 +53,9 @@ export function SpecRenderer(props: { spec: RootSpec; apiBase: string }) {
             spec={props.spec as MarkdownViewSpec}
             entityId={(props.spec as MarkdownViewSpec).entityId ?? ''}
           />
+        </Match>
+        <Match when={props.spec.kind === 'card'}>
+          <CardViewComponent spec={props.spec as CardSpec} />
         </Match>
       </Switch>
     </ApiBaseContext.Provider>

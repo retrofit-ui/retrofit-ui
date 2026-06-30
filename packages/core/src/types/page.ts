@@ -33,6 +33,13 @@ export interface LayoutConfig {
   columnTemplate?: string;
 }
 
+export interface CardSpec {
+  kind: 'card';
+  header?: string;
+  children: ViewSpec[];
+  footer?: ViewSpec;
+}
+
 export type ViewSpec =
   | {
       kind: 'flex';
@@ -56,6 +63,7 @@ export type ViewSpec =
   | { kind: 'filter-form'; spec: FilterFormSpec }
   | { kind: 'table'; spec: TableSpec }
   | { kind: 'markdown'; spec: MarkdownViewSpec }
+  | CardSpec
   | StatSpec
   | CalendarSpec
   | TreeSpec

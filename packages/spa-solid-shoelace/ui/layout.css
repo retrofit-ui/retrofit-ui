@@ -291,6 +291,17 @@
   margin-top: var(--sl-spacing-2x-small);
 }
 
+/* Card view */
+.retrofit-card-header {
+  font-size: var(--sl-font-size-small);
+  font-weight: var(--sl-font-weight-semibold);
+  color: var(--sl-color-neutral-700);
+}
+
+.retrofit-card-body > * + * {
+  margin-top: var(--sl-spacing-medium);
+}
+
 /* Calendar view */
 .retrofit-calendar {
   font-family: var(--sl-font-sans);

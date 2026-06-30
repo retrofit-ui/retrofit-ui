@@ -10,6 +10,15 @@ const MESSAGES: Record<string, string> = {
   '3': 'How does my workload this week **compare to last week**?',
 };
 
+const DOWNLOAD_FOOTER = {
+  kind: 'form',
+  spec: {
+    kind: 'form',
+    fields: [],
+    endpoints: { create: { url: '/api/chat-messages/export', method: 'POST' } },
+  },
+};
+
 const spec = {
   kind: 'page',
   title: 'Agenda Assistant',
@@ -17,210 +26,256 @@ const spec = {
   children: [
     // Turn 1 — user
     {
-      kind: 'markdown',
-      spec: {
-        kind: 'markdown',
-        entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-        field: 'text',
-        entityId: '1',
-      },
-    },
-    // Turn 1 — assistant: stat overview + timeline
-    {
-      kind: 'flex',
-      direction: 'column',
-      gap: '1rem',
+      kind: 'card',
+      header: 'You',
       children: [
         {
-          kind: 'stat',
-          stats: [
-            { label: 'Meetings Today', value: 4 },
-            {
-              label: 'Focus Blocks',
-              value: 2,
-              description: '3 hours of deep work',
-            },
-            { label: 'Hours Scheduled', value: '6.5h' },
-          ],
-        },
-        {
-          kind: 'timeline',
-          events: [
-            {
-              timestamp: '2026-06-29T09:00:00',
-              title: 'Sprint Standup',
-              description: '15 min daily sync with engineering team',
-              variant: 'primary',
-            },
-            {
-              timestamp: '2026-06-29T11:00:00',
-              title: 'Design Review',
-              description: 'Review new dashboard wireframes',
-              variant: 'neutral',
-            },
-            {
-              timestamp: '2026-06-29T12:30:00',
-              title: 'Team Lunch',
-              description: 'Monthly team lunch — La Paloma restaurant',
-              variant: 'success',
-            },
-            {
-              timestamp: '2026-06-29T14:00:00',
-              title: '1:1 with Manager',
-              description: 'Weekly check-in and career development',
-              variant: 'primary',
-            },
-            {
-              timestamp: '2026-06-29T15:00:00',
-              title: 'Focus Block',
-              description: 'Deep work: Retrofit UI v1.0 release prep',
-              variant: 'warning',
-            },
-            {
-              timestamp: '2026-06-29T16:30:00',
-              title: 'Code Review',
-              description: 'Review open PRs from the team',
-              variant: 'neutral',
-            },
-          ],
-        },
-      ],
-    },
-    // Turn 2 — user
-    {
-      kind: 'markdown',
-      spec: {
-        kind: 'markdown',
-        entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-        field: 'text',
-        entityId: '2',
-      },
-    },
-    // Turn 2 — assistant: deadline stats + table
-    {
-      kind: 'flex',
-      direction: 'column',
-      gap: '1rem',
-      children: [
-        {
-          kind: 'stat',
-          stats: [
-            { label: 'Overdue', value: 1, description: '1 task past due date' },
-            {
-              label: 'Due This Week',
-              value: 2,
-              description: 'By end of June 30',
-            },
-            { label: 'Due Next Week', value: 3, description: 'July 2–8' },
-          ],
-        },
-        {
-          kind: 'table',
+          kind: 'markdown',
           spec: {
-            kind: 'table',
-            columns: [
-              { key: 'project', label: 'Project', type: 'string' },
-              { key: 'task', label: 'Task', type: 'string' },
-              { key: 'dueDate', label: 'Due Date', type: 'string' },
-              {
-                key: 'priority',
-                label: 'Priority',
-                type: 'enum',
-                options: [
-                  { label: 'High', value: 'high' },
-                  { label: 'Medium', value: 'medium' },
-                  { label: 'Low', value: 'low' },
-                ],
-              },
-            ],
-            rows: [
-              {
-                id: 1,
-                project: 'Retrofit UI',
-                task: 'Ship v1.0 docs',
-                dueDate: '2026-06-30',
-                priority: 'high',
-              },
-              {
-                id: 2,
-                project: 'Mobile App',
-                task: 'Fix auth crash',
-                dueDate: '2026-06-30',
-                priority: 'high',
-              },
-              {
-                id: 3,
-                project: 'API',
-                task: 'Rate limiting',
-                dueDate: '2026-07-02',
-                priority: 'medium',
-              },
-              {
-                id: 4,
-                project: 'Dashboard',
-                task: 'Export CSV',
-                dueDate: '2026-07-03',
-                priority: 'medium',
-              },
-              {
-                id: 5,
-                project: 'Infra',
-                task: 'DB migration',
-                dueDate: '2026-07-07',
-                priority: 'low',
-              },
-            ],
+            kind: 'markdown',
+            entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
+            field: 'text',
+            entityId: '1',
           },
         },
       ],
+      footer: DOWNLOAD_FOOTER,
     },
-    // Turn 3 — user
+    // Turn 1 — assistant: stat overview + timeline
     {
-      kind: 'markdown',
-      spec: {
-        kind: 'markdown',
-        entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-        field: 'text',
-        entityId: '3',
-      },
-    },
-    // Turn 3 — assistant: 3-column comparison grid
-    {
-      kind: 'grid',
-      columns: 3,
-      gap: '1rem',
+      kind: 'card',
+      header: 'Assistant',
       children: [
         {
-          kind: 'stat',
-          stats: [
+          kind: 'flex',
+          direction: 'column',
+          gap: '1rem',
+          children: [
             {
-              label: 'This Week',
-              value: '14h',
-              description: 'Meetings + focus time',
+              kind: 'stat',
+              stats: [
+                { label: 'Meetings Today', value: 4 },
+                {
+                  label: 'Focus Blocks',
+                  value: 2,
+                  description: '3 hours of deep work',
+                },
+                { label: 'Hours Scheduled', value: '6.5h' },
+              ],
             },
-          ],
-        },
-        {
-          kind: 'stat',
-          stats: [
             {
-              label: 'Last Week',
-              value: '11h',
-              description: 'Meetings + focus time',
-            },
-          ],
-        },
-        {
-          kind: 'stat',
-          stats: [
-            {
-              label: 'Change',
-              value: '+27%',
-              description: '3h more than last week',
+              kind: 'timeline',
+              events: [
+                {
+                  timestamp: '2026-06-29T09:00:00',
+                  title: 'Sprint Standup',
+                  description: '15 min daily sync with engineering team',
+                  variant: 'primary',
+                },
+                {
+                  timestamp: '2026-06-29T11:00:00',
+                  title: 'Design Review',
+                  description: 'Review new dashboard wireframes',
+                  variant: 'neutral',
+                },
+                {
+                  timestamp: '2026-06-29T12:30:00',
+                  title: 'Team Lunch',
+                  description: 'Monthly team lunch — La Paloma restaurant',
+                  variant: 'success',
+                },
+                {
+                  timestamp: '2026-06-29T14:00:00',
+                  title: '1:1 with Manager',
+                  description: 'Weekly check-in and career development',
+                  variant: 'primary',
+                },
+                {
+                  timestamp: '2026-06-29T15:00:00',
+                  title: 'Focus Block',
+                  description: 'Deep work: Retrofit UI v1.0 release prep',
+                  variant: 'warning',
+                },
+                {
+                  timestamp: '2026-06-29T16:30:00',
+                  title: 'Code Review',
+                  description: 'Review open PRs from the team',
+                  variant: 'neutral',
+                },
+              ],
             },
           ],
         },
       ],
+      footer: DOWNLOAD_FOOTER,
+    },
+    // Turn 2 — user
+    {
+      kind: 'card',
+      header: 'You',
+      children: [
+        {
+          kind: 'markdown',
+          spec: {
+            kind: 'markdown',
+            entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
+            field: 'text',
+            entityId: '2',
+          },
+        },
+      ],
+      footer: DOWNLOAD_FOOTER,
+    },
+    // Turn 2 — assistant: deadline stats + table
+    {
+      kind: 'card',
+      header: 'Assistant',
+      children: [
+        {
+          kind: 'flex',
+          direction: 'column',
+          gap: '1rem',
+          children: [
+            {
+              kind: 'stat',
+              stats: [
+                {
+                  label: 'Overdue',
+                  value: 1,
+                  description: '1 task past due date',
+                },
+                {
+                  label: 'Due This Week',
+                  value: 2,
+                  description: 'By end of June 30',
+                },
+                { label: 'Due Next Week', value: 3, description: 'July 2–8' },
+              ],
+            },
+            {
+              kind: 'table',
+              spec: {
+                kind: 'table',
+                columns: [
+                  { key: 'project', label: 'Project', type: 'string' },
+                  { key: 'task', label: 'Task', type: 'string' },
+                  { key: 'dueDate', label: 'Due Date', type: 'string' },
+                  {
+                    key: 'priority',
+                    label: 'Priority',
+                    type: 'enum',
+                    options: [
+                      { label: 'High', value: 'high' },
+                      { label: 'Medium', value: 'medium' },
+                      { label: 'Low', value: 'low' },
+                    ],
+                  },
+                ],
+                rows: [
+                  {
+                    id: 1,
+                    project: 'Retrofit UI',
+                    task: 'Ship v1.0 docs',
+                    dueDate: '2026-06-30',
+                    priority: 'high',
+                  },
+                  {
+                    id: 2,
+                    project: 'Mobile App',
+                    task: 'Fix auth crash',
+                    dueDate: '2026-06-30',
+                    priority: 'high',
+                  },
+                  {
+                    id: 3,
+                    project: 'API',
+                    task: 'Rate limiting',
+                    dueDate: '2026-07-02',
+                    priority: 'medium',
+                  },
+                  {
+                    id: 4,
+                    project: 'Dashboard',
+                    task: 'Export CSV',
+                    dueDate: '2026-07-03',
+                    priority: 'medium',
+                  },
+                  {
+                    id: 5,
+                    project: 'Infra',
+                    task: 'DB migration',
+                    dueDate: '2026-07-07',
+                    priority: 'low',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      footer: DOWNLOAD_FOOTER,
+    },
+    // Turn 3 — user
+    {
+      kind: 'card',
+      header: 'You',
+      children: [
+        {
+          kind: 'markdown',
+          spec: {
+            kind: 'markdown',
+            entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
+            field: 'text',
+            entityId: '3',
+          },
+        },
+      ],
+      footer: DOWNLOAD_FOOTER,
+    },
+    // Turn 3 — assistant: 3-column comparison grid
+    {
+      kind: 'card',
+      header: 'Assistant',
+      children: [
+        {
+          kind: 'grid',
+          columns: 3,
+          gap: '1rem',
+          children: [
+            {
+              kind: 'stat',
+              stats: [
+                {
+                  label: 'This Week',
+                  value: '14h',
+                  description: 'Meetings + focus time',
+                },
+              ],
+            },
+            {
+              kind: 'stat',
+              stats: [
+                {
+                  label: 'Last Week',
+                  value: '11h',
+                  description: 'Meetings + focus time',
+                },
+              ],
+            },
+            {
+              kind: 'stat',
+              stats: [
+                {
+                  label: 'Change',
+                  value: '+27%',
+                  description: '3h more than last week',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      footer: DOWNLOAD_FOOTER,
     },
   ],
 };

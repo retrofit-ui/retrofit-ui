@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import { getController } from './useRetrofitController';
+import { onMounted, ref } from 'vue';
+import MultiViewDemo, { type DemoView } from './MultiViewDemo.vue';
 
-const root = ref<HTMLElement>();
+const demo = ref<InstanceType<typeof MultiViewDemo>>();
 
 let _worker: { stop: () => void } | null = null;
 
@@ -14,6 +14,7 @@ const _posts = [
     status: 'published',
     author: 'Alice',
     updatedAt: '2025-06-01',
+    body: '# Getting Started with retrofit-ui\n\n**retrofit-ui** generates a full admin UI from your Zod schemas — no frontend code required.\n\n## Why server-driven?\n\nWhen the server owns the UI spec, adding a field to your Zod schema is all you need to do. The form updates on the next request — zero frontend work.\n\n## Quick example\n\n```typescript\nconst bundle = TableFormWorkflowBundle\n  .schema(PostSchema)\n  .list({ method: "GET", url: "/posts" })\n  .build();\n```',
   },
   {
     id: 2,
@@ -22,6 +23,7 @@ const _posts = [
     status: 'published',
     author: 'Bob',
     updatedAt: '2025-06-10',
+    body: '# Server-Driven Admin UIs\n\nThe key insight: your server already knows the shape of your data. retrofit-ui lets the server describe the UI — columns, fields, validation — and the SPA renders it without any custom frontend code.',
   },
   {
     id: 3,
@@ -30,11 +32,12 @@ const _posts = [
     status: 'draft',
     author: 'Alice',
     updatedAt: '2025-06-20',
+    body: '# Advanced Table Patterns\n\nSortable columns, filterable enums, row actions, and pagination — all configured server-side.',
   },
 ];
 let _nextId = 4;
 
-const spec = {
+const tableSpec = {
   kind: 'table',
   title: 'Posts',
   columns: [
@@ -61,16 +64,93 @@ const spec = {
   },
 };
 
+// Mirrors what the server returns at GET /api/ui/posts/:id
+const editFormSpec = {
+  kind: 'form',
+  fields: [
+    {
+      name: 'title',
+      label: 'Title',
+      type: 'text',
+      required: true,
+      value: 'Getting started with retrofit-ui',
+      validation: { max: 200 },
+    },
+    {
+      name: 'slug',
+      label: 'Slug',
+      type: 'text',
+      required: true,
+      value: 'getting-started',
+      helpText: 'lowercase, hyphens only',
+      validation: { pattern: '^[a-z0-9-]+$' },
+    },
+    {
+      name: 'body',
+      label: 'Body',
+      type: 'markdown',
+      required: true,
+      value: '# Getting Started\n\nretrofit-ui generates a full admin UI from your Zod schemas.',
+    },
+    {
+      name: 'status',
+      label: 'Status',
+      type: 'select',
+      required: true,
+      value: 'published',
+      options: [
+        { label: 'Draft', value: 'draft' },
+        { label: 'Published', value: 'published' },
+        { label: 'Archived', value: 'archived' },
+      ],
+    },
+    {
+      name: 'tags',
+      label: 'Tags',
+      type: 'text',
+      required: false,
+      helpText: 'comma-separated',
+      value: 'retrofit, admin, tutorial',
+    },
+    { name: 'author', label: 'Author', type: 'text', required: false, readOnly: true, value: 'Alice' },
+    { name: 'updatedAt', label: 'Updated', type: 'text', required: false, readOnly: true, value: '2025-06-01' },
+  ],
+  endpoints: {
+    create: { method: 'POST', url: '/posts' },
+    update: { method: 'PUT', url: '/posts/{id}' },
+    delete: { method: 'DELETE', url: '/posts/{id}' },
+  },
+  metadata: { title: 'Edit Post' },
+};
+
+// Mirrors what the server returns at GET /api/ui/posts/:id/render
+const renderSpec = {
+  kind: 'markdown',
+  entityEndpoint: { method: 'GET', url: '/posts/{id}' },
+  field: 'body',
+  entityId: '1',
+  metadata: { title: 'Render Preview' },
+};
+
+const views: DemoView[] = [
+  { label: 'Table', spec: tableSpec },
+  { label: 'Edit Form', spec: editFormSpec },
+  { label: 'Preview', spec: renderSpec },
+];
+
 onMounted(async () => {
   if (typeof window === 'undefined') return;
-  await nextTick();
-  if (!root.value) return;
 
   if (!_worker) {
     const { setupWorker } = await import('msw/browser');
     const { http, HttpResponse } = await import('msw');
     _worker = setupWorker(
       http.get('/posts', () => HttpResponse.json([..._posts])),
+      http.get('/posts/:id', ({ params }) => {
+        const post = _posts.find((p) => p.id === Number(params.id));
+        if (!post) return new HttpResponse(null, { status: 404 });
+        return HttpResponse.json(post);
+      }),
       http.post('/posts', async ({ request }) => {
         const body = (await request.json()) as Record<string, unknown>;
         const post = {
@@ -78,43 +158,32 @@ onMounted(async () => {
           status: 'draft',
           author: 'You',
           updatedAt: new Date().toISOString().slice(0, 10),
+          body: '',
           ...body,
         };
         _posts.push(post as (typeof _posts)[0]);
         return HttpResponse.json(post, { status: 201 });
       }),
+      http.put('/posts/:id', async ({ params, request }) => {
+        const body = (await request.json()) as Record<string, unknown>;
+        const idx = _posts.findIndex((p) => p.id === Number(params.id));
+        if (idx === -1) return new HttpResponse(null, { status: 404 });
+        Object.assign(_posts[idx], body);
+        return HttpResponse.json(_posts[idx]);
+      }),
+      http.delete('/posts/:id', ({ params }) => {
+        const idx = _posts.findIndex((p) => p.id === Number(params.id));
+        if (idx !== -1) _posts.splice(idx, 1);
+        return new HttpResponse(null, { status: 204 });
+      }),
     );
     await _worker.start({ onUnhandledRequest: 'bypass', quiet: true });
   }
 
-  const controller = await getController();
-  controller.mount(spec, root.value);
-});
-
-onBeforeUnmount(() => {
-  const el = root.value;
-  if (el) {
-    getController().then((ctrl) => ctrl.unmount(el));
-  }
+  await demo.value?.start(views);
 });
 </script>
 
 <template>
-  <ClientOnly>
-    <div class="live-demo-container">
-      <div class="live-demo-header">
-        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true">
-          <circle cx="4" cy="4" r="3" fill="currentColor" fill-opacity="0.4" />
-          <circle cx="4" cy="4" r="1.5" />
-        </svg>
-        Live Demo
-      </div>
-      <div class="live-demo-body" ref="root" />
-    </div>
-    <template #fallback>
-      <div class="live-demo-container">
-        <div class="live-demo-loading">Initialising demo…</div>
-      </div>
-    </template>
-  </ClientOnly>
+  <MultiViewDemo ref="demo" />
 </template>

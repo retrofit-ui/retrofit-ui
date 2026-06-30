@@ -6,6 +6,7 @@ import HomeLanding from './HomeLanding.vue';
 import InteractiveChatDemo from './InteractiveChatDemo.vue';
 import LandingDemo from './LandingDemo.vue';
 import LiveDemo from './LiveDemo.vue';
+import MultiViewDemo from './MultiViewDemo.vue';
 import PreviewBlock from './PreviewBlock.vue';
 import TodosDemo from './TodosDemo.vue';
 import './style.css';
@@ -19,6 +20,7 @@ export default {
     app.component('InteractiveChatDemo', InteractiveChatDemo);
     app.component('LandingDemo', LandingDemo);
     app.component('LiveDemo', LiveDemo);
+    app.component('MultiViewDemo', MultiViewDemo);
     app.component('PreviewBlock', PreviewBlock);
     app.component('TodosDemo', TodosDemo);
   },

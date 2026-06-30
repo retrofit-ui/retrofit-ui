@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
-import { getController } from './useRetrofitController';
+import { onMounted, ref } from 'vue';
+import MultiViewDemo, { type DemoView } from './MultiViewDemo.vue';
 
-const root = ref<HTMLElement>();
+const demo = ref<InstanceType<typeof MultiViewDemo>>();
 
 let _worker: { stop: () => void } | null = null;
 
@@ -38,7 +38,8 @@ const _contacts = [
 ];
 let _nextId = 5;
 
-const spec = {
+// Mirrors GET /api/ui/contacts — PageSpec with col() layout wrapping the table
+const tableSpec = {
   kind: 'page',
   title: 'Contacts',
   layout: { direction: 'column' },
@@ -75,10 +76,49 @@ const spec = {
   ],
 };
 
+// Mirrors GET /api/ui/contacts/:id — FormSpec with contact #1 pre-populated
+const editFormSpec = {
+  kind: 'form',
+  fields: [
+    { name: 'name', label: 'Name', type: 'text', required: true, value: 'Alice Chen' },
+    { name: 'email', label: 'Email', type: 'email', required: true, value: 'alice@example.com' },
+    {
+      name: 'phone',
+      label: 'Phone',
+      type: 'text',
+      required: false,
+      value: '+1 555 010 0001',
+      placeholder: '+1 555 000 0000',
+      validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
+    },
+    {
+      name: 'type',
+      label: 'Type',
+      type: 'select',
+      required: false,
+      value: 'customer',
+      options: [
+        { label: 'Customer', value: 'customer' },
+        { label: 'Partner', value: 'partner' },
+        { label: 'Lead', value: 'lead' },
+      ],
+    },
+    { name: 'notes', label: 'Notes', type: 'textarea', required: false, value: '' },
+  ],
+  endpoints: {
+    update: { method: 'PUT', url: '/contacts/{id}' },
+    delete: { method: 'DELETE', url: '/contacts/{id}' },
+  },
+  metadata: { title: 'Edit Contact' },
+};
+
+const views: DemoView[] = [
+  { label: 'Table', spec: tableSpec },
+  { label: 'Edit Form', spec: editFormSpec },
+];
+
 onMounted(async () => {
   if (typeof window === 'undefined') return;
-  await nextTick();
-  if (!root.value) return;
 
   if (!_worker) {
     const { setupWorker } = await import('msw/browser');
@@ -107,34 +147,10 @@ onMounted(async () => {
     await _worker.start({ onUnhandledRequest: 'bypass', quiet: true });
   }
 
-  const controller = await getController();
-  controller.mount(spec, root.value);
-});
-
-onBeforeUnmount(() => {
-  const el = root.value;
-  if (el) {
-    getController().then((ctrl) => ctrl.unmount(el));
-  }
+  await demo.value?.start(views);
 });
 </script>
 
 <template>
-  <ClientOnly>
-    <div class="live-demo-container">
-      <div class="live-demo-header">
-        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true">
-          <circle cx="4" cy="4" r="3" fill="currentColor" fill-opacity="0.4" />
-          <circle cx="4" cy="4" r="1.5" />
-        </svg>
-        Live Demo
-      </div>
-      <div class="live-demo-body" ref="root" />
-    </div>
-    <template #fallback>
-      <div class="live-demo-container">
-        <div class="live-demo-loading">Initialising demo…</div>
-      </div>
-    </template>
-  </ClientOnly>
+  <MultiViewDemo ref="demo" />
 </template>

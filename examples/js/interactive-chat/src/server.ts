@@ -1,5 +1,6 @@
 import type { MarkdownViewSpec, ViewSpec } from '@retrofit-ui/builder-zod';
 import {
+  CardViewBuilder,
   col,
   grid,
   pageSpec,
@@ -35,6 +36,14 @@ app.get('/api/chat-messages/:id', (req, res) => {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+const DOWNLOAD_BUTTON = {
+  label: 'Download',
+  icon: 'download',
+  size: 'small' as const,
+  variant: 'neutral' as const,
+  outline: true,
+};
+
 function userMessage(id: string): ViewSpec {
   const spec: MarkdownViewSpec = {
     kind: 'markdown',
@@ -42,7 +51,19 @@ function userMessage(id: string): ViewSpec {
     field: 'text',
     entityId: id,
   };
-  return { kind: 'markdown', spec };
+  return new CardViewBuilder()
+    .header('You')
+    .add({ kind: 'markdown', spec })
+    .footerButton(DOWNLOAD_BUTTON)
+    .build();
+}
+
+function assistantReply(content: ViewSpec): ViewSpec {
+  return new CardViewBuilder()
+    .header('Assistant')
+    .add(content)
+    .footerButton(DOWNLOAD_BUTTON)
+    .build();
 }
 
 // ── Deadline schema (for inline table) ───────────────────────────────────────
@@ -217,23 +238,27 @@ app.get('/api/ui/chat', (_req, res) => {
     .layout(col('2rem'))
     // Turn 1
     .add(userMessage('1'))
-    .add(col('1rem').add(todayStats).add(todayTimeline).build())
+    .add(assistantReply(col('1rem').add(todayStats).add(todayTimeline).build()))
     // Turn 2
     .add(userMessage('2'))
     .add(
-      col('1rem')
-        .add(deadlineStats)
-        .add({ kind: 'table', spec: deadlineTable })
-        .build(),
+      assistantReply(
+        col('1rem')
+          .add(deadlineStats)
+          .add({ kind: 'table', spec: deadlineTable })
+          .build(),
+      ),
     )
     // Turn 3
     .add(userMessage('3'))
     .add(
-      grid(3, '1rem')
-        .add(thisWeekStat)
-        .add(lastWeekStat)
-        .add(changeStat)
-        .build(),
+      assistantReply(
+        grid(3, '1rem')
+          .add(thisWeekStat)
+          .add(lastWeekStat)
+          .add(changeStat)
+          .build(),
+      ),
     )
     .build();
 

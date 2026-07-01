@@ -254,24 +254,10 @@ importers:
         version: 5.9.3
 
   packages/builder-zod:
-    devDependencies:
+    dependencies:
       '@retrofit-ui/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
-      tsup:
-        specifier: ^8.5.1
-        version: 8.5.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@20.19.41)(typescript@5.9.3))(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@1.21.7)(tsx@4.22.4))
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-
-  packages/core:
     devDependencies:
       tsup:
         specifier: ^8.5.1
@@ -286,7 +272,26 @@ importers:
         specifier: ^4.3.6
         version: 4.4.3
 
+  packages/core:
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.1.8(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(msw@2.14.6(@types/node@20.19.41)(typescript@5.9.3))(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@1.21.7)(tsx@4.22.4))
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+
   packages/spa-solid-shoelace:
+    dependencies:
+      '@retrofit-ui/core':
+        specifier: workspace:^
+        version: link:../core
     devDependencies:
       '@fullcalendar/core':
         specifier: ^6.0.0
@@ -303,9 +308,6 @@ importers:
       '@fullcalendar/timegrid':
         specifier: ^6.0.0
         version: 6.1.20(@fullcalendar/core@6.1.20)
-      '@retrofit-ui/core':
-        specifier: workspace:*
-        version: link:../core
       '@shoelace-style/shoelace':
         specifier: ^2.20.0
         version: 2.20.1(@floating-ui/utils@0.2.11)(@types/react@19.2.16)

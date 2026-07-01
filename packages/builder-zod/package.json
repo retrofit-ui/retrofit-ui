@@ -50,12 +50,13 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check src"
   },
+  "dependencies": {
+    "@retrofit-ui/core": "workspace:^"
+  },
   "peerDependencies": {
-    "@retrofit-ui/core": "workspace:*",
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@retrofit-ui/core": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",

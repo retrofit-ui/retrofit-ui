@@ -1,6 +1,6 @@
 {
   "name": "@retrofit-ui/spa-solid-shoelace",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "SolidJS + Shoelace SPA for retrofit-ui — built assets and distPath export",
   "keywords": [
     "retrofit-ui",

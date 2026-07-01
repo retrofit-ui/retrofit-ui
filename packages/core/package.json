@@ -1,6 +1,6 @@
 {
   "name": "@retrofit-ui/core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Zod type definitions for all retrofit-ui component types",
   "keywords": [
     "retrofit-ui",

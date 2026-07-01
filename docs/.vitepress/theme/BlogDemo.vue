@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import MultiViewDemo, { type DemoView } from './MultiViewDemo.vue';
+import type MultiViewDemo from './MultiViewDemo.vue';
+import type { DemoView } from './MultiViewDemo.vue';
 
 const demo = ref<InstanceType<typeof MultiViewDemo>>();
 
@@ -90,7 +91,8 @@ const editFormSpec = {
       label: 'Body',
       type: 'markdown',
       required: true,
-      value: '# Getting Started\n\nretrofit-ui generates a full admin UI from your Zod schemas.',
+      value:
+        '# Getting Started\n\nretrofit-ui generates a full admin UI from your Zod schemas.',
     },
     {
       name: 'status',
@@ -112,8 +114,22 @@ const editFormSpec = {
       helpText: 'comma-separated',
       value: 'retrofit, admin, tutorial',
     },
-    { name: 'author', label: 'Author', type: 'text', required: false, readOnly: true, value: 'Alice' },
-    { name: 'updatedAt', label: 'Updated', type: 'text', required: false, readOnly: true, value: '2025-06-01' },
+    {
+      name: 'author',
+      label: 'Author',
+      type: 'text',
+      required: false,
+      readOnly: true,
+      value: 'Alice',
+    },
+    {
+      name: 'updatedAt',
+      label: 'Updated',
+      type: 'text',
+      required: false,
+      readOnly: true,
+      value: '2025-06-01',
+    },
   ],
   endpoints: {
     create: { method: 'POST', url: '/posts' },

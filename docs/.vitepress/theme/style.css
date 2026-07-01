@@ -126,7 +126,10 @@
   color: var(--vp-c-text-3);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
   line-height: 1.8;
 }
 

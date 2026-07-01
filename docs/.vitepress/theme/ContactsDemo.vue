@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import MultiViewDemo, { type DemoView } from './MultiViewDemo.vue';
+import type MultiViewDemo from './MultiViewDemo.vue';
+import type { DemoView } from './MultiViewDemo.vue';
 
 const demo = ref<InstanceType<typeof MultiViewDemo>>();
 
@@ -80,8 +81,20 @@ const tableSpec = {
 const editFormSpec = {
   kind: 'form',
   fields: [
-    { name: 'name', label: 'Name', type: 'text', required: true, value: 'Alice Chen' },
-    { name: 'email', label: 'Email', type: 'email', required: true, value: 'alice@example.com' },
+    {
+      name: 'name',
+      label: 'Name',
+      type: 'text',
+      required: true,
+      value: 'Alice Chen',
+    },
+    {
+      name: 'email',
+      label: 'Email',
+      type: 'email',
+      required: true,
+      value: 'alice@example.com',
+    },
     {
       name: 'phone',
       label: 'Phone',
@@ -103,7 +116,13 @@ const editFormSpec = {
         { label: 'Lead', value: 'lead' },
       ],
     },
-    { name: 'notes', label: 'Notes', type: 'textarea', required: false, value: '' },
+    {
+      name: 'notes',
+      label: 'Notes',
+      type: 'textarea',
+      required: false,
+      value: '',
+    },
   ],
   endpoints: {
     update: { method: 'PUT', url: '/contacts/{id}' },

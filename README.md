@@ -50,25 +50,9 @@ pnpm dev
 
 ## Contributing
 
-### Finding something to work on
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the PR workflow, branch model, and release process. TL;DR: fork, branch from `main`, add a changeset if your change affects a published package (`pnpm changeset`), open a PR. Releases publish to npm automatically when the "Version Packages" PR is merged.
 
-Check the [open issues](https://github.com/retrofit-ui/retrofit-ui/issues) — anything labelled `good first issue` is a reasonable starting point. For larger changes, open an issue first to discuss the approach before writing code.
-
-### Submitting a PR
-
-1. Fork the repo and create a branch off `main`
-2. Make your changes and ensure `pnpm test` and `pnpm typecheck` pass
-3. If your change affects a published package, add a changeset:
-   ```bash
-   pnpm changeset
-   ```
-4. Open a PR with a clear description of what changed and why
-
-Code style is enforced by [Biome](https://biomejs.dev) — run `pnpm lint` before pushing.
-
-### Releases
-
-This repo uses [Changesets](https://github.com/changesets/changesets). Maintainers run `pnpm version-packages` to bump versions and `pnpm release` to publish.
+> **Status: experimental.** This project is pre-1.0 and APIs may change without notice.
 
 ---
 

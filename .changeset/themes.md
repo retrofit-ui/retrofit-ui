@@ -1,6 +1,6 @@
 ---
 '@retrofit-ui/core': minor
-'@retrofit-ui/renderers-solid': minor
+'@retrofit-ui/spa-solid-shoelace': minor
 ---
 
 feat: theming system

@@ -2,6 +2,25 @@
   "name": "@retrofit-ui/builder-zod",
   "version": "0.0.1",
   "description": "Zod-driven UI spec builders for retrofit-ui (table, form, page, stat, timeline, tree, calendar, workflow)",
+  "keywords": [
+    "retrofit-ui",
+    "ui",
+    "builder",
+    "schema",
+    "zod",
+    "spec"
+  ],
+  "license": "MIT",
+  "author": "retrofit-ui",
+  "homepage": "https://github.com/retrofit-ui/retrofit-ui/tree/main/packages/builder-zod#readme",
+  "bugs": {
+    "url": "https://github.com/retrofit-ui/retrofit-ui/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/retrofit-ui/retrofit-ui.git",
+    "directory": "packages/builder-zod"
+  },
   "type": "module",
   "exports": {
     ".": {

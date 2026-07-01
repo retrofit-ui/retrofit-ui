@@ -2,6 +2,25 @@
   "name": "@retrofit-ui/spa-solid-shoelace",
   "version": "0.0.1",
   "description": "SolidJS + Shoelace SPA for retrofit-ui — built assets and distPath export",
+  "keywords": [
+    "retrofit-ui",
+    "ui",
+    "solid-js",
+    "shoelace",
+    "spa",
+    "renderer"
+  ],
+  "license": "MIT",
+  "author": "retrofit-ui",
+  "homepage": "https://github.com/retrofit-ui/retrofit-ui/tree/main/packages/spa-solid-shoelace#readme",
+  "bugs": {
+    "url": "https://github.com/retrofit-ui/retrofit-ui/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/retrofit-ui/retrofit-ui.git",
+    "directory": "packages/spa-solid-shoelace"
+  },
   "type": "module",
   "exports": {
     ".": {

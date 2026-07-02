@@ -1,6 +1,6 @@
 {
   "name": "@retrofit-ui/builder-zod",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Fluent builders for retrofit-ui specs — compose tables, forms, pages, timelines, trees, and calendars in typed code instead of hand-writing JSON",
   "keywords": [
     "retrofit-ui",

@@ -1,5 +1,12 @@
 # @retrofit-ui/builder-zod
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [31c8154]
+  - @retrofit-ui/core@0.2.0
+
 ## 0.0.3
 
 ### Patch Changes

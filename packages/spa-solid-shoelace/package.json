@@ -1,6 +1,6 @@
 {
   "name": "@retrofit-ui/spa-solid-shoelace",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Prebuilt SolidJS + Shoelace renderer for retrofit-ui — drop into any server as static assets; no frontend build required",
   "keywords": [
     "retrofit-ui",

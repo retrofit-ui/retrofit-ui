@@ -28,7 +28,8 @@ export function MarkdownView() {
     () => ({ resource: params.resource, id: params.id }),
     async ({ resource, id }) => {
       const res = await fetch(`${apiBase}/${resource}/${id}/render`);
-      if (!res.ok) throw new Error(`Failed to fetch render spec for ${resource}`);
+      if (!res.ok)
+        throw new Error(`Failed to fetch render spec for ${resource}`);
       return (await res.json()) as MarkdownViewSpec;
     },
   );
@@ -66,7 +67,10 @@ export function MarkdownView() {
             <Show when={s().metadata?.title}>
               <h1 class="retrofit-page-title">{s().metadata?.title}</h1>
             </Show>
-            <div class="retrofit-markdown" innerHTML={marked.parse(s().content) as string} />
+            <div
+              class="retrofit-markdown"
+              innerHTML={marked.parse(s().content) as string}
+            />
           </div>
         )}
       </Show>

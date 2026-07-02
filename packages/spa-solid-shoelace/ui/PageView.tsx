@@ -786,9 +786,7 @@ function ViewRenderer(props: { spec: ViewSpec }) {
       <Match when={props.spec.kind === 'markdown'}>
         {(_item) => {
           const s = props.spec as { kind: 'markdown'; spec: MarkdownViewSpec };
-          return (
-            <MarkdownViewComponent spec={s.spec} />
-          );
+          return <MarkdownViewComponent spec={s.spec} />;
         }}
       </Match>
       <Match when={props.spec.kind === 'stat'}>

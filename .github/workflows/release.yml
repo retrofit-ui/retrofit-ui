@@ -42,10 +42,7 @@ jobs:
           # workflows (like ci.yml). If we want CI to run on the Version PR,
           # swap this for a fine-grained PAT stored as secrets.GH_PAT.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Token-based publish. Trusted Publishing (OIDC) was set up correctly
-          # on both sides but consistently returned E404 from npm — falling back
-          # to a granular scope-scoped npm token unblocks releases.
-          # id-token: write permission is retained so provenance attestations
-          # still get signed via sigstore for each published version.
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NPM_TOKEN — auth via Trusted Publishing (OIDC). Requires
+          # a Trusted Publisher entry on each npm package with org access
+          # (since @retrofit-ui is an npm org scope, not a user scope).
           NPM_CONFIG_PROVENANCE: 'true'

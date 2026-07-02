@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   CalendarEvent,
   CalendarSpec,
+  MarkdownViewSpec,
   Stat,
   StatSpec,
   TableSpec,
@@ -91,6 +92,27 @@ describe('StatSpec', () => {
   it('metadata.title is optional', () => {
     const spec: StatSpec = { kind: 'stat', stats: [], metadata: {} };
     expect(spec.metadata?.title).toBeUndefined();
+  });
+});
+
+describe('MarkdownViewSpec', () => {
+  it('minimal spec requires only kind and content', () => {
+    const spec: MarkdownViewSpec = { kind: 'markdown', content: '# Hello' };
+    expect(spec.content).toBe('# Hello');
+  });
+
+  it('metadata.title is optional', () => {
+    const spec: MarkdownViewSpec = {
+      kind: 'markdown',
+      content: 'text',
+      metadata: { title: 'My Doc' },
+    };
+    expect(spec.metadata?.title).toBe('My Doc');
+  });
+
+  it('metadata is optional', () => {
+    const spec: MarkdownViewSpec = { kind: 'markdown', content: '' };
+    expect(spec.metadata).toBeUndefined();
   });
 });
 

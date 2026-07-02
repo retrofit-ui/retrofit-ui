@@ -787,10 +787,7 @@ function ViewRenderer(props: { spec: ViewSpec }) {
         {(_item) => {
           const s = props.spec as { kind: 'markdown'; spec: MarkdownViewSpec };
           return (
-            <MarkdownViewComponent
-              spec={s.spec}
-              entityId={s.spec.entityId ?? ''}
-            />
+            <MarkdownViewComponent spec={s.spec} />
           );
         }}
       </Match>

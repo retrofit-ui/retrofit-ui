@@ -16,23 +16,12 @@ const app = express();
 app.use(express.json());
 
 // ── Static chat message content ──────────────────────────────────────────────
-// MarkdownViewComponent fetches from these endpoints and renders the `text`
-// field as markdown. Using static routes keeps this example self-contained.
 
 const MESSAGES: Record<string, string> = {
   '1': 'What does my schedule look like for **today**?',
   '2': 'Are there any **upcoming deadlines** I should know about?',
   '3': 'How does my workload this week **compare to last week**?',
 };
-
-app.get('/api/chat-messages/:id', (req, res) => {
-  const text = MESSAGES[req.params.id];
-  if (!text) {
-    res.status(404).json({ error: 'Not found' });
-    return;
-  }
-  res.json({ id: req.params.id, text });
-});
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,9 +37,7 @@ const DOWNLOAD_FOOTER: ViewSpec = {
 function userMessage(id: string): ViewSpec {
   const spec: MarkdownViewSpec = {
     kind: 'markdown',
-    entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-    field: 'text',
-    entityId: id,
+    content: MESSAGES[id] ?? '',
   };
   return new CardViewBuilder()
     .header('You')

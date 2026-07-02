@@ -175,6 +175,40 @@ test.describe('Turn 2 — upcoming deadlines', () => {
   });
 });
 
+test.describe('Inline markdown content — no entity fetch', () => {
+  test('user messages render without any /api/chat-messages requests', async ({
+    page,
+  }) => {
+    const fetchedMessageUrls: string[] = [];
+    page.on('request', (req) => {
+      if (req.url().includes('/api/chat-messages')) {
+        fetchedMessageUrls.push(req.url());
+      }
+    });
+    await page.goto(CHAT_URL);
+    await page.waitForSelector('.retrofit-markdown');
+    expect(fetchedMessageUrls).toHaveLength(0);
+  });
+
+  test('bold markdown in user message renders as <strong> element', async ({
+    page,
+  }) => {
+    await page.goto(CHAT_URL);
+    await page.waitForSelector('.retrofit-markdown');
+    const first = page.locator('.retrofit-markdown').first();
+    await expect(first.locator('strong')).toBeVisible();
+  });
+
+  test('inline content renders immediately without loading skeleton', async ({
+    page,
+  }) => {
+    await page.goto(CHAT_URL);
+    await page.waitForSelector('.retrofit-markdown');
+    const skeletons = page.locator('.retrofit-markdown ~ sl-skeleton');
+    await expect(skeletons).toHaveCount(0);
+  });
+});
+
 test.describe('Turn 3 — week-over-week comparison', () => {
   test('renders three comparison stat cards', async ({ page }) => {
     await page.goto(CHAT_URL);

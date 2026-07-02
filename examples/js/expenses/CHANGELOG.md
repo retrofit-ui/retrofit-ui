@@ -1,5 +1,13 @@
 # @retrofit-ui-examples/expenses
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [0339835]
+  - @retrofit-ui/builder-zod@0.0.3
+  - @retrofit-ui/spa-solid-shoelace@0.1.1
+
 ## 0.0.2
 
 ### Patch Changes

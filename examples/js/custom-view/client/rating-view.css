@@ -1,0 +1,56 @@
+/*
+ * All colours, spacing, and typography resolve through Shoelace design
+ * tokens so the theme applied at :root (from /retrofit.json) reaches this
+ * view without any per-component wiring.
+ *
+ * Class names are namespaced under `custom-rating-*` to keep them clearly
+ * separate from retrofit-ui's own `.retrofit-*` classes.
+ */
+
+.custom-rating-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.custom-rating-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sl-spacing-medium);
+  padding: var(--sl-spacing-small) 0;
+  border-bottom: 1px solid var(--sl-color-neutral-200);
+  font-family: var(--sl-font-sans);
+  font-size: var(--sl-font-size-medium);
+  color: var(--sl-color-neutral-900);
+}
+
+.custom-rating-row:last-child {
+  border-bottom: none;
+}
+
+.custom-rating-label {
+  min-width: 10rem;
+  font-weight: var(--sl-font-weight-semibold);
+}
+
+.custom-rating-stars {
+  display: inline-flex;
+  gap: 2px;
+  font-size: var(--sl-font-size-large);
+  line-height: 1;
+}
+
+.custom-rating-star--empty {
+  color: var(--sl-color-neutral-300);
+}
+
+/* --filled colour is set by the theme's extraCss (see server.ts) so the
+ * primary token drives it. Kept as its own selector for clarity. */
+.custom-rating-star--filled {
+  color: var(--sl-color-primary-600);
+}
+
+.custom-rating-note {
+  color: var(--sl-color-neutral-600);
+  font-size: var(--sl-font-size-small);
+}

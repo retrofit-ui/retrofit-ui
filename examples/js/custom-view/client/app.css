@@ -1,0 +1,24 @@
+/* App-shell chrome — theme tokens only, no hard-coded colours. */
+
+.example-nav-button {
+  margin-right: var(--sl-spacing-x-small);
+  padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
+  border: 1px solid var(--sl-color-neutral-300);
+  border-radius: var(--sl-border-radius-medium);
+  background: var(--sl-color-neutral-0);
+  color: var(--sl-color-neutral-700);
+  font-family: var(--sl-font-sans);
+  font-size: var(--sl-font-size-small);
+  cursor: pointer;
+}
+
+.example-nav-button:hover {
+  border-color: var(--sl-color-primary-500);
+  color: var(--sl-color-primary-700);
+}
+
+.example-nav-button[data-active] {
+  border-color: var(--sl-color-primary-600);
+  color: var(--sl-color-primary-700);
+  background: var(--sl-color-primary-50);
+}

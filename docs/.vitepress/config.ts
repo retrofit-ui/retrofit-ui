@@ -86,7 +86,10 @@ export default defineConfig({
         },
         {
           text: 'Customisation',
-          items: [{ text: 'Theming', link: '/guide/theming' }],
+          items: [
+            { text: 'Theming', link: '/guide/theming' },
+            { text: 'Extending', link: '/guide/extending' },
+          ],
         },
       ],
       '/reference/': [

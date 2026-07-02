@@ -13,7 +13,8 @@ jobs:
     permissions:
       contents: write        # push version bump commit + tags
       pull-requests: write   # open/update the Version Packages PR
-      id-token: write        # OIDC for npm Trusted Publishing + provenance
+      # id-token: write     # only needed for OIDC/Trusted Publishing/provenance;
+                            # off for now while we're on token auth (see below).
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,10 +45,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Token-based publish. Trusted Publishing (OIDC) had unresolved
           # 404 issues with our brand-new npm org + auth-and-writes 2FA setup.
-          # Using a granular npm token scoped to @retrofit-ui (with Org read
-          # permission) as a pragmatic fallback while automation is running.
+          # Fallback: granular npm token with:
+          #   - Packages/scopes: read+write on @retrofit-ui
+          #   - Organizations: read-only on retrofit-ui (needed because the
+          #     scope is org-owned, not user-owned)
+          # 365-day expiry; rotate before then. TP is the intended end-state.
           # id-token: write is retained so provenance attestations still sign
           # via sigstore — each published tarball keeps the "Built and signed
           # on GitHub Actions" badge on npmjs.com.
+          # TODO(supply-chain): split build (no token) from publish (token)
+          # so devDeps executed during `pnpm build` can't observe NPM_TOKEN.
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: 'true'
+          # NPM_CONFIG_PROVENANCE intentionally OFF for now: with recent npm
+          # CLI versions, enabling it appears to cause npm to prefer OIDC
+          # (Trusted Publishing) over the NPM_TOKEN auth, and TP is broken
+          # for this account. Re-enable once TP is fixed to get the "Built
+          # and signed on GitHub Actions" badge back on npmjs.com.

@@ -352,6 +352,60 @@ $([ -n "$fix_context" ] && printf "## Problems to fix\n\n${fix_context}")
 - Do not commit, push, or open a PR — the script handles that.
 - Do not ask for confirmation. Work autonomously to completion." </dev/null 2>&1 | tee -a "$log_file"
 
+    # ── Step 2.5: Changeset ───────────────────────────────────────────────────
+    # If any publishable package changed, ensure a changeset exists so the
+    # Changesets bot will open a version-bump PR after merge. Without this,
+    # package changes ship to main but never get versioned or published.
+    changed_pkgs=$(git -C "$worktree" diff --name-only origin/main...HEAD -- 'packages/*/src' 'packages/*/ui' 'packages/*/package.json' 2>/dev/null \
+      | awk -F/ '/^packages\// {print $2}' | sort -u)
+    # Also include uncommitted changes from the implementation step above
+    changed_pkgs_wip=$(git -C "$worktree" status --porcelain -- 'packages/' 2>/dev/null \
+      | awk '{print $2}' | awk -F/ '/^packages\// {print $2}' | sort -u)
+    all_changed_pkgs=$(printf "%s\n%s\n" "$changed_pkgs" "$changed_pkgs_wip" | grep -v '^$' | sort -u)
+    # Filter out Java packages (published via Gradle, not changesets)
+    publishable_pkgs=$(echo "$all_changed_pkgs" | grep -vE '^retrofit-ui-spring-boot' || true)
+
+    if [ -n "$publishable_pkgs" ]; then
+      existing_changeset=$(git -C "$worktree" status --porcelain -- '.changeset/*.md' 2>/dev/null \
+        | grep -v README | head -1)
+      if [ -z "$existing_changeset" ] && ! git -C "$worktree" diff --name-only origin/main...HEAD -- '.changeset/*.md' 2>/dev/null | grep -v README | grep -q .; then
+        log "  → step 2.5: adding changeset for: $(echo "$publishable_pkgs" | tr '\n' ' ')"
+        pkg_list=$(echo "$publishable_pkgs" | sed 's/^/@retrofit-ui\//')
+        cd "$worktree" && claude --dangerously-skip-permissions --verbose --max-turns 10 \
+          -p "You are adding a changeset for a PR in the retrofit-ui monorepo.
+
+## Issue #${number}: ${title}
+
+The following publishable packages changed and need a changeset entry so the Changesets bot opens a version-bump PR after merge:
+
+$(echo "$pkg_list" | sed 's/^/  - /')
+
+## Task
+
+- Create a new file at \`.changeset/issue-${number}.md\`.
+- Use this exact format (YAML frontmatter, then a blank line, then a short human-readable summary):
+
+  ---
+  '@retrofit-ui/<package-a>': patch
+  '@retrofit-ui/<package-b>': minor
+  ---
+
+  <one-line summary of the user-facing change>
+
+  <optional longer paragraph if the change deserves it>
+
+- Choose the bump level per package by semver:
+  - **patch** for bug fixes and internal refactors with no API change
+  - **minor** for backwards-compatible additions (new components, new spec fields, new exports)
+  - **major** for breaking changes (renamed/removed exports, changed spec shape)
+- Base your bump choice on the actual diff of the packages listed above — read the changes first.
+- The summary should describe the user-visible change, not the implementation. It ends up in CHANGELOG.md.
+- Do not commit or push — the script will handle that." </dev/null 2>&1 | tee -a "$log_file"
+      else
+        log "  → step 2.5: changeset already present, skipping"
+      fi
+    fi
+
     # Commit implementation (everything except the plan file, which is already committed)
     git -C "$worktree" add -A
     git -C "$worktree" restore --staged "$plan_file" 2>/dev/null || true

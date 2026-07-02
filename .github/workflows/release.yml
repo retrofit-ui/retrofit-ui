@@ -30,13 +30,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Debug OIDC identity (temporary — remove after Trusted Publishing is confirmed working)
-        run: |
-          ID_TOKEN=$(curl -sSf "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org" \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r .value)
-          echo "=== OIDC token claims sent to npm ==="
-          echo "$ID_TOKEN" | python3 -c "import sys, json, base64; t = sys.stdin.read().strip(); p = t.split('.')[1]; p += '=' * (-len(p) % 4); print(json.dumps(json.loads(base64.urlsafe_b64decode(p)), indent=2))"
-
       - name: Create Version PR or Publish
         uses: changesets/action@v1
         with:
@@ -49,6 +42,10 @@ jobs:
           # workflows (like ci.yml). If we want CI to run on the Version PR,
           # swap this for a fine-grained PAT stored as secrets.GH_PAT.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # NPM_TOKEN intentionally omitted — auth is handled via OIDC
-          # once Trusted Publisher is configured on each npm package.
+          # Token-based publish. Trusted Publishing (OIDC) was set up correctly
+          # on both sides but consistently returned E404 from npm — falling back
+          # to a granular scope-scoped npm token unblocks releases.
+          # id-token: write permission is retained so provenance attestations
+          # still get signed via sigstore for each published version.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'

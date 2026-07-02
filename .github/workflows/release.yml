@@ -31,10 +31,19 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Build happens in a step WITHOUT NPM_TOKEN in env, so devDeps executed
+      # during the build (tsup, vite, etc.) cannot observe the publish token.
+      # Only the changesets/action step below sees NPM_TOKEN.
+      - name: Build packages
+        run: pnpm build
+
       - name: Create Version PR or Publish
         uses: changesets/action@v1
         with:
-          publish: pnpm release
+          # `pnpm exec changeset publish` runs the publish step only —
+          # deliberately NOT `pnpm release`, which also runs `pnpm build`
+          # inside this env (where NPM_TOKEN is exposed).
+          publish: pnpm exec changeset publish
           version: pnpm changeset version
           commit: 'chore: version packages'
           title: 'chore: version packages'
@@ -47,17 +56,14 @@ jobs:
           # 404 issues with our brand-new npm org + auth-and-writes 2FA setup.
           # Fallback: granular npm token with:
           #   - Packages/scopes: read+write on @retrofit-ui
-          #   - Organizations: read-only on retrofit-ui (needed because the
-          #     scope is org-owned, not user-owned)
-          # 365-day expiry; rotate before then. TP is the intended end-state.
-          # id-token: write is retained so provenance attestations still sign
-          # via sigstore — each published tarball keeps the "Built and signed
-          # on GitHub Actions" badge on npmjs.com.
-          # TODO(supply-chain): split build (no token) from publish (token)
-          # so devDeps executed during `pnpm build` can't observe NPM_TOKEN.
+          #   - Organizations: read-only on retrofit-ui (org-owned scope)
+          # 365-day expiry; rotate before then.
+          #
+          # Provenance attestations and id-token: write are BOTH disabled here
+          # because with recent npm CLI versions, enabling provenance appears
+          # to make npm silently prefer OIDC (Trusted Publishing) over the
+          # NPM_TOKEN auth. Since TP is broken for this account, that caused
+          # 404s. Turning provenance off restored token-auth. Consequence:
+          # published tarballs do not get the "Built and signed on GitHub
+          # Actions" badge on npmjs.com until we resolve TP.
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          # NPM_CONFIG_PROVENANCE intentionally OFF for now: with recent npm
-          # CLI versions, enabling it appears to cause npm to prefer OIDC
-          # (Trusted Publishing) over the NPM_TOKEN auth, and TP is broken
-          # for this account. Re-enable once TP is fixed to get the "Built
-          # and signed on GitHub Actions" badge back on npmjs.com.

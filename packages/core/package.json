@@ -1,17 +1,21 @@
 {
   "name": "@retrofit-ui/core",
   "version": "0.1.0",
-  "description": "Zod type definitions for all retrofit-ui component types",
+  "description": "TypeScript + Zod types describing retrofit-ui component specs — the wire-format contract for server-driven UI",
   "keywords": [
     "retrofit-ui",
-    "ui",
-    "schema",
+    "server-driven-ui",
+    "sdui",
+    "json-schema",
     "zod",
     "types"
   ],
   "license": "MIT",
-  "author": "retrofit-ui",
-  "homepage": "https://github.com/retrofit-ui/retrofit-ui/tree/main/packages/core#readme",
+  "author": {
+    "name": "retrofit-ui",
+    "url": "https://github.com/retrofit-ui"
+  },
+  "homepage": "https://retrofitui.dev",
   "bugs": {
     "url": "https://github.com/retrofit-ui/retrofit-ui/issues"
   },

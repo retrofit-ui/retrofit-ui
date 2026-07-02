@@ -14,8 +14,12 @@ test.describe('Built-in stat view (delegated through ExtendedRenderer)', () => {
     // Both stat cards render with formatted values + labels.
     await expect(page.getByText('Reviews')).toBeVisible();
     await expect(page.getByText('Average score')).toBeVisible();
-    await expect(page.locator('.retrofit-stat-value', { hasText: '128' })).toBeVisible();
-    await expect(page.locator('.retrofit-stat-value', { hasText: '4.35' })).toBeVisible();
+    await expect(
+      page.locator('.retrofit-stat-value', { hasText: '128' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('.retrofit-stat-value', { hasText: '4.35' }),
+    ).toBeVisible();
 
     // Custom kind hasn't rendered yet.
     await expect(page.getByText('Product ratings')).toHaveCount(0);
@@ -63,10 +67,7 @@ test.describe('Custom rating view (handled by ExtendedRenderer)', () => {
     const aeropressStars = page
       .locator('.retrofit-view li', { hasText: 'Aeropress' })
       .locator('[aria-label]');
-    await expect(aeropressStars).toHaveAttribute(
-      'aria-label',
-      '4.5 out of 5',
-    );
+    await expect(aeropressStars).toHaveAttribute('aria-label', '4.5 out of 5');
   });
 
   test('items without a note render only label + stars', async ({ page }) => {
@@ -183,9 +184,7 @@ test.describe('Theming', () => {
 
     // Same class the built-in views use, same computed colour. This is the
     // proof that the theme flows through both surfaces without conflict.
-    const titleColor = await title.evaluate(
-      (el) => getComputedStyle(el).color,
-    );
+    const titleColor = await title.evaluate((el) => getComputedStyle(el).color);
     expect(titleColor).toBe(PRIMARY_700);
 
     // Custom-namespaced class, still driven by the primary token.

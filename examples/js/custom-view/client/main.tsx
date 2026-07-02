@@ -7,13 +7,7 @@ import '@retrofit-ui/spa-solid-shoelace/renderer.css';
 import './app.css';
 import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
 import { HashRouter, Route, useNavigate } from '@solidjs/router';
-import {
-  createResource,
-  createSignal,
-  For,
-  onMount,
-  Show,
-} from 'solid-js';
+import { createResource, createSignal, For, onMount, Show } from 'solid-js';
 import { render } from 'solid-js/web';
 import type { AppSpec } from '../src/spec';
 import { ExtendedRenderer } from './ExtendedRenderer';
@@ -53,11 +47,11 @@ function applyTheme(theme: RetrofitTheme | undefined) {
 const ENDPOINTS = [
   { path: '/api/hello-stat', label: 'Built-in: stat view' },
   { path: '/api/product-ratings', label: 'Custom: rating view' },
-];
+] as const;
 
 function Home(props: { apiBase: string }) {
   const nav = useNavigate();
-  const [path, setPath] = createSignal(ENDPOINTS[0]!.path);
+  const [path, setPath] = createSignal<string>(ENDPOINTS[0].path);
   const [spec] = createResource(path, async (p) => {
     const r = await fetch(p);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);

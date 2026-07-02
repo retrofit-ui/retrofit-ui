@@ -3,8 +3,8 @@
 // The `@retrofit-ui/spa-solid-shoelace/components` subpath ships JS without
 // matching .d.ts (the tsup build only emits types for the Node entry).
 declare module '@retrofit-ui/spa-solid-shoelace/components' {
-  import type { Component } from 'solid-js';
   import type { RootSpec } from '@retrofit-ui/core';
+  import type { Component } from 'solid-js';
 
   export const SpecRenderer: Component<{ spec: RootSpec; apiBase: string }>;
 }

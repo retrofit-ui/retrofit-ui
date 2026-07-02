@@ -21,16 +21,21 @@ function Stars(props: { score: number }) {
   return (
     <span
       class="custom-rating-stars"
+      role="img"
       aria-label={`${props.score} out of 5`}
     >
       <For each={Array(full).fill(null)}>
-        {() => <span class="custom-rating-star custom-rating-star--filled">★</span>}
+        {() => (
+          <span class="custom-rating-star custom-rating-star--filled">★</span>
+        )}
       </For>
       <Show when={half}>
         <span class="custom-rating-star custom-rating-star--filled">½</span>
       </Show>
       <For each={Array(empty).fill(null)}>
-        {() => <span class="custom-rating-star custom-rating-star--empty">☆</span>}
+        {() => (
+          <span class="custom-rating-star custom-rating-star--empty">☆</span>
+        )}
       </For>
     </span>
   );
@@ -55,9 +60,7 @@ export function RatingView(props: { spec: RatingSpec }) {
         <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
       </Show>
       <ul class="custom-rating-list">
-        <For each={props.spec.items}>
-          {(item) => <RatingRow item={item} />}
-        </For>
+        <For each={props.spec.items}>{(item) => <RatingRow item={item} />}</For>
       </ul>
     </div>
   );

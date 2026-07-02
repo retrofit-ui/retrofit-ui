@@ -49,10 +49,7 @@ export function SpecRenderer(props: { spec: RootSpec; apiBase: string }) {
           <TimelineViewComponent spec={props.spec as TimelineSpec} />
         </Match>
         <Match when={props.spec.kind === 'markdown'}>
-          <MarkdownViewComponent
-            spec={props.spec as MarkdownViewSpec}
-            entityId={(props.spec as MarkdownViewSpec).entityId ?? ''}
-          />
+          <MarkdownViewComponent spec={props.spec as MarkdownViewSpec} />
         </Match>
         <Match when={props.spec.kind === 'card'}>
           <CardViewComponent spec={props.spec as CardSpec} />

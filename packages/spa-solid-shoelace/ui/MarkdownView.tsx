@@ -6,80 +6,15 @@ import { marked } from 'marked';
 import { createResource, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './context';
 
-interface MarkdownViewData {
-  spec: MarkdownViewSpec;
-  html: string;
-}
-
-async function fetchMarkdownView(
-  resource: string,
-  id: string,
-  apiBase: string,
-): Promise<MarkdownViewData> {
-  const res = await fetch(`${apiBase}/${resource}/${id}/render`);
-  if (!res.ok) throw new Error(`Failed to fetch render spec for ${resource}`);
-  const spec = (await res.json()) as MarkdownViewSpec;
-
-  const entityUrl = spec.entityEndpoint.url.replace('{id}', id);
-  const entityRes = await fetch(entityUrl);
-  if (!entityRes.ok)
-    throw new Error(`Failed to fetch entity from ${entityUrl}`);
-  const entity = (await entityRes.json()) as Record<string, unknown>;
-
-  const raw = String(entity[spec.field] ?? '');
-  const html = marked.parse(raw) as string;
-  return { spec, html };
-}
-
-async function fetchMarkdownHtml(
-  spec: MarkdownViewSpec,
-  entityId: string,
-): Promise<string> {
-  const entityUrl = spec.entityEndpoint.url.replace('{id}', entityId);
-  const res = await fetch(entityUrl);
-  if (!res.ok) throw new Error(`Failed to fetch entity from ${entityUrl}`);
-  const entity = (await res.json()) as Record<string, unknown>;
-  const raw = String(entity[spec.field] ?? '');
-  return marked.parse(raw) as string;
-}
-
-export function MarkdownViewComponent(props: {
-  spec: MarkdownViewSpec;
-  entityId: string;
-}) {
-  const [html] = createResource(
-    () => ({ spec: props.spec, entityId: props.entityId }),
-    ({ spec, entityId }) => fetchMarkdownHtml(spec, entityId),
-  );
+export function MarkdownViewComponent(props: { spec: MarkdownViewSpec }) {
+  const html = () => marked.parse(props.spec.content) as string;
 
   return (
     <div class="retrofit-view">
-      <Show when={html.loading}>
-        <div
-          style={{
-            display: 'flex',
-            'flex-direction': 'column',
-            gap: 'var(--sl-spacing-medium)',
-          }}
-        >
-          <sl-skeleton effect="sheen" style={{ width: '55%' }} />
-          <sl-skeleton effect="sheen" />
-          <sl-skeleton effect="sheen" style={{ width: '80%' }} />
-        </div>
+      <Show when={props.spec.metadata?.title}>
+        <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
       </Show>
-      <Show when={html.error}>
-        <p class="retrofit-error-message">Error: {String(html.error)}</p>
-      </Show>
-      <Show when={html()}>
-        {(h) => (
-          <>
-            <Show when={props.spec.metadata?.title}>
-              <h1 class="retrofit-page-title">{props.spec.metadata?.title}</h1>
-            </Show>
-            <div class="retrofit-markdown" innerHTML={h()} />
-          </>
-        )}
-      </Show>
+      <div class="retrofit-markdown" innerHTML={html()} />
     </div>
   );
 }
@@ -89,14 +24,19 @@ export function MarkdownView() {
   const navigate = useNavigate();
   const apiBase = useContext(ApiBaseContext);
 
-  const [view] = createResource(
+  const [spec] = createResource(
     () => ({ resource: params.resource, id: params.id }),
-    ({ resource, id }) => fetchMarkdownView(resource, id, apiBase),
+    async ({ resource, id }) => {
+      const res = await fetch(`${apiBase}/${resource}/${id}/render`);
+      if (!res.ok)
+        throw new Error(`Failed to fetch render spec for ${resource}`);
+      return (await res.json()) as MarkdownViewSpec;
+    },
   );
 
   return (
     <div class="retrofit-view">
-      <Show when={view.loading}>
+      <Show when={spec.loading}>
         <div
           style={{
             display: 'flex',
@@ -111,11 +51,11 @@ export function MarkdownView() {
           <sl-skeleton effect="sheen" style={{ width: '40%' }} />
         </div>
       </Show>
-      <Show when={view.error}>
-        <p class="retrofit-error-message">Error: {String(view.error)}</p>
+      <Show when={spec.error}>
+        <p class="retrofit-error-message">Error: {String(spec.error)}</p>
       </Show>
-      <Show when={view()}>
-        {(v) => (
+      <Show when={spec()}>
+        {(s) => (
           <div>
             <button
               type="button"
@@ -124,10 +64,13 @@ export function MarkdownView() {
             >
               &larr; Back
             </button>
-            <Show when={v().spec.metadata?.title}>
-              <h1 class="retrofit-page-title">{v().spec.metadata?.title}</h1>
+            <Show when={s().metadata?.title}>
+              <h1 class="retrofit-page-title">{s().metadata?.title}</h1>
             </Show>
-            <div class="retrofit-markdown" innerHTML={v().html} />
+            <div
+              class="retrofit-markdown"
+              innerHTML={marked.parse(s().content) as string}
+            />
           </div>
         )}
       </Show>

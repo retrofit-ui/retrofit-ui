@@ -20,7 +20,7 @@ async function start(initialViews: DemoView[]) {
   controller.mount(initialViews[0].spec, root.value);
 }
 
-async function switchView(i: number) {
+async function _switchView(i: number) {
   if (!root.value || i === activeIndex.value) return;
   activeIndex.value = i;
   const controller = await getController();

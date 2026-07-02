@@ -69,10 +69,7 @@ export interface FormSpec {
 /** Returned by GET /api/ui/{resource}/:id/render — drives the markdown render view. */
 export interface MarkdownViewSpec {
   kind: 'markdown';
-  entityEndpoint: EndpointDirective;
-  field: string;
-  /** Entity id substituted into entityEndpoint.url when using the standalone renderer. */
-  entityId?: string;
+  content: string;
   metadata?: { title?: string };
 }
 

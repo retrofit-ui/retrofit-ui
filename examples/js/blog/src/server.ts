@@ -134,11 +134,15 @@ app.get('/api/ui/posts/:id', (req, res) => {
 });
 
 // Markdown render spec — 3 path segments, won't conflict with /:id above
-app.get('/api/ui/posts/:id/render', (_req, res) => {
+app.get('/api/ui/posts/:id/render', (req, res) => {
+  const post = store.find(req.params.id);
+  if (!post) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
   res.json({
     kind: 'markdown',
-    entityEndpoint: { method: 'GET', url: '/posts/{id}' },
-    field: 'body',
+    content: String(post.body ?? ''),
     metadata: { title: 'Preview' },
   } satisfies MarkdownViewSpec);
 });

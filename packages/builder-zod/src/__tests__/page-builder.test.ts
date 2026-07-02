@@ -80,8 +80,7 @@ describe('LayoutContainerBuilder.add()', () => {
         kind: 'markdown',
         spec: {
           kind: 'markdown',
-          entityEndpoint: { method: 'GET', url: '/md' },
-          field: 'content',
+          content: 'hello',
         },
       })
       .build();

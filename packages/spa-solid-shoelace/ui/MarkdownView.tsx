@@ -6,6 +6,12 @@ import { marked } from 'marked';
 import { createResource, Show, useContext } from 'solid-js';
 import { ApiBaseContext } from './context';
 
+export function configureMarked(
+  options: Parameters<typeof marked.use>[0],
+): void {
+  marked.use(options);
+}
+
 export function MarkdownViewComponent(props: { spec: MarkdownViewSpec }) {
   const html = () => marked.parse(props.spec.content) as string;
 

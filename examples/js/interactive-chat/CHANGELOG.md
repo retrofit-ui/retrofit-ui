@@ -1,5 +1,13 @@
 # @retrofit-ui-examples/interactive-chat
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [083cffd]
+  - @retrofit-ui/spa-solid-shoelace@0.3.0
+  - @retrofit-ui/builder-zod@0.0.6
+
 ## 0.0.4
 
 ### Patch Changes

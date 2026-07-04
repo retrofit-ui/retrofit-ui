@@ -8,10 +8,7 @@ Admin and internal tools are the obvious fit, but they're just one use case: any
 
 Instead of the browser knowing how to render your data, the **server describes the UI as JSON**. The browser's SPA reads that description and renders the appropriate component.
 
-<figure class="img-placeholder">
-  <span class="img-placeholder__label">Image placeholder · request flow</span>
-  <p class="img-placeholder__brief"><strong>A sequence diagram, Browser ↔ Server.</strong> Three labelled round-trips stacked top to bottom: (1) <code>GET /retrofit-ui</code> → returns the SPA static bundle ("served once"); (2) <code>GET /api/ui/todos</code> → returns <strong>TableSpec JSON</strong> (<code>{ columns, endpoints }</code>), annotated "SPA renders the table shell"; (3) <code>GET /todos</code> → returns the row array <code>[{ id, title, … }]</code>, annotated "SPA fills the rows." Emphasise that only the spec + data change over time — the bundle is static. Light + dark variants.</p>
-</figure>
+<RequestFlow />
 
 The SPA itself never changes. When you add a column to your schema, the `TableSpec` JSON changes, and the browser renders the new column automatically on the next load.
 

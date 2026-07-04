@@ -4,6 +4,8 @@
 
 In this style you load a single script, call `init()` once, then drop `<div>` elements annotated with `data-retrofit-src` or `data-retrofit` wherever you want a view to appear. The renderer scans the DOM, fetches specs (or reads inline JSON), and mounts each view independently. The host page owns its own routing and layout — retrofit-ui fills specific containers.
 
+<ScriptIslands />
+
 ## Setup
 
 ### Load the renderer

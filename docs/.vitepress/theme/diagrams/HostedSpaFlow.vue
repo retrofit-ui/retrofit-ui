@@ -1,0 +1,79 @@
+<!--
+  Hosted-SPA sequence diagram used on /guide/hosted-spa.
+  Four steps: /admin bundle (once), /retrofit.json config, /api/ui/items
+  spec, then a user "New" click that triggers /api/ui/items/new. Shows
+  the hash-routing step between spec fetches.
+-->
+<template>
+  <figure class="rf-diagram">
+    <svg viewBox="0 0 820 500" role="img" aria-labelledby="rf-hosted-title rf-hosted-desc" xmlns="http://www.w3.org/2000/svg">
+      <title id="rf-hosted-title">Hosted SPA request flow</title>
+      <desc id="rf-hosted-desc">The browser fetches the SPA bundle from /admin once, then fetches /retrofit.json for config, then fetches spec JSON per route as the user navigates. A hash-route change to #/items/new triggers a new spec fetch and re-render — no full page reload.</desc>
+      <defs>
+        <marker id="rf-h-arrow-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+        </marker>
+        <marker id="rf-h-arrow-l" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M10,0 L0,5 L10,10 z" fill="currentColor" />
+        </marker>
+      </defs>
+      <g font-family="var(--vp-font-family-base, system-ui)" font-size="13" font-weight="600">
+        <g transform="translate(80,20)">
+          <rect width="180" height="42" rx="8" fill="var(--rf-blue)" opacity="0.15" />
+          <rect width="180" height="42" rx="8" fill="none" stroke="var(--rf-blue)" stroke-width="1.5" />
+          <text x="90" y="26" text-anchor="middle" fill="var(--rf-ink)">Browser</text>
+        </g>
+        <g transform="translate(560,20)">
+          <rect width="180" height="42" rx="8" fill="var(--rf-teal)" opacity="0.15" />
+          <rect width="180" height="42" rx="8" fill="none" stroke="var(--rf-teal)" stroke-width="1.5" />
+          <text x="90" y="26" text-anchor="middle" fill="var(--rf-ink)">Your server</text>
+        </g>
+      </g>
+      <line x1="170" y1="62" x2="170" y2="490" stroke="var(--rf-ink-3)" stroke-width="1" stroke-dasharray="3 4" />
+      <line x1="650" y1="62" x2="650" y2="490" stroke="var(--rf-ink-3)" stroke-width="1" stroke-dasharray="3 4" />
+      <text x="30" y="102" fill="var(--rf-ink-3)" font-family="var(--vp-font-family-base, system-ui)" font-size="10" font-weight="700" letter-spacing="0.15em">BOOT</text>
+      <g font-family="var(--vp-font-family-mono, ui-monospace, monospace)" font-size="12">
+        <line x1="180" y1="106" x2="640" y2="106" stroke="var(--rf-blue)" stroke-width="1.5" marker-end="url(#rf-h-arrow-r)" color="var(--rf-blue)" />
+        <text x="410" y="100" text-anchor="middle" fill="var(--rf-blue)" font-weight="600">GET /admin</text>
+        <line x1="640" y1="126" x2="180" y2="126" stroke="var(--rf-ink-2)" stroke-width="1.5" marker-end="url(#rf-h-arrow-l)" color="var(--rf-ink-2)" />
+        <text x="410" y="142" text-anchor="middle" fill="var(--rf-ink-2)">SPA bundle (from distPath)</text>
+        <text x="410" y="158" text-anchor="middle" fill="var(--rf-ink-3)" font-size="11" font-family="var(--vp-font-family-base, system-ui)">served once, cached forever</text>
+      </g>
+      <g font-family="var(--vp-font-family-mono, ui-monospace, monospace)" font-size="12">
+        <line x1="180" y1="192" x2="640" y2="192" stroke="var(--rf-blue)" stroke-width="1.5" marker-end="url(#rf-h-arrow-r)" color="var(--rf-blue)" />
+        <text x="410" y="186" text-anchor="middle" fill="var(--rf-blue)" font-weight="600">GET /retrofit.json</text>
+        <line x1="640" y1="212" x2="180" y2="212" stroke="var(--rf-ink-2)" stroke-width="1.5" marker-end="url(#rf-h-arrow-l)" color="var(--rf-ink-2)" />
+        <text x="410" y="228" text-anchor="middle" fill="var(--rf-ink-2)">{ "apiBase": "/api/ui", "theme": … }</text>
+      </g>
+      <text x="30" y="272" fill="var(--rf-ink-3)" font-family="var(--vp-font-family-base, system-ui)" font-size="10" font-weight="700" letter-spacing="0.15em">ROUTE #/items</text>
+      <g font-family="var(--vp-font-family-mono, ui-monospace, monospace)" font-size="12">
+        <line x1="180" y1="276" x2="640" y2="276" stroke="var(--rf-orange)" stroke-width="1.5" marker-end="url(#rf-h-arrow-r)" color="var(--rf-orange)" />
+        <text x="410" y="270" text-anchor="middle" fill="var(--rf-orange)" font-weight="600">GET /api/ui/items</text>
+        <line x1="640" y1="296" x2="180" y2="296" stroke="var(--rf-ink-2)" stroke-width="1.5" marker-end="url(#rf-h-arrow-l)" color="var(--rf-ink-2)" />
+        <text x="410" y="312" text-anchor="middle" fill="var(--rf-ink-2)">
+          <tspan font-weight="600" fill="var(--rf-ink)">TableSpec</tspan> JSON
+        </text>
+        <text x="410" y="328" text-anchor="middle" fill="var(--rf-ink-3)" font-size="11" font-family="var(--vp-font-family-base, system-ui)">SPA renders the table</text>
+      </g>
+      <g transform="translate(30,368)">
+        <rect width="130" height="40" rx="8" fill="var(--rf-red)" opacity="0.14" />
+        <rect width="130" height="40" rx="8" fill="none" stroke="var(--rf-red)" stroke-width="1.5" stroke-dasharray="3 3" />
+        <text x="65" y="18" text-anchor="middle" fill="var(--rf-ink)" font-family="var(--vp-font-family-base, system-ui)" font-size="11" font-weight="600">User clicks "New"</text>
+        <text x="65" y="32" text-anchor="middle" fill="var(--rf-ink-2)" font-family="var(--vp-font-family-mono, ui-monospace, monospace)" font-size="10">→ #/items/new</text>
+      </g>
+      <text x="30" y="428" fill="var(--rf-ink-3)" font-family="var(--vp-font-family-base, system-ui)" font-size="10" font-weight="700" letter-spacing="0.15em">ROUTE #/items/new</text>
+      <g font-family="var(--vp-font-family-mono, ui-monospace, monospace)" font-size="12">
+        <line x1="180" y1="432" x2="640" y2="432" stroke="var(--rf-purple)" stroke-width="1.5" marker-end="url(#rf-h-arrow-r)" color="var(--rf-purple)" />
+        <text x="410" y="426" text-anchor="middle" fill="var(--rf-purple)" font-weight="600">GET /api/ui/items/new</text>
+        <line x1="640" y1="452" x2="180" y2="452" stroke="var(--rf-ink-2)" stroke-width="1.5" marker-end="url(#rf-h-arrow-l)" color="var(--rf-ink-2)" />
+        <text x="410" y="468" text-anchor="middle" fill="var(--rf-ink-2)">
+          <tspan font-weight="600" fill="var(--rf-ink)">FormSpec</tspan> JSON
+        </text>
+        <text x="410" y="484" text-anchor="middle" fill="var(--rf-ink-3)" font-size="11" font-family="var(--vp-font-family-base, system-ui)">SPA renders the form</text>
+      </g>
+    </svg>
+    <figcaption class="rf-diagram__caption">
+      The SPA owns hash routing (<code>#/items</code>, <code>#/items/new</code>). Each route triggers one spec fetch; the SPA replaces its content in place — no full page reload.
+    </figcaption>
+  </figure>
+</template>

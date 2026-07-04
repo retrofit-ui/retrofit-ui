@@ -6,21 +6,7 @@ In this style, your server serves the pre-built SPA bundle as static files. The 
 
 ## How it works
 
-```
-Browser ──GET /admin───────────────────────► SPA (served from distPath, once)
-   │
-   ├──GET /retrofit.json──────────────────► { "apiBase": "/api/ui" }
-   │
-   ├──GET /api/ui/items────────────────────► TableSpec JSON
-   │                                              │
-   │                                              └──► SPA renders table
-   │
-   └──(user clicks "New")
-       └──navigate to #/items/new
-           └──GET /api/ui/items/new───────► FormSpec JSON
-                                                  │
-                                                  └──► SPA renders form
-```
+<HostedSpaFlow />
 
 The SPA manages the hash URL (`#/items`, `#/items/new`, `#/items/42`). Each route fetches the corresponding spec endpoint and renders the right view. Your server adds spec endpoints and the bundle handles everything else.
 

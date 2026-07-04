@@ -52,7 +52,16 @@ app.post('/test/reset', (_req, res) => {
 });
 
 app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme: blogTheme }),
+  res.json({
+    apiBase: '/api/ui',
+    title: 'Blog Admin',
+    theme: blogTheme,
+    nav: [
+      { label: 'Posts', href: '/posts', icon: 'file-text' },
+      { label: 'By status', href: '/posts-by-status', icon: 'bar-chart' },
+      { label: 'Reviews', href: '/reviews', icon: 'star' },
+    ],
+  }),
 );
 app.use(express.static(distPath));
 

@@ -3,7 +3,7 @@ import '@shoelace-style/shoelace/dist/themes/light.css';
 import '@shoelace-style/shoelace/dist/components/alert/alert.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import { render } from 'solid-js/web';
-import { App } from './App';
+import { App, type NavItem } from './App';
 import './layout.css';
 
 setBasePath(
@@ -34,19 +34,26 @@ function applyTheme(theme: RetrofitTheme | undefined) {
 
 async function init() {
   let apiBase = '/api/ui';
+  let nav: NavItem[] | undefined;
+  let title: string | undefined;
   try {
     const cfg = (await fetch('/retrofit.json').then((r) => r.json())) as {
       apiBase?: string;
       theme?: RetrofitTheme;
+      nav?: NavItem[];
+      title?: string;
     };
     apiBase = cfg.apiBase ?? '/api/ui';
+    nav = cfg.nav;
+    title = cfg.title;
     applyTheme(cfg.theme);
+    if (title) document.title = title;
   } catch {
     // fall back to same-origin default
   }
   const root = document.getElementById('root');
   if (root) {
-    render(() => <App apiBase={apiBase} />, root);
+    render(() => <App apiBase={apiBase} nav={nav} title={title} />, root);
   }
 }
 

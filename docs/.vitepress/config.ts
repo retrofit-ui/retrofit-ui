@@ -112,6 +112,7 @@ export default defineConfig({
             { text: 'Contacts', link: '/examples/contacts' },
             { text: 'Blog', link: '/examples/blog' },
             { text: 'Interactive Chat', link: '/examples/interactive-chat' },
+            { text: 'Chalk App ↗', link: '/examples/chalk-app' },
           ],
         },
       ],

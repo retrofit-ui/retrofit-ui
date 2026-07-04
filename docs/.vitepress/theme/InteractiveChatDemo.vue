@@ -31,12 +31,7 @@ const spec = {
       children: [
         {
           kind: 'markdown',
-          spec: {
-            kind: 'markdown',
-            entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-            field: 'text',
-            entityId: '1',
-          },
+          spec: { kind: 'markdown', content: MESSAGES['1'] },
         },
       ],
       footer: DOWNLOAD_FOOTER,
@@ -116,12 +111,7 @@ const spec = {
       children: [
         {
           kind: 'markdown',
-          spec: {
-            kind: 'markdown',
-            entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-            field: 'text',
-            entityId: '2',
-          },
+          spec: { kind: 'markdown', content: MESSAGES['2'] },
         },
       ],
       footer: DOWNLOAD_FOOTER,
@@ -222,12 +212,7 @@ const spec = {
       children: [
         {
           kind: 'markdown',
-          spec: {
-            kind: 'markdown',
-            entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-            field: 'text',
-            entityId: '3',
-          },
+          spec: { kind: 'markdown', content: MESSAGES['3'] },
         },
       ],
       footer: DOWNLOAD_FOOTER,
@@ -296,7 +281,6 @@ const THEME_CSS_VARS: Record<string, string> = {
 const THEME_EXTRA_CSS = `.retrofit-thead { background-color: #312e81; }
 .retrofit-th { color: #eef2ff; border-bottom-color: #3730a3; }`;
 
-let _worker: { stop: () => void } | null = null;
 let _styleEl: HTMLStyleElement | null = null;
 
 onMounted(async () => {
@@ -312,19 +296,6 @@ onMounted(async () => {
     _styleEl = document.createElement('style');
     _styleEl.textContent = THEME_EXTRA_CSS;
     document.head.appendChild(_styleEl);
-  }
-
-  if (!_worker) {
-    const { setupWorker } = await import('msw/browser');
-    const { http, HttpResponse } = await import('msw');
-    _worker = setupWorker(
-      http.get('/api/chat-messages/:id', ({ params }) => {
-        const text = MESSAGES[params.id as string];
-        if (!text) return new HttpResponse(null, { status: 404 });
-        return HttpResponse.json({ id: params.id, text });
-      }),
-    );
-    await _worker.start({ onUnhandledRequest: 'bypass', quiet: true });
   }
 
   const controller = await getController();

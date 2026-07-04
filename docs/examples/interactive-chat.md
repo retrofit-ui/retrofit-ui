@@ -7,7 +7,7 @@ The interactive-chat example demonstrates how retrofit-ui's layout system can re
 <InteractiveChatDemo />
 
 ::: tip
-The demo above is live — the markdown messages are fetched from mock MSW endpoints, just as they would be from a real server.
+The demo above is live — everything is embedded in a single spec, so no network calls are needed to render it.
 :::
 
 Run it locally:
@@ -19,7 +19,7 @@ just example js interactive-chat
 
 - Nesting `col()` and `grid()` layout containers inside a `pageSpec()` to build multi-section pages
 - Embedding `StatViewBuilder`, `TimelineView`, and `TableView.forRows` as inline children (no route needed)
-- Using `MarkdownViewSpec` with a static REST endpoint to render user message text
+- Using `MarkdownViewSpec` with inline `content` to render user message text
 - A 3-column `grid()` for side-by-side stat comparison cards
 
 ## Server
@@ -63,22 +63,19 @@ app.get('/api/ui/chat', (_req, res) => {
 });
 ```
 
-User messages are served by a separate static endpoint and fetched lazily by `MarkdownViewComponent`:
+`userMessage()` embeds the markdown text directly in the spec, so no follow-up fetch is needed:
 
 ```typescript
-app.get('/api/chat-messages/:id', (req, res) => {
-  res.json({ id: req.params.id, text: MESSAGES[req.params.id] });
-});
+const MESSAGES: Record<string, string> = {
+  '1': 'What does my schedule look like for **today**?',
+  '2': 'Are there any **upcoming deadlines** I should know about?',
+  '3': 'How does my workload this week **compare to last week**?',
+};
 
 function userMessage(id: string): ViewSpec {
   return {
     kind: 'markdown',
-    spec: {
-      kind: 'markdown',
-      entityEndpoint: { url: '/api/chat-messages/{id}', method: 'GET' },
-      field: 'text',
-      entityId: id,
-    },
+    spec: { kind: 'markdown', content: MESSAGES[id] ?? '' },
   };
 }
 ```
@@ -87,11 +84,11 @@ function userMessage(id: string): ViewSpec {
 
 | Child | Kind | Contents |
 |-------|------|----------|
-| User turn 1 | `markdown` | Fetched from `/api/chat-messages/1` |
+| User turn 1 | `markdown` | Inline `content` — "What does my schedule look like today?" |
 | Assistant turn 1 | `flex` column | `stat` (3 KPIs) + `timeline` (6 events) |
-| User turn 2 | `markdown` | Fetched from `/api/chat-messages/2` |
+| User turn 2 | `markdown` | Inline `content` — "Are there any upcoming deadlines?" |
 | Assistant turn 2 | `flex` column | `stat` (deadline counts) + `table` (5 rows) |
-| User turn 3 | `markdown` | Fetched from `/api/chat-messages/3` |
+| User turn 3 | `markdown` | Inline `content` — "How does my workload compare?" |
 | Assistant turn 3 | `grid` (3 cols) | Three single-stat comparison cards |
 
 ## Key takeaway

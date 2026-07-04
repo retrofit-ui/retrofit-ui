@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/retrofit-ui/retrofit-ui/main/docs/public/logo.svg" alt="retrofit-ui" width="120" height="120" />
+</p>
+
 # @retrofit-ui/core
 
 [![npm](https://img.shields.io/npm/v/@retrofit-ui/core.svg)](https://www.npmjs.com/package/@retrofit-ui/core)

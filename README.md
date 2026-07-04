@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/retrofit-ui/retrofit-ui/main/docs/public/logo.svg" alt="retrofit-ui" width="140" height="140" />
+</p>
+
 # retrofit-ui
 
 Declarative, server-driven UI framework. The server describes UI as JSON; the browser renders it with no frontend code required. See the [docs](https://retrofit-ui.github.io/retrofit-ui/) for usage.

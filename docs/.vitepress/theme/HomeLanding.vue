@@ -255,6 +255,7 @@ onBeforeUnmount(() => observer?.disconnect());
   background: linear-gradient(110deg, var(--warm-2), var(--warm));
   -webkit-background-clip: text;
   background-clip: text;
+  white-space: nowrap;
 }
 
 .rf-lede {

@@ -6,6 +6,7 @@ export default defineConfig({
     'Declarative, server-driven UI components from your existing schemas',
 
   head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     [
       'link',
@@ -32,6 +33,8 @@ export default defineConfig({
   },
 
   themeConfig: {
+    logo: '/logo.svg',
+
     nav: [
       { text: 'Guide', link: '/guide/what-is-retrofit-ui' },
       { text: 'Reference', link: '/reference/js-api' },

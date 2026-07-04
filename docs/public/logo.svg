@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-label="retrofit-ui logo">
+  <rect x="40"  y="40"  width="96" height="96" fill="#e8695d"/>
+  <rect x="144" y="40"  width="96" height="96" fill="#f2a541"/>
+  <rect x="248" y="40"  width="96" height="96" fill="#4fb0a5"/>
+  <rect x="40"  y="144" width="96" height="96" fill="#5b8fd6"/>
+  <rect x="352" y="144" width="96" height="96" fill="#f2a541"/>
+  <rect x="40"  y="248" width="96" height="96" fill="#8a6fc9"/>
+  <rect x="144" y="248" width="96" height="96" fill="#e8695d"/>
+  <rect x="248" y="248" width="96" height="96" fill="#4fb0a5"/>
+  <rect x="40"  y="352" width="96" height="96" fill="#5b8fd6"/>
+  <rect x="352" y="352" width="96" height="96" fill="#8a6fc9"/>
+</svg>

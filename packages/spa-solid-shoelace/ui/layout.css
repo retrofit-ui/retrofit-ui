@@ -52,7 +52,9 @@
   font-size: var(--sl-font-size-small);
   font-weight: var(--sl-font-weight-medium);
   text-decoration: none;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
 }
 
 .retrofit-shell-nav-link:hover {

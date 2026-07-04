@@ -54,7 +54,8 @@ The SPA navigates to `#/{resource}/timeline` (or `#/{resource}/{id}/timeline` fo
 ```typescript
 import { TimelineView } from '@retrofit-ui/builder-zod';
 
-app.get('/api/ui/deployments/timeline', async (_req, res) => {
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/ops/deployments/timeline', async (_req, res) => {
   const events = await db.query(
     `SELECT title, description, created_at AS timestamp, status AS variant
      FROM deploy_events ORDER BY created_at DESC`,

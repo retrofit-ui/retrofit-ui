@@ -61,6 +61,10 @@ npx tsx server.ts
 
 Open `http://localhost:3000` and you'll see a table with Name and Active columns populated from your data. retrofit-ui derived the column types from the Zod schema automatically.
 
+::: info The `/api/ui` prefix is your choice
+`apiBase` is a prefix retrofit-ui prepends when it fetches specs. `/api/ui` above is a convention that reads cleanly, not a requirement — use `/admin-ui`, `/ui/v2`, or `/` if that fits your server. Just make sure the `apiBase` in `/retrofit.json` matches the routes you register.
+:::
+
 ## Adding create and delete
 
 Wire up more endpoints by adding handlers and endpoint directives to the builder:

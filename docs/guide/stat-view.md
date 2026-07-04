@@ -60,7 +60,8 @@ const spec = new StatView()
   .title('Dashboard Overview')
   .build();
 
-app.get('/api/ui/dashboard/stats', (_req, res) => {
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/dashboard/stats', (_req, res) => {
   res.json(spec);
 });
 ```

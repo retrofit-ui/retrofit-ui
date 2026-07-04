@@ -33,7 +33,8 @@ const tableSpec = TableView.schema(PostSchema)
   .list({ method: 'GET', url: '/posts' })
   .build();
 
-app.get('/api/ui/posts-page', (_req, res) => {
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/admin-ui/posts-page', (_req, res) => {
   res.json(
     pageSpec()
       .title('Posts')
@@ -50,7 +51,7 @@ Use `row()` + `.add()` to compose a two-column dashboard:
 ```typescript
 import { pageSpec, row, formSpec, TableView } from '@retrofit-ui/builder-zod';
 
-app.get('/api/ui/expenses-dashboard', (_req, res) => {
+app.get('/reports/expenses-dashboard', (_req, res) => {
   res.json(
     pageSpec()
       .title('Expenses')
@@ -93,8 +94,8 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .build();
 
 // Two routes, two specs, one builder call
-app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
-app.get('/api/ui/contacts/:id', (req, res) => {
+app.get('/admin-ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+app.get('/admin-ui/contacts/:id', (req, res) => {
   // bake entity values onto form fields for the edit case
   const entity = store.find(req.params.id);
   const fields = bundle.formSpec.fields.map((f) =>

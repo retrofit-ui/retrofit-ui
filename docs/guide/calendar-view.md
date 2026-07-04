@@ -70,7 +70,8 @@ FullCalendar is initialized from the spec's `events` array and options. Subseque
 ```typescript
 import { CalendarView } from '@retrofit-ui/builder-zod';
 
-app.get('/api/ui/events/calendar', async (_req, res) => {
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/schedule/events/calendar', async (_req, res) => {
   const events = await db.query(
     `SELECT id::text, title, start_at AS start, end_at AS end, color
      FROM events WHERE start_at >= NOW() - INTERVAL '30 days'`,

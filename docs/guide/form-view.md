@@ -60,7 +60,8 @@ const PostSchema = z.object({
 
 const UpdatePostSchema = PostSchema.omit({ id: true });
 
-app.get('/api/ui/posts/:id', (req, res) => {
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/admin-ui/posts/:id', (req, res) => {
   res.json(
     retrofit(
       formSpec(PostSchema, UpdatePostSchema)
@@ -357,7 +358,7 @@ TableView.schema(PostSchema)
 
 ```typescript
 // Form spec — handles the edit page
-app.get('/api/ui/posts/:id', (req, res) => {
+app.get('/admin-ui/posts/:id', (req, res) => {
   res.json(retrofit(formSpec(PostSchema, UpdatePostSchema)
     .find({ method: 'GET', url: '/posts/{id}' })
     .update({ method: 'PUT', url: '/posts/{id}' })
@@ -369,7 +370,7 @@ app.get('/api/ui/posts/:id', (req, res) => {
 ## Java
 
 ```java
-@GetMapping("/api/ui/items/{id}")
+@GetMapping("/admin-ui/items/{id}")
 public FormSpec itemForm(@PathVariable String id) {
     boolean isNew = "new".equals(id);
     var builder = FormSpec.builder()

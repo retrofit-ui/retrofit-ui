@@ -48,7 +48,8 @@ It then fetches the entity, extracts the `body` field, parses it with [marked](h
 ```typescript
 import type { MarkdownViewSpec } from '@retrofit-ui/builder-zod';
 
-app.get('/api/ui/posts/:id/render', (req, res) => {
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/pages/posts/:id/render', (req, res) => {
   const spec: MarkdownViewSpec = {
     entityEndpoint: { method: 'GET', url: `/posts/${req.params.id}` },
     field: 'body',

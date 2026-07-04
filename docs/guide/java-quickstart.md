@@ -79,7 +79,9 @@ Override defaults in `application.properties`:
 # Where the SPA is served (default: /retrofit-ui)
 retrofit-ui.path=/admin
 
-# Base path the SPA uses to call spec endpoints (default: /api/ui)
+# Base path the SPA uses to call spec endpoints (default: /api/ui).
+# Any prefix works — /admin-ui, /ui/v2, or /. Match this to whatever
+# routes your controllers expose.
 retrofit-ui.api-base=/api/ui
 
 # Shoelace theme: "light" or "dark" (default: light)

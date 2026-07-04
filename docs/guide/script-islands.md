@@ -34,6 +34,10 @@ init({ rootElement: document.body, apiBase: '/api/ui' });
 
 `init()` returns an `IslandController` you can hold onto for programmatic mounting and teardown later.
 
+::: info Pick your own URL prefix
+`apiBase` is the prefix retrofit-ui prepends to a resource name when fetching its spec — nothing more. `/api/ui` above is a convention, not a requirement: set it to `/admin-ui`, `/pages`, or `/` to match whatever routes your server exposes.
+:::
+
 ## Mounting views with data attributes
 
 ### `data-retrofit-src` — fetch spec from URL

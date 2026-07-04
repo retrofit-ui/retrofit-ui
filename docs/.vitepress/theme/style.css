@@ -89,16 +89,16 @@
  * so they stay visually consistent.
  */
 .rf-diagram {
-  --rf-red:    #e8695d;
+  --rf-red: #e8695d;
   --rf-orange: #f2a541;
-  --rf-teal:   #4fb0a5;
-  --rf-blue:   #5b8fd6;
+  --rf-teal: #4fb0a5;
+  --rf-blue: #5b8fd6;
   --rf-purple: #8a6fc9;
-  --rf-panel:  var(--vp-c-bg-soft);
+  --rf-panel: var(--vp-c-bg-soft);
   --rf-panel-border: var(--vp-c-divider);
-  --rf-ink:    var(--vp-c-text-1);
-  --rf-ink-2:  var(--vp-c-text-2);
-  --rf-ink-3:  var(--vp-c-text-3);
+  --rf-ink: var(--vp-c-text-1);
+  --rf-ink-2: var(--vp-c-text-2);
+  --rf-ink-3: var(--vp-c-text-3);
 
   margin: 28px 0;
   padding: 20px 16px;
@@ -118,10 +118,10 @@
 
 /* Slightly punchier palette in dark mode so the accents don't wash out. */
 .dark .rf-diagram {
-  --rf-red:    #ff7a6d;
+  --rf-red: #ff7a6d;
   --rf-orange: #ffb85a;
-  --rf-teal:   #6bd0c3;
-  --rf-blue:   #7ea6e6;
+  --rf-teal: #6bd0c3;
+  --rf-blue: #7ea6e6;
   --rf-purple: #a58ce0;
 }
 

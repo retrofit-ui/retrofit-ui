@@ -109,9 +109,10 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
 
 // Serve the two specs. The table spec goes on the collection route; the form
 // spec on the item route, with the entity's values baked onto the fields for edit.
-app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/admin-ui/contacts', (_req, res) => res.json(bundle.tableSpec));
 
-app.get('/api/ui/contacts/:id', (req, res) => {
+app.get('/admin-ui/contacts/:id', (req, res) => {
   const { id } = req.params;
   const entity =
     id !== 'new'
@@ -186,5 +187,5 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .build();
 
 console.log(bundle.tableSpec.columns.map((c) => c.key));
-app.get('/api/ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+app.get('/admin-ui/contacts', (_req, res) => res.json(bundle.tableSpec));
 ```

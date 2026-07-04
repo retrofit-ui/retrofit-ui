@@ -1,6 +1,6 @@
 # JS API Reference
 
-All exports from `@retrofit-ui/builder-zod`. The package produces spec JSON; your server emits it on `/api/ui/*` routes and serves the SPA bundle.
+All exports from `@retrofit-ui/builder-zod`. The package produces spec JSON; your server emits it on whatever routes you register (matched to the `apiBase` in `/retrofit.json` — the default is `/api/ui`) and serves the SPA bundle.
 
 ---
 

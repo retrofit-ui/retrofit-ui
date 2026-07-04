@@ -20,6 +20,10 @@ pnpm add @retrofit-ui/builder-zod @retrofit-ui/spa-solid-shoelace
 
 ### Wire up the server
 
+::: info Pick your own URL prefix
+`apiBase` is a prefix retrofit-ui prepends to the resource name when it fetches specs — nothing else magic about it. Set it to whatever fits your server: `/api/ui`, `/admin-ui`, `/ui/v2`, or just `/`. The `/api/ui` shown below is only a convention that reads well; retrofit-ui does not require it.
+:::
+
 ```typescript
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';

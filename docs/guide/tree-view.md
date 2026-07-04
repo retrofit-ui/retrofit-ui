@@ -63,7 +63,8 @@ Then the SPA fetches all nodes from `spec.endpoint` and builds the tree by match
 import { TreeView } from '@retrofit-ui/builder-zod';
 
 // Each row must have: id, parentId (or null for roots), name
-app.get('/api/ui/departments/tree', (_req, res) => {
+// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/files/departments/tree', (_req, res) => {
   res.json(
     new TreeView()
       .endpoint({ method: 'GET', url: '/departments' })

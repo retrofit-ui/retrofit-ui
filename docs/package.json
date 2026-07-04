@@ -8,9 +8,11 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
+    "@retrofit-ui/builder-zod": "workspace:*",
     "@retrofit-ui/spa-solid-shoelace": "workspace:*",
     "msw": "^2.7.0",
-    "vitepress": "^1.6.0"
+    "vitepress": "^1.6.0",
+    "zod": "^4.3.6"
   },
   "msw": {
     "workerDirectory": [

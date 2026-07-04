@@ -1,12 +1,12 @@
-import {
-  filterForm,
-  formSpec,
-  pageSpec,
-  TableView,
-} from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
-import { CreateTodoSchema, TodoSchema } from './schemas';
+import type { Todo } from './schemas';
+import {
+  buildTodoFormSpec,
+  buildTodosByPrioritySpec,
+  buildTodosTableSpec,
+  todosTheme,
+} from './specs';
 import { store } from './store';
 
 const app = express();
@@ -26,88 +26,24 @@ app.delete('/todos/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-// Serve the SPA bundle + its config. The SPA fetches /retrofit.json for its
-// apiBase and theme, then renders specs from /api/ui/*. Any server in any
-// language can serve the bundle the same way — see @retrofit-ui/spa-solid-shoelace.
-const theme = {
-  cssVariables: {
-    '--sl-color-primary-50': '#f5f3ff',
-    '--sl-color-primary-100': '#ede9fe',
-    '--sl-color-primary-200': '#ddd6fe',
-    '--sl-color-primary-300': '#c4b5fd',
-    '--sl-color-primary-400': '#a78bfa',
-    '--sl-color-primary-500': '#8b5cf6',
-    '--sl-color-primary-600': '#7c3aed',
-    '--sl-color-primary-700': '#6d28d9',
-    '--sl-color-primary-800': '#5b21b6',
-    '--sl-color-primary-900': '#4c1d95',
-    '--sl-color-primary-950': '#2e1065',
-  },
-  extraCss: `.retrofit-thead { background-color: #4c1d95; }
-.retrofit-th { color: #f5f3ff; border-bottom-color: #6d28d9; }`,
-};
 app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme }),
+  res.json({ apiBase: '/api/ui', theme: todosTheme }),
 );
 app.use(express.static(distPath));
 
-// Single spec endpoint — inline editing, rows embedded in response
 app.get('/api/ui/todos', (_req, res) => {
-  res.json(
-    TableView.forRows(TodoSchema, store.all())
-      .updateSchema(CreateTodoSchema) // marks title/done/priority as editable
-      .create({ method: 'POST', url: '/todos' })
-      .update({ method: 'PUT', url: '/todos/{id}' })
-      .delete({ method: 'DELETE', url: '/todos/{id}' })
-      .build(),
-  );
+  res.json(buildTodosTableSpec(store.all() as Todo[]));
 });
 
-// Form view with switch for the done field — navigate to /#/todos/:id (edit)
-// or /#/todos/new (create)
 app.get('/api/ui/todos/:id', (req, res) => {
   const id = req.params.id;
   const isNew = id === 'new';
-  const entity = isNew ? undefined : store.find(id);
-  const builder = formSpec(TodoSchema, CreateTodoSchema)
-    .fieldOverride('done', { type: 'switch' })
-    .fieldOverride('title', {
-      tooltip: 'Enter a short description of the task',
-      helpText: 'Keep it brief',
-    })
-    .update({ method: 'PUT', url: `/todos/${id}` })
-    .delete({ method: 'DELETE', url: `/todos/${id}` });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  if (isNew) builder.create({ method: 'POST', url: '/todos' });
-  res.json(builder.build());
+  const entity = isNew ? undefined : (store.find(id) as Todo | undefined);
+  res.json(buildTodoFormSpec(id, entity, isNew));
 });
 
-// Stacked layout: priority filter + todos table — navigate to /#/todos-by-priority
 app.get('/api/ui/todos-by-priority', (_req, res) => {
-  res.json(
-    pageSpec()
-      .title('Todos by Priority')
-      .filterForm(
-        filterForm()
-          .field('priority', {
-            type: 'select',
-            label: 'Priority',
-            placeholder: 'All Priorities',
-            options: [
-              { label: 'High', value: 'high' },
-              { label: 'Medium', value: 'medium' },
-              { label: 'Low', value: 'low' },
-            ],
-          })
-          .build(),
-      )
-      .table(
-        TableView.schema(TodoSchema)
-          .list({ method: 'GET', url: '/todos?priority={priority}' })
-          .build(),
-      )
-      .build(),
-  );
+  res.json(buildTodosByPrioritySpec());
 });
 
 const PORT = process.env.PORT ?? 3000;

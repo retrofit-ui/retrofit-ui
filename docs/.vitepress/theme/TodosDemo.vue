@@ -1,47 +1,22 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import type { Todo } from '../../../examples/js/todos/src/schemas';
+import { buildTodosTableSpec } from '../../../examples/js/todos/src/specs';
 import { getController } from './useRetrofitController';
 
 const root = ref<HTMLElement>();
 
-// Module-level MSW worker — persists across SPA navigations so we don't
-// re-register the service worker on every component mount.
+// Module-level MSW worker + store — persist across SPA navigations.
 let _worker: { stop: () => void } | null = null;
 
-// In-memory store for MSW (shared across navigations)
-const _todos = [
+const _todos: Todo[] = [
   { id: 1, title: 'Buy groceries', done: false, priority: 'high' },
   { id: 2, title: 'Walk the dog', done: true, priority: 'low' },
   { id: 3, title: 'Read a book', done: false, priority: 'medium' },
 ];
 let _nextId = 4;
 
-const spec = {
-  kind: 'table',
-  title: 'Todos',
-  columns: [
-    { key: 'id', label: 'ID', type: 'number' },
-    { key: 'title', label: 'Title', type: 'string', editable: true },
-    { key: 'done', label: 'Done', type: 'boolean', editable: true },
-    {
-      key: 'priority',
-      label: 'Priority',
-      type: 'enum',
-      options: [
-        { label: 'Low', value: 'low' },
-        { label: 'Medium', value: 'medium' },
-        { label: 'High', value: 'high' },
-      ],
-      editable: true,
-    },
-  ],
-  endpoints: {
-    list: { method: 'GET', url: '/todos' },
-    create: { method: 'POST', url: '/todos' },
-    update: { method: 'PUT', url: '/todos/{id}' },
-    delete: { method: 'DELETE', url: '/todos/{id}' },
-  },
-};
+const spec = buildTodosTableSpec(_todos);
 
 onMounted(async () => {
   if (typeof window === 'undefined') return;
@@ -54,18 +29,19 @@ onMounted(async () => {
     _worker = setupWorker(
       http.get('/todos', () => HttpResponse.json([..._todos])),
       http.post('/todos', async ({ request }) => {
-        const body = (await request.json()) as Record<string, unknown>;
-        const todo = {
+        const body = (await request.json()) as Partial<Todo>;
+        const todo: Todo = {
           id: _nextId++,
+          title: '',
           done: false,
           priority: 'medium',
           ...body,
         };
-        _todos.push(todo as (typeof _todos)[0]);
+        _todos.push(todo);
         return HttpResponse.json(todo, { status: 201 });
       }),
       http.put('/todos/:id', async ({ params, request }) => {
-        const body = (await request.json()) as Record<string, unknown>;
+        const body = (await request.json()) as Partial<Todo>;
         const idx = _todos.findIndex((t) => t.id === Number(params.id));
         if (idx === -1) return new HttpResponse(null, { status: 404 });
         Object.assign(_todos[idx], body);

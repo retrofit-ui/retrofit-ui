@@ -3,30 +3,20 @@
 // 'review', change the enum here — the client form regenerates automatically
 // with no frontend changes required. This is the server-driven UI principle.
 
-import {
-  filterForm,
-  formSpec,
-  type MarkdownViewSpec,
-  pageSpec,
-  TableView,
-  TimelineView,
-} from '@retrofit-ui/builder-zod';
+import { formSpec, TableView } from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
-import type { Review } from './schemas';
+import type { Post, Review } from './schemas';
+import { ReviewSchema, UpdateReviewSchema } from './schemas';
 import {
-  PostSchema,
-  ReviewSchema,
-  UpdatePostSchema,
-  UpdateReviewSchema,
-} from './schemas';
+  blogTheme,
+  buildPostFormSpec,
+  buildPostRenderSpec,
+  buildPostsByStatusSpec,
+  buildPostsTableSpec,
+  buildPostTimelineSpec,
+} from './specs';
 import { store } from './store';
-
-const AUTHORS = [
-  { id: 'alice', name: 'Alice Smith' },
-  { id: 'bob', name: 'Bob Jones' },
-  { id: 'carol', name: 'Carol White' },
-];
 
 const app = express();
 app.use(express.json());
@@ -61,154 +51,45 @@ app.post('/test/reset', (_req, res) => {
   res.json({ ok: true });
 });
 
-// Serve the SPA bundle + its config. The SPA fetches /retrofit.json for its
-// apiBase and theme, then renders specs from /api/ui/*. Any server in any
-// language can serve the bundle the same way — see @retrofit-ui/spa-solid-shoelace.
-const theme = {
-  cssVariables: {
-    '--sl-color-primary-50': '#fdf4ff',
-    '--sl-color-primary-100': '#fae8ff',
-    '--sl-color-primary-200': '#f5d0fe',
-    '--sl-color-primary-300': '#f0abfc',
-    '--sl-color-primary-400': '#e879f9',
-    '--sl-color-primary-500': '#d946ef',
-    '--sl-color-primary-600': '#c026d3',
-    '--sl-color-primary-700': '#a21caf',
-    '--sl-color-primary-800': '#86198f',
-    '--sl-color-primary-900': '#701a75',
-    '--sl-color-primary-950': '#4a044e',
-  },
-  extraCss: `.retrofit-thead { background-color: #701a75; }
-.retrofit-th { color: #fdf4ff; border-bottom-color: #86198f; }`,
-};
 app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme }),
+  res.json({ apiBase: '/api/ui', theme: blogTheme }),
 );
 app.use(express.static(distPath));
 
-// Table view — rows embedded; click row to edit, Preview button to render
 app.get('/api/ui/posts', (_req, res) => {
-  res.json(
-    TableView.forRows(PostSchema, store.all())
-      .columnOverride('title', { sortable: true })
-      .columnOverride('status', {
-        filterable: true,
-        badgeVariants: {
-          draft: 'neutral',
-          published: 'success',
-          archived: 'warning',
-        },
-      })
-      .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
-      .rowAction({ label: 'History', routePattern: '/{id}/timeline' })
-      .find({ method: 'GET', url: '/posts/{id}' })
-      .create({ method: 'POST', url: '/posts' })
-      .build(),
-  );
+  res.json(buildPostsTableSpec(store.all() as Post[]));
 });
 
-// Form view — handles new (/api/ui/posts/new) and edit (/api/ui/posts/:id)
-// Express ':id' matches 'new' too, so one handler covers both
 app.get('/api/ui/posts/:id', (req, res) => {
   const { id } = req.params;
-  const entity = id !== 'new' ? store.find(id) : null;
-  const builder = formSpec(PostSchema, UpdatePostSchema)
-    .fieldOverride('body', { type: 'markdown' })
-    .fieldOverride('slug', {
-      helpText: 'lowercase, hyphens only',
-      validation: { pattern: '^[a-z0-9-]+$' },
-    })
-    .fieldOverride('tags', { type: 'tags' })
-    .fieldOverride('title', { validation: { max: 200 } })
-    .fieldOverride('author', {
-      type: 'select',
-      label: 'Author',
-      options: AUTHORS.map((a) => ({ label: a.name, value: a.id })),
-    })
-    .fieldOverride('status', { type: 'radio-group' })
-    .create({ method: 'POST', url: '/posts' })
-    .update({ method: 'PUT', url: '/posts/{id}' })
-    .delete({ method: 'DELETE', url: '/posts/{id}' });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(builder.build());
+  const entity = id !== 'new' ? (store.find(id) as Post | null) : null;
+  res.json(buildPostFormSpec(entity));
 });
 
-// Markdown render spec — 3 path segments, won't conflict with /:id above
 app.get('/api/ui/posts/:id/render', (req, res) => {
-  const post = store.find(req.params.id);
+  const post = store.find(req.params.id) as Post | undefined;
   if (!post) {
     res.status(404).json({ error: 'Not found' });
     return;
   }
-  res.json({
-    kind: 'markdown',
-    content: String(post.body ?? ''),
-    metadata: { title: 'Preview' },
-  } satisfies MarkdownViewSpec);
+  res.json(buildPostRenderSpec(post));
 });
 
-// Timeline spec route — events are populated inline, no separate data fetch
 app.get('/api/ui/posts/:id/timeline', (req, res) => {
-  const post = store.find(req.params.id);
+  const post = store.find(req.params.id) as Post | undefined;
   if (!post) {
     res.status(404).json({ error: 'Not found' });
     return;
   }
-  const variantMap: Record<string, 'success' | 'primary' | 'neutral'> = {
-    published: 'success',
-    draft: 'primary',
-    archived: 'neutral',
-  };
-  res.json(
-    TimelineView.events([
-      {
-        timestamp: post.updatedAt as string,
-        title: `Marked as ${post.status as string}`,
-        description: `Status changed to '${post.status as string}'.`,
-        variant: variantMap[post.status as string] ?? 'neutral',
-      },
-      {
-        timestamp: '2026-01-01T00:00:00.000Z',
-        title: 'Created',
-        description: 'Post was created.',
-        variant: 'neutral',
-      },
-    ])
-      .title('Post History')
-      .build(),
-  );
+  res.json(buildPostTimelineSpec(post));
 });
 
-// Stacked layout: status filter + posts table — navigate to /#/posts-by-status
-app.get('/api/ui/posts-by-status', (_req, res) => {
-  res.json(
-    pageSpec()
-      .title('Posts by Status')
-      .filterForm(
-        filterForm()
-          .field('status', {
-            type: 'select',
-            label: 'Status',
-            placeholder: 'All Statuses',
-            options: [
-              { label: 'Draft', value: 'draft' },
-              { label: 'Published', value: 'published' },
-              { label: 'Archived', value: 'archived' },
-            ],
-          })
-          .build(),
-      )
-      .table(
-        TableView.schema(PostSchema)
-          .visibleColumns(['title', 'author', 'status', 'updatedAt'])
-          .list({ method: 'GET', url: '/posts?status={status}' })
-          .build(),
-      )
-      .build(),
-  );
-});
+app.get('/api/ui/posts-by-status', (_req, res) =>
+  res.json(buildPostsByStatusSpec()),
+);
 
-// In-memory reviews store
+// ── Reviews (used by the custom-view example, not the blog docs demo) ────────
+
 let reviewNextId = 1;
 const reviews: Review[] = [];
 

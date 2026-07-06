@@ -103,3 +103,35 @@ describe('ViewSpec leaf types', () => {
     expect(children[0]?.kind).toBe('stat');
   });
 });
+
+// Guards the shapes SpecRenderer's `text`/`tabs`/`details` arms depend on
+// (issue #133). These kinds are unwrapped and standalone-renderable, so they
+// can be dispatched directly by SpecRenderer without a page/router context.
+describe('ViewSpec text/tabs/details standalone shapes', () => {
+  it('TextSpec is unwrapped with content + optional variant', () => {
+    const spec: ViewSpec = { kind: 'text', content: 'hi', variant: 'muted' };
+    expect(spec.kind).toBe('text');
+    expect((spec as { kind: 'text'; content: string }).content).toBe('hi');
+  });
+
+  it('TabsSpec carries tabs with children', () => {
+    const spec: ViewSpec = {
+      kind: 'tabs',
+      tabs: [{ label: 'A', children: [{ kind: 'text', content: 'x' }] }],
+    };
+    expect(spec.kind).toBe('tabs');
+    const tabs = (spec as { kind: 'tabs'; tabs: { label: string }[] }).tabs;
+    expect(tabs[0]?.label).toBe('A');
+  });
+
+  it('DetailsSpec carries items', () => {
+    const spec: ViewSpec = {
+      kind: 'details',
+      items: [{ summary: 'S', body: 'B', open: true }],
+    };
+    expect(spec.kind).toBe('details');
+    const items = (spec as { kind: 'details'; items: { summary: string }[] })
+      .items;
+    expect(items[0]?.summary).toBe('S');
+  });
+});

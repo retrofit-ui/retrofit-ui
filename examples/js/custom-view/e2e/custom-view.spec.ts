@@ -78,6 +78,35 @@ test.describe('Custom rating view (handled by ExtendedRenderer)', () => {
   });
 });
 
+// ── ViewSpec-only kinds delegated through SpecRenderer (issue #133) ───────────
+// text/tabs/details are ViewSpec-only kinds ExtendedRenderer doesn't handle, so
+// they fall through to the stock SpecRenderer. Before the fix these rendered as
+// "Unknown spec kind"; now they render their real content.
+
+test.describe('ViewSpec-only kinds delegated through SpecRenderer', () => {
+  test('text spec renders its content, not an error', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Built-in: text view' }).click();
+    await expect(page.getByText('Rendered by SpecRenderer')).toBeVisible();
+    await expect(page.locator('.retrofit-error-message')).toHaveCount(0);
+  });
+
+  test('tabs spec renders a tab group with a text child', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Built-in: tabs view' }).click();
+    await expect(page.locator('sl-tab-group')).toBeVisible();
+    await expect(page.getByText('Tab one via SpecRenderer')).toBeVisible();
+    await expect(page.locator('.retrofit-error-message')).toHaveCount(0);
+  });
+
+  test('details spec renders sl-details', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Built-in: details view' }).click();
+    await expect(page.locator('sl-details')).toHaveCount(2);
+    await expect(page.locator('.retrofit-error-message')).toHaveCount(0);
+  });
+});
+
 test.describe('Renderer composition', () => {
   test('switching between built-in and custom kinds reuses the same host', async ({
     page,

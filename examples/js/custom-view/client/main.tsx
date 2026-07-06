@@ -47,6 +47,9 @@ function applyTheme(theme: RetrofitTheme | undefined) {
 const ENDPOINTS = [
   { path: '/api/hello-stat', label: 'Built-in: stat view' },
   { path: '/api/product-ratings', label: 'Custom: rating view' },
+  { path: '/api/hello-text', label: 'Built-in: text view' },
+  { path: '/api/hello-tabs', label: 'Built-in: tabs view' },
+  { path: '/api/hello-details', label: 'Built-in: details view' },
 ] as const;
 
 function Home(props: { apiBase: string }) {

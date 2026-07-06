@@ -1,4 +1,9 @@
-import type { RootSpec } from '@retrofit-ui/core';
+import type {
+  DetailsSpec,
+  RootSpec,
+  TabsSpec,
+  TextSpec,
+} from '@retrofit-ui/core';
 
 /**
  * A custom spec kind, defined entirely in userland. Extending retrofit-ui
@@ -22,4 +27,9 @@ export interface RatingSpec {
  * about, plus our custom kind. Server code returns this; client dispatches on
  * `spec.kind`.
  */
-export type AppSpec = RootSpec | RatingSpec;
+export type AppSpec =
+  | RootSpec
+  | RatingSpec
+  | TextSpec
+  | TabsSpec
+  | DetailsSpec;

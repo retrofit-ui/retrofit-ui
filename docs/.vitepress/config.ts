@@ -5,6 +5,12 @@ export default defineConfig({
   description:
     'Declarative, server-driven UI components from your existing schemas',
 
+  // Internal planning artifacts (issue write-ups + implementation plans) live under
+  // docs/ for convenience but are not part of the published site. VitePress compiles
+  // every .md as a Vue SFC, so their inline `{{ ... }}` snippets would otherwise be
+  // parsed as Vue interpolation and break the build. They are not linked anywhere.
+  srcExclude: ['github_issues/**'],
+
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],

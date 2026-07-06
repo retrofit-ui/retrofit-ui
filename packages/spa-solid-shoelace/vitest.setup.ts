@@ -16,5 +16,5 @@ const g = globalThis as {
   IntersectionObserver?: unknown;
 };
 if (!('ResizeObserver' in globalThis)) g.ResizeObserver = ObserverStub;
-if (!('IntersectionObserver' in globalThis)) g.IntersectionObserver =
-  ObserverStub;
+if (!('IntersectionObserver' in globalThis))
+  g.IntersectionObserver = ObserverStub;

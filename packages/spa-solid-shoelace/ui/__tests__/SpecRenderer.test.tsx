@@ -92,9 +92,9 @@ describe('SpecRenderer without extensions', () => {
 
   it('shows "Unknown spec kind" for an unregistered kind', () => {
     const { container } = renderSpec({ kind: 'my-widget', label: 'x' });
-    expect(container.querySelector('.retrofit-error-message')?.textContent).toBe(
-      'Unknown spec kind',
-    );
+    expect(
+      container.querySelector('.retrofit-error-message')?.textContent,
+    ).toBe('Unknown spec kind');
     expect(container.querySelector('.my-widget')).toBeNull();
   });
 });
@@ -103,10 +103,7 @@ describe('SpecRenderer without extensions', () => {
 
 describe('custom leaf kind', () => {
   it('renders at the top level when registered', () => {
-    const { container } = renderSpec(
-      { kind: 'my-widget', label: 'top' },
-      EXT,
-    );
+    const { container } = renderSpec({ kind: 'my-widget', label: 'top' }, EXT);
     expect(container.querySelector('.my-widget')?.textContent).toBe(
       'widget:top',
     );
@@ -218,16 +215,11 @@ describe('custom container kind', () => {
     };
     const { container } = renderSpec(spec, EXT);
     const panel = container.querySelector('.my-panel');
-    expect(panel?.querySelector('.my-widget')?.textContent).toBe(
-      'widget:deep',
-    );
+    expect(panel?.querySelector('.my-widget')?.textContent).toBe('widget:deep');
   });
 
   it('renders an empty custom container without crashing', () => {
-    const { container } = renderSpec(
-      { kind: 'my-panel', children: [] },
-      EXT,
-    );
+    const { container } = renderSpec({ kind: 'my-panel', children: [] }, EXT);
     expect(container.querySelector('.my-panel')?.textContent).toBe('');
   });
 });

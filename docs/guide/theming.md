@@ -61,7 +61,52 @@ These classes are applied to the rendered HTML and can be targeted with `extraCs
 | `.retrofit-back-btn` | "← Back" link on form and markdown pages |
 | `.retrofit-form-actions` | Flex row containing Save/Delete buttons |
 | `.retrofit-error-message` | Validation/submit error text |
-| `.retrofit-markdown` | Markdown render container |
+| `.retrofit-markdown` | Markdown render container — reads `--retrofit-markdown-{max-width,line-height,font-size}` |
+
+## Markdown typography
+
+The markdown render view (`.retrofit-markdown`) exposes its typography as retrofit-ui custom properties so you can restyle it **without `!important`**. Each property carries its current value as a `var()` fallback, so unset behaves exactly as the default:
+
+| Custom property | Default |
+|-----------------|---------|
+| `--retrofit-markdown-max-width` | `720px` |
+| `--retrofit-markdown-line-height` | `1.7` |
+| `--retrofit-markdown-font-size` | `var(--sl-font-size-medium)` |
+
+Because the override is decided by the cascade of the custom property (not selector specificity), you can set it globally, per layout container, or per instance — all without `!important`:
+
+```css
+/* global opt-out: markdown fills its container everywhere */
+:root { --retrofit-markdown-max-width: none; }
+
+/* scoped: full-width only inside layout containers, others keep 720px */
+.retrofit-flex .retrofit-markdown,
+.retrofit-grid .retrofit-markdown {
+  --retrofit-markdown-max-width: none;
+}
+```
+
+Prefer the config seam over a raw global stylesheet. `theme.cssVariables` is injected into `:root` and `.sl-theme-light`, so it resolves identically to a hand-written `:root` rule:
+
+```typescript
+const retrofit = retrofitUi(app, {
+  theme: {
+    cssVariables: { '--retrofit-markdown-max-width': 'none' },
+  },
+});
+```
+
+For a scoped override, use `extraCss` (appended as a raw `<style>` block):
+
+```typescript
+const retrofit = retrofitUi(app, {
+  theme: {
+    extraCss: `.retrofit-flex .retrofit-markdown { --retrofit-markdown-max-width: 1200px; }`,
+  },
+});
+```
+
+Any valid `max-width` value works (`1200px`, `90ch`, `none`, …) — the property is opaque to retrofit-ui. Note that a *set-but-invalid* value (e.g. `banana`) is **not** the same as unset: CSS discards the declaration and the value falls back to `initial` (`none`) rather than re-triggering the `var()` fallback. This is standard CSS custom-property behaviour.
 
 ## Example themes
 

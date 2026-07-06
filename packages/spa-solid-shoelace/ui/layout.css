@@ -218,9 +218,9 @@
 
 /* Markdown render view */
 .retrofit-markdown {
-  line-height: 1.7;
-  font-size: var(--sl-font-size-medium);
-  max-width: 720px;
+  line-height: var(--retrofit-markdown-line-height, 1.7);
+  font-size: var(--retrofit-markdown-font-size, var(--sl-font-size-medium));
+  max-width: var(--retrofit-markdown-max-width, 720px);
 }
 
 .retrofit-markdown h1,

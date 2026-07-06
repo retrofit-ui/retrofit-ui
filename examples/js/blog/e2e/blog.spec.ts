@@ -389,3 +389,54 @@ test.describe('Blog markdown render view', () => {
     await waitForForm(page);
   });
 });
+
+test.describe('Markdown max-width override', () => {
+  const maxWidth = (page: import('@playwright/test').Page) =>
+    page
+      .locator('.retrofit-markdown')
+      .evaluate((el) => getComputedStyle(el).maxWidth);
+
+  test('defaults to 720px with no override', async ({ page }) => {
+    await page.goto('/#/posts/1/render');
+    await page.waitForSelector('.retrofit-markdown');
+    expect(await maxWidth(page)).toBe('720px');
+  });
+
+  test('a global :root override wins without !important', async ({ page }) => {
+    await page.goto('/#/posts/1/render');
+    await page.waitForSelector('.retrofit-markdown');
+    await page.addStyleTag({
+      content: ':root { --retrofit-markdown-max-width: none; }',
+    });
+    expect(await maxWidth(page)).toBe('none');
+  });
+
+  test('a scoped override applies while defaults elsewhere are untouched', async ({
+    page,
+  }) => {
+    await page.goto('/#/posts/1/render');
+    await page.waitForSelector('.retrofit-markdown');
+    await page.addStyleTag({
+      content:
+        '.retrofit-view .retrofit-markdown { --retrofit-markdown-max-width: 1200px; }',
+    });
+    expect(await maxWidth(page)).toBe('1200px');
+  });
+
+  test('line-height honours --retrofit-markdown-line-height', async ({
+    page,
+  }) => {
+    await page.goto('/#/posts/1/render');
+    await page.waitForSelector('.retrofit-markdown');
+    const lineHeight = () =>
+      page
+        .locator('.retrofit-markdown')
+        .evaluate((el) => getComputedStyle(el).lineHeight);
+    const before = await lineHeight();
+    await page.addStyleTag({
+      content: ':root { --retrofit-markdown-line-height: 3; }',
+    });
+    const after = await lineHeight();
+    expect(after).not.toBe(before);
+  });
+});

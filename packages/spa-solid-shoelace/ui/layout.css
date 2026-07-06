@@ -1,13 +1,19 @@
 /* Layout-only styles for the ui-shell. Form and component styles come from Shoelace. */
 
-/* Dashboard shell — sidebar + main content. Rendered by App.tsx when
-   /retrofit.json includes a `nav` array. */
+/* Dashboard shell — collapsible sidebar + main content. Rendered by
+   App.tsx. The sidebar is collapsed by default; a fixed hamburger button
+   in the top-left opens it. A close (chevron) button inside the sidebar
+   header collapses it again. State persists in localStorage. */
 .retrofit-shell {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 1fr; /* default: sidebar collapsed */
   min-height: 100vh;
   font-family: var(--sl-font-sans);
   background: var(--sl-color-neutral-0);
+}
+
+.retrofit-shell--nav-open {
+  grid-template-columns: 240px 1fr;
 }
 
 .retrofit-shell--no-nav {
@@ -17,8 +23,8 @@
 .retrofit-shell-nav {
   border-right: 1px solid var(--sl-color-neutral-200);
   background: var(--sl-color-neutral-50);
-  padding: var(--sl-spacing-large) 0;
-  display: flex;
+  padding: var(--sl-spacing-medium) 0 var(--sl-spacing-large);
+  display: none; /* hidden until nav opens */
   flex-direction: column;
   gap: var(--sl-spacing-medium);
   position: sticky;
@@ -27,12 +33,76 @@
   overflow-y: auto;
 }
 
+.retrofit-shell--nav-open .retrofit-shell-nav {
+  display: flex;
+}
+
+.retrofit-shell-nav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sl-spacing-small) 0 var(--sl-spacing-large);
+}
+
 .retrofit-shell-brand {
-  padding: 0 var(--sl-spacing-large);
   font-size: var(--sl-font-size-medium);
   font-weight: var(--sl-font-weight-semibold);
   color: var(--sl-color-neutral-900);
   letter-spacing: -0.01em;
+}
+
+.retrofit-shell-nav-close {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--sl-color-neutral-500);
+  border-radius: var(--sl-border-radius-small);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.retrofit-shell-nav-close:hover {
+  color: var(--sl-color-neutral-900);
+  background: var(--sl-color-neutral-100);
+}
+
+/* Floating hamburger, visible only while the sidebar is collapsed. */
+.retrofit-shell-nav-toggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  background: var(--sl-color-neutral-0);
+  border: 1px solid var(--sl-color-neutral-200);
+  border-radius: var(--sl-border-radius-medium);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--sl-color-neutral-700);
+  font-size: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.retrofit-shell-nav-toggle:hover {
+  background: var(--sl-color-neutral-100);
+  border-color: var(--sl-color-neutral-300);
+}
+
+.retrofit-shell--nav-open .retrofit-shell-nav-toggle {
+  display: none;
 }
 
 .retrofit-shell-nav-list {
@@ -80,16 +150,27 @@
   min-width: 0; /* let grid child shrink so tables can scroll horizontally */
 }
 
+/* When the nav is collapsed (but present), reserve room on the left so
+   the floating hamburger button doesn't overlap page titles. */
+.retrofit-shell:not(.retrofit-shell--no-nav):not(.retrofit-shell--nav-open)
+.retrofit-shell-main {
+  padding-left: 56px;
+}
+
 @media (max-width: 720px) {
-  .retrofit-shell {
+  .retrofit-shell--nav-open {
+    /* On narrow screens the sidebar becomes an overlay drawer rather
+       than pushing the content — otherwise the main pane gets too
+       cramped. */
     grid-template-columns: 1fr;
   }
-  .retrofit-shell-nav {
-    position: static;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--sl-color-neutral-200);
-    padding: var(--sl-spacing-medium) 0;
+  .retrofit-shell--nav-open .retrofit-shell-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    z-index: 20;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   }
 }
 

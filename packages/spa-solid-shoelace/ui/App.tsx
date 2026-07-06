@@ -1,5 +1,5 @@
 import { HashRouter, Route, useLocation } from '@solidjs/router';
-import { For, Show } from 'solid-js';
+import { createEffect, createSignal, For, Show } from 'solid-js';
 import { CalendarView } from './CalendarView';
 import { ApiBaseContext } from './context';
 import { FormView } from './FormView';
@@ -18,6 +18,29 @@ export interface NavItem {
   icon?: string;
 }
 
+// Fallback nav shown when /retrofit.json doesn't declare one — keeps the
+// SPA feeling like a real dashboard even for minimal example servers.
+// Servers opt out by setting `nav` to `null`, `false`, or `[]`.
+const DEFAULT_NAV: NavItem[] = [{ label: 'Home', href: '/', icon: 'house' }];
+
+const NAV_STATE_KEY = 'retrofit-ui:nav-open';
+
+function readInitialNavOpen(): boolean {
+  try {
+    return localStorage.getItem(NAV_STATE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function persistNavOpen(open: boolean): void {
+  try {
+    localStorage.setItem(NAV_STATE_KEY, open ? '1' : '0');
+  } catch {
+    // Best-effort — private-mode Safari etc. may block writes.
+  }
+}
+
 function Landing() {
   return (
     <div class="retrofit-view">
@@ -29,17 +52,36 @@ function Landing() {
   );
 }
 
-function Sidebar(props: { title?: string; nav: NavItem[] }) {
+function Sidebar(props: {
+  title?: string;
+  nav: NavItem[];
+  onClose: () => void;
+}) {
   const location = useLocation();
   const isActive = (href: string) => {
     const path = href.startsWith('#') ? href.slice(1) : href;
+    if (path === '/') return location.pathname === '/';
     return (
       location.pathname === path || location.pathname.startsWith(`${path}/`)
     );
   };
   return (
-    <aside class="retrofit-shell-nav" aria-label="Primary">
-      <div class="retrofit-shell-brand">{props.title ?? 'Retrofit UI'}</div>
+    <aside
+      class="retrofit-shell-nav"
+      aria-label="Primary"
+      id="retrofit-shell-nav"
+    >
+      <div class="retrofit-shell-nav-head">
+        <div class="retrofit-shell-brand">{props.title ?? 'Retrofit UI'}</div>
+        <button
+          type="button"
+          class="retrofit-shell-nav-close"
+          onClick={props.onClose}
+          aria-label="Collapse navigation"
+        >
+          <sl-icon name="chevron-left" />
+        </button>
+      </div>
       <nav class="retrofit-shell-nav-list">
         <For each={props.nav}>
           {(item) => (
@@ -65,20 +107,48 @@ function Sidebar(props: { title?: string; nav: NavItem[] }) {
 
 export function App(props: {
   apiBase?: string;
+  /**
+   * Nav items. `undefined` falls back to the built-in default (a single
+   * "Home" link at `/`). Pass an empty array to hide the sidebar
+   * entirely.
+   */
   nav?: NavItem[];
   title?: string;
 }) {
-  const nav = () => props.nav ?? [];
+  const nav = () => props.nav ?? DEFAULT_NAV;
+  const [open, setOpen] = createSignal(readInitialNavOpen());
+
+  createEffect(() => {
+    persistNavOpen(open());
+  });
+
   return (
     <ApiBaseContext.Provider value={props.apiBase ?? '/api/ui'}>
       <HashRouter
         root={(routerProps) => (
           <div
             class="retrofit-shell"
-            classList={{ 'retrofit-shell--no-nav': nav().length === 0 }}
+            classList={{
+              'retrofit-shell--nav-open': open() && nav().length > 0,
+              'retrofit-shell--no-nav': nav().length === 0,
+            }}
           >
             <Show when={nav().length > 0}>
-              <Sidebar title={props.title} nav={nav()} />
+              <Sidebar
+                title={props.title}
+                nav={nav()}
+                onClose={() => setOpen(false)}
+              />
+              <button
+                type="button"
+                class="retrofit-shell-nav-toggle"
+                onClick={() => setOpen(true)}
+                aria-label="Open navigation"
+                aria-expanded={open()}
+                aria-controls="retrofit-shell-nav"
+              >
+                <sl-icon name="list" />
+              </button>
             </Show>
             <main class="retrofit-shell-main">{routerProps.children}</main>
           </div>

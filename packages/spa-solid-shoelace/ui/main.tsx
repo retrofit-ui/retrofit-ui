@@ -32,6 +32,15 @@ function applyTheme(theme: RetrofitTheme | undefined) {
   }
 }
 
+// Nav config resolution: undefined → let App use its built-in default;
+// null / false / [] → hide the sidebar entirely; NavItem[] → use as-is.
+function normalizeNav(raw: unknown): NavItem[] | undefined {
+  if (raw === undefined) return undefined;
+  if (raw === null || raw === false) return [];
+  if (Array.isArray(raw)) return raw as NavItem[];
+  return undefined;
+}
+
 async function init() {
   let apiBase = '/api/ui';
   let nav: NavItem[] | undefined;
@@ -40,11 +49,11 @@ async function init() {
     const cfg = (await fetch('/retrofit.json').then((r) => r.json())) as {
       apiBase?: string;
       theme?: RetrofitTheme;
-      nav?: NavItem[];
+      nav?: NavItem[] | null | false;
       title?: string;
     };
     apiBase = cfg.apiBase ?? '/api/ui';
-    nav = cfg.nav;
+    nav = normalizeNav(cfg.nav);
     title = cfg.title;
     applyTheme(cfg.theme);
     if (title) document.title = title;

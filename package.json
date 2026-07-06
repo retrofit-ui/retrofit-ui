@@ -17,6 +17,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
+    "verify:publish": "node scripts/verify-publish-manifests.mjs",
+    "test:publish-guard": "vitest run scripts",
     "prepare": "test -n \"$CI\" || lefthook install"
   },
   "devDependencies": {
@@ -24,6 +26,7 @@
     "@changesets/cli": "^2.29.8",
     "@vitest/coverage-v8": "^4.1.8",
     "lefthook": "^1.11.13",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   }
 }

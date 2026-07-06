@@ -8,7 +8,12 @@ Admin and internal tools are the obvious fit, but they're just one use case: any
 
 Instead of the browser knowing how to render your data, the **server describes the UI as JSON**. The browser's SPA reads that description and renders the appropriate component.
 
-<RequestFlow />
+<figure class="rf-diagram">
+  <img src="../diagrams/request-flow.svg" alt="Request flow between browser and server: the browser fetches the SPA bundle once, then repeatedly fetches spec JSON and row data." />
+  <figcaption class="rf-diagram__caption">
+    The SPA bundle is fetched <strong>once</strong>. Only the spec + row payloads change over time — no frontend redeploy when your schema grows.
+  </figcaption>
+</figure>
 
 The SPA itself never changes. When you add a column to your schema, the `TableSpec` JSON changes, and the browser renders the new column automatically on the next load.
 
@@ -21,6 +26,19 @@ The fix is a clean interface between layers — the same principle Kubernetes ap
 Three patterns this solves:
 
 <ScenarioTimelines />
+
+<!-- GitHub fallback: rendered on github.com (where custom Vue components are
+     stripped) but hidden on the docs site via the .gh-only CSS rule. -->
+<div class="gh-only">
+
+| **CRUD API** | **Project page with admin tools** | **AI-generated content blocks** |
+|---|---|---|
+| You have an entity table — products, users, invoices. Every field added to the schema needs to propagate to the backend model, the API response, and the frontend that displays it. | An internal page mixing prose or documentation with interactive components — forms, approval buttons, admin actions — that call real endpoints owned by the same service. | Structured output — a calendar, a summary grid, a timeline — that automation or a language model generates and needs to display without a custom frontend. |
+| When the UI lives in a separate codebase, the frontend step lags or gets skipped. Three places to update for every field. | The interactive pieces require frontend code tightly coupled to the backend API — two codebases to keep in sync for what should be a single feature. | There is no rendering layer. The machine produces structured data, but something has to turn it into UI — which means a frontend someone has to build and maintain. |
+| The spec is derived from your schema. Add a field once; it appears in the table automatically on the next load. | Drop a `data-retrofit-src` element into your page. The renderer fetches the spec and mounts the component wherever you place it — no framework, no build step. | The model emits spec JSON. The renderer consumes it directly. The output is also the render instruction — no template layer, no component code between them. |
+| Your existing REST endpoints stay untouched. The spec lives on a separate endpoint you define (`/api/ui/*` is the default convention, but you pick the URL) — no code generation, no scaffolding, nothing to maintain. | The backend stays in builder code — types and method chains that backend engineers already know. Complexity is opt-in; you never touch the frontend unless you choose to. | The same renderer that handles hand-authored specs handles machine-generated ones. No special mode, no integration layer. |
+
+</div>
 
 ## The spec types
 

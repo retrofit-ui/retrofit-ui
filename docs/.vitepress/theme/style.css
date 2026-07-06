@@ -252,6 +252,12 @@
   color: var(--rf-ink);
 }
 
+/* GitHub-only fallback content — visible on github.com (where Vue components
+ * and CSS get stripped) and hidden inside the VitePress docs site. */
+.gh-only {
+  display: none;
+}
+
 /* Collapse to a single column on narrow viewports so prose stays readable. */
 @media (max-width: 720px) {
   .rf-scenarios {

@@ -10,7 +10,12 @@ Everything in retrofit-ui meets at one place: the spec. A spec is a declarative 
 
 `@retrofit-ui/core` defines that contract — the shape of every spec a backend may emit and every renderer may consume. It is the only thing the two sides share.
 
-<SpecContract />
+<figure class="rf-diagram">
+  <img src="../diagrams/spec-contract.svg" alt="Spec contract: builder-zod (TypeScript) and builder-java (Spring Boot) both produce a central spec JSON; spa-solid-shoelace consumes it and reconciles the DOM. All three sit on the @retrofit-ui/core foundation — producers and renderer never talk directly." />
+  <figcaption class="rf-diagram__caption">
+    A Python or Go builder would slot into the left-hand side and get the same UI — as long as it emits <code>@retrofit-ui/core</code>-shaped specs.
+  </figcaption>
+</figure>
 
 The goal is for the spec to carry enough information that a backend library can make real guarantees to its users — correct pagination shape, valid column types, predictable cell structure — with no runtime knowledge of which renderer will consume the output. A Python or Go builder implements the same contract and gets the same UI.
 

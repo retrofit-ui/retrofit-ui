@@ -4,7 +4,12 @@
 
 In this style you load a single script, call `init()` once, then drop `<div>` elements annotated with `data-retrofit-src` or `data-retrofit` wherever you want a view to appear. The renderer scans the DOM, fetches specs (or reads inline JSON), and mounts each view independently. The host page owns its own routing and layout — retrofit-ui fills specific containers.
 
-<ScriptIslands />
+<figure class="rf-diagram">
+  <img src="../diagrams/script-islands.svg" alt="Script islands: a host HTML page owns its own header, sidebar, and footer; only one div annotated with data-retrofit-src is taken over by the renderer, which scans, fetches the spec, and mounts a view inside just that div." />
+  <figcaption class="rf-diagram__caption">
+    You own the header, sidebar, and footer. retrofit-ui takes over one specific <code>&lt;div&gt;</code> — as many as you want on a page, each independently.
+  </figcaption>
+</figure>
 
 ## Setup
 

@@ -2,11 +2,7 @@ import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
 import BlogDemo from './BlogDemo.vue';
 import ContactsDemo from './ContactsDemo.vue';
-import HostedSpaFlow from './diagrams/HostedSpaFlow.vue';
-import RequestFlow from './diagrams/RequestFlow.vue';
 import ScenarioTimelines from './diagrams/ScenarioTimelines.vue';
-import ScriptIslands from './diagrams/ScriptIslands.vue';
-import SpecContract from './diagrams/SpecContract.vue';
 import HomeLanding from './HomeLanding.vue';
 import InteractiveChatDemo from './InteractiveChatDemo.vue';
 import LandingDemo from './LandingDemo.vue';
@@ -22,16 +18,12 @@ export default {
     app.component('BlogDemo', BlogDemo);
     app.component('ContactsDemo', ContactsDemo);
     app.component('HomeLanding', HomeLanding);
-    app.component('HostedSpaFlow', HostedSpaFlow);
     app.component('InteractiveChatDemo', InteractiveChatDemo);
     app.component('LandingDemo', LandingDemo);
     app.component('LiveDemo', LiveDemo);
     app.component('MultiViewDemo', MultiViewDemo);
     app.component('PreviewBlock', PreviewBlock);
-    app.component('RequestFlow', RequestFlow);
     app.component('ScenarioTimelines', ScenarioTimelines);
-    app.component('ScriptIslands', ScriptIslands);
-    app.component('SpecContract', SpecContract);
     app.component('TodosDemo', TodosDemo);
   },
 } satisfies Theme;

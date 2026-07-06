@@ -6,7 +6,12 @@ In this style, your server serves the pre-built SPA bundle as static files. The 
 
 ## How it works
 
-<HostedSpaFlow />
+<figure class="rf-diagram">
+  <img src="../diagrams/hosted-spa-flow.svg" alt="Hosted SPA request flow: browser fetches /admin bundle once, then /retrofit.json, then a spec per hash route (#/items → TableSpec, #/items/new → FormSpec)." />
+  <figcaption class="rf-diagram__caption">
+    The SPA owns hash routing (<code>#/items</code>, <code>#/items/new</code>). Each route triggers one spec fetch; the SPA replaces its content in place — no full page reload.
+  </figcaption>
+</figure>
 
 The SPA manages the hash URL (`#/items`, `#/items/new`, `#/items/42`). Each route fetches the corresponding spec endpoint and renders the right view. Your server adds spec endpoints and the bundle handles everything else.
 

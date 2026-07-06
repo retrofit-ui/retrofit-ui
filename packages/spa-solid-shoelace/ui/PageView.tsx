@@ -41,8 +41,14 @@ import {
   Switch,
   useContext,
 } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { CalendarViewComponent } from './CalendarView';
 import { MarkdownViewComponent } from './MarkdownView';
+import {
+  type AnySpec,
+  type Dispatch,
+  RendererRegistryContext,
+} from './registry';
 import { StatViewComponent } from './StatView';
 import { TimelineViewComponent } from './TimelineView';
 import { TreeViewComponent } from './TreeView';
@@ -716,9 +722,19 @@ export function CardViewComponent(props: { spec: CardSpec }) {
   );
 }
 
-function ViewRenderer(props: { spec: ViewSpec }) {
+export function ViewRenderer(props: { spec: ViewSpec }) {
+  const registry = useContext(RendererRegistryContext);
   return (
     <Switch>
+      <Match when={registry[(props.spec as { kind: string }).kind]}>
+        {(R) => (
+          <Dynamic
+            component={R()}
+            spec={props.spec as AnySpec}
+            Dispatch={ViewRenderer as Dispatch}
+          />
+        )}
+      </Match>
       <Match when={props.spec.kind === 'flex'}>
         {(_item) => {
           const s = props.spec as {

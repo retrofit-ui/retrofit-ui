@@ -1,9 +1,16 @@
+import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  plugins: [solid()],
+  resolve: {
+    conditions: ['development', 'browser'],
+  },
   test: {
     globals: true,
     passWithNoTests: true,
-    include: ['ui/**/*.test.ts'],
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
+    include: ['ui/**/*.test.ts', 'ui/**/*.test.tsx'],
   },
 });

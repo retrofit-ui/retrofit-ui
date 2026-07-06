@@ -51,52 +51,38 @@
   letter-spacing: -0.01em;
 }
 
+/* Close button — sl-icon-button inside the sidebar header. Uses
+   Shoelace's default hover/focus styling; we only tweak size + colour. */
 .retrofit-shell-nav-close {
-  background: none;
-  border: none;
-  padding: 6px;
-  cursor: pointer;
-  color: var(--sl-color-neutral-500);
-  border-radius: var(--sl-border-radius-small);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 1rem;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease;
+  color: var(--sl-color-neutral-500);
 }
 
-.retrofit-shell-nav-close:hover {
-  color: var(--sl-color-neutral-900);
-  background: var(--sl-color-neutral-100);
-}
-
-/* Floating hamburger, visible only while the sidebar is collapsed. */
+/* Floating hamburger — sl-icon-button turned into a bordered chip via
+   ::part(base). Visible only while the sidebar is collapsed. */
 .retrofit-shell-nav-toggle {
   position: fixed;
   top: 10px;
   left: 10px;
   z-index: 10;
+  font-size: 1rem;
+  color: var(--sl-color-neutral-700);
+}
+
+.retrofit-shell-nav-toggle::part(base) {
   background: var(--sl-color-neutral-0);
   border: 1px solid var(--sl-color-neutral-200);
   border-radius: var(--sl-border-radius-medium);
   width: 36px;
   height: 36px;
   padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--sl-color-neutral-700);
-  font-size: 1rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition:
     background-color 120ms ease,
     border-color 120ms ease;
 }
 
-.retrofit-shell-nav-toggle:hover {
+.retrofit-shell-nav-toggle::part(base):hover {
   background: var(--sl-color-neutral-100);
   border-color: var(--sl-color-neutral-300);
 }

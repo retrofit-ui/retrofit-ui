@@ -1,3 +1,4 @@
+import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import { HashRouter, Route, useLocation } from '@solidjs/router';
 import { createEffect, createSignal, For, Show } from 'solid-js';
 import { CalendarView } from './CalendarView';
@@ -73,14 +74,12 @@ function Sidebar(props: {
     >
       <div class="retrofit-shell-nav-head">
         <div class="retrofit-shell-brand">{props.title ?? 'Retrofit UI'}</div>
-        <button
-          type="button"
+        <sl-icon-button
+          name="chevron-left"
+          label="Collapse navigation"
           class="retrofit-shell-nav-close"
           onClick={props.onClose}
-          aria-label="Collapse navigation"
-        >
-          <sl-icon name="chevron-left" />
-        </button>
+        />
       </div>
       <nav class="retrofit-shell-nav-list">
         <For each={props.nav}>
@@ -139,16 +138,14 @@ export function App(props: {
                 nav={nav()}
                 onClose={() => setOpen(false)}
               />
-              <button
-                type="button"
+              <sl-icon-button
+                name="list"
+                label="Open navigation"
                 class="retrofit-shell-nav-toggle"
                 onClick={() => setOpen(true)}
-                aria-label="Open navigation"
-                aria-expanded={open()}
-                aria-controls="retrofit-shell-nav"
-              >
-                <sl-icon name="list" />
-              </button>
+                attr:aria-expanded={open() ? 'true' : 'false'}
+                attr:aria-controls="retrofit-shell-nav"
+              />
             </Show>
             <main class="retrofit-shell-main">{routerProps.children}</main>
           </div>

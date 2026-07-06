@@ -1,65 +1,30 @@
 /* Layout-only styles for the ui-shell. Form and component styles come from Shoelace. */
 
-/* Dashboard shell — collapsible sidebar + main content. Rendered by
-   App.tsx. The sidebar is collapsed by default; a fixed hamburger button
-   in the top-left opens it. A close (chevron) button inside the sidebar
-   header collapses it again. State persists in localStorage. */
+/* Dashboard shell — hamburger toggle + an sl-drawer for the sidebar.
+   The drawer is hidden by default; a fixed hamburger button in the
+   top-left opens it. Shoelace's drawer handles the panel, backdrop,
+   focus trap, escape key, and header close button. */
 .retrofit-shell {
-  display: grid;
-  grid-template-columns: 1fr; /* default: sidebar collapsed */
   min-height: 100vh;
   font-family: var(--sl-font-sans);
   background: var(--sl-color-neutral-0);
 }
 
-.retrofit-shell--nav-open {
-  grid-template-columns: 240px 1fr;
-}
-
-.retrofit-shell--no-nav {
-  grid-template-columns: 1fr;
-}
-
+/* Drawer sizing — sl-drawer exposes --size on the host. */
 .retrofit-shell-nav {
-  border-right: 1px solid var(--sl-color-neutral-200);
-  background: var(--sl-color-neutral-50);
-  padding: var(--sl-spacing-medium) 0 var(--sl-spacing-large);
-  display: none; /* hidden until nav opens */
-  flex-direction: column;
-  gap: var(--sl-spacing-medium);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
+  --size: 240px;
 }
 
-.retrofit-shell--nav-open .retrofit-shell-nav {
-  display: flex;
-}
-
-.retrofit-shell-nav-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--sl-spacing-small) 0 var(--sl-spacing-large);
-}
-
-.retrofit-shell-brand {
-  font-size: var(--sl-font-size-medium);
-  font-weight: var(--sl-font-weight-semibold);
-  color: var(--sl-color-neutral-900);
-  letter-spacing: -0.01em;
-}
-
-/* Close button — sl-icon-button inside the sidebar header. Uses
-   Shoelace's default hover/focus styling; we only tweak size + colour. */
-.retrofit-shell-nav-close {
-  font-size: 1rem;
-  color: var(--sl-color-neutral-500);
+/* Sit the drawer body flush with its header — no need for extra
+   padding on top; Shoelace already inset the body. Nav links get their
+   own gutter below. */
+.retrofit-shell-nav::part(body) {
+  padding: var(--sl-spacing-x-small) var(--sl-spacing-small);
 }
 
 /* Floating hamburger — sl-icon-button turned into a bordered chip via
-   ::part(base). Visible only while the sidebar is collapsed. */
+   ::part(base). Hidden while the drawer is open (the drawer covers it,
+   but we also fade it out so it isn't briefly re-shown mid-animation). */
 .retrofit-shell-nav-toggle {
   position: fixed;
   top: 10px;
@@ -87,15 +52,14 @@
   border-color: var(--sl-color-neutral-300);
 }
 
-.retrofit-shell--nav-open .retrofit-shell-nav-toggle {
-  display: none;
+.retrofit-shell-nav-toggle--hidden {
+  visibility: hidden;
 }
 
 .retrofit-shell-nav-list {
   display: flex;
   flex-direction: column;
   gap: var(--sl-spacing-2x-small);
-  padding: 0 var(--sl-spacing-small);
 }
 
 .retrofit-shell-nav-link {
@@ -133,31 +97,15 @@
 }
 
 .retrofit-shell-main {
-  min-width: 0; /* let grid child shrink so tables can scroll horizontally */
+  min-width: 0;
 }
 
-/* When the nav is collapsed (but present), reserve room on the left so
-   the floating hamburger button doesn't overlap page titles. */
-.retrofit-shell:not(.retrofit-shell--no-nav):not(.retrofit-shell--nav-open)
-.retrofit-shell-main {
+/* When a nav is present, reserve room on the left for the floating
+   hamburger so it doesn't overlap page titles. Applied unconditionally
+   (even while the drawer is open) so there's no content shift on
+   toggle — the drawer overlays the content anyway. */
+.retrofit-shell:not(.retrofit-shell--no-nav) .retrofit-shell-main {
   padding-left: 56px;
-}
-
-@media (max-width: 720px) {
-  .retrofit-shell--nav-open {
-    /* On narrow screens the sidebar becomes an overlay drawer rather
-       than pushing the content — otherwise the main pane gets too
-       cramped. */
-    grid-template-columns: 1fr;
-  }
-  .retrofit-shell--nav-open .retrofit-shell-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 240px;
-    z-index: 20;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-  }
 }
 
 .retrofit-view {

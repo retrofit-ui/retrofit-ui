@@ -1,6 +1,7 @@
+import '@shoelace-style/shoelace/dist/components/drawer/drawer.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import { HashRouter, Route, useLocation } from '@solidjs/router';
-import { createEffect, createSignal, For, Show } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { CalendarView } from './CalendarView';
 import { ApiBaseContext } from './context';
 import { FormView } from './FormView';
@@ -24,24 +25,6 @@ export interface NavItem {
 // Servers opt out by setting `nav` to `null`, `false`, or `[]`.
 const DEFAULT_NAV: NavItem[] = [{ label: 'Home', href: '/', icon: 'house' }];
 
-const NAV_STATE_KEY = 'retrofit-ui:nav-open';
-
-function readInitialNavOpen(): boolean {
-  try {
-    return localStorage.getItem(NAV_STATE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function persistNavOpen(open: boolean): void {
-  try {
-    localStorage.setItem(NAV_STATE_KEY, open ? '1' : '0');
-  } catch {
-    // Best-effort — private-mode Safari etc. may block writes.
-  }
-}
-
 function Landing() {
   return (
     <div class="retrofit-view">
@@ -56,7 +39,9 @@ function Landing() {
 function Sidebar(props: {
   title?: string;
   nav: NavItem[];
-  onClose: () => void;
+  open: boolean;
+  onHide: () => void;
+  onLinkClick: () => void;
 }) {
   const location = useLocation();
   const isActive = (href: string) => {
@@ -67,21 +52,14 @@ function Sidebar(props: {
     );
   };
   return (
-    <aside
+    <sl-drawer
       class="retrofit-shell-nav"
-      aria-label="Primary"
-      id="retrofit-shell-nav"
+      placement="start"
+      prop:open={props.open}
+      attr:label={props.title ?? 'Retrofit UI'}
+      on:sl-hide={props.onHide}
     >
-      <div class="retrofit-shell-nav-head">
-        <div class="retrofit-shell-brand">{props.title ?? 'Retrofit UI'}</div>
-        <sl-icon-button
-          name="chevron-left"
-          label="Collapse navigation"
-          class="retrofit-shell-nav-close"
-          onClick={props.onClose}
-        />
-      </div>
-      <nav class="retrofit-shell-nav-list">
+      <nav class="retrofit-shell-nav-list" aria-label="Primary">
         <For each={props.nav}>
           {(item) => (
             <a
@@ -91,6 +69,7 @@ function Sidebar(props: {
               }}
               aria-current={isActive(item.href) ? 'page' : undefined}
               href={item.href.startsWith('#') ? item.href : `#${item.href}`}
+              onClick={props.onLinkClick}
             >
               <Show when={item.icon}>
                 <sl-icon name={item.icon} class="retrofit-shell-nav-icon" />
@@ -100,7 +79,7 @@ function Sidebar(props: {
           )}
         </For>
       </nav>
-    </aside>
+    </sl-drawer>
   );
 }
 
@@ -115,11 +94,10 @@ export function App(props: {
   title?: string;
 }) {
   const nav = () => props.nav ?? DEFAULT_NAV;
-  const [open, setOpen] = createSignal(readInitialNavOpen());
-
-  createEffect(() => {
-    persistNavOpen(open());
-  });
+  // Drawer is hidden by default; no persistence across reloads. Drawer
+  // semantics are "transient — open to navigate, close after" rather
+  // than a persistent sidebar preference.
+  const [open, setOpen] = createSignal(false);
 
   return (
     <ApiBaseContext.Provider value={props.apiBase ?? '/api/ui'}>
@@ -127,24 +105,25 @@ export function App(props: {
         root={(routerProps) => (
           <div
             class="retrofit-shell"
-            classList={{
-              'retrofit-shell--nav-open': open() && nav().length > 0,
-              'retrofit-shell--no-nav': nav().length === 0,
-            }}
+            classList={{ 'retrofit-shell--no-nav': nav().length === 0 }}
           >
             <Show when={nav().length > 0}>
               <Sidebar
                 title={props.title}
                 nav={nav()}
-                onClose={() => setOpen(false)}
+                open={open()}
+                onHide={() => setOpen(false)}
+                onLinkClick={() => setOpen(false)}
               />
               <sl-icon-button
                 name="list"
                 label="Open navigation"
                 class="retrofit-shell-nav-toggle"
+                classList={{
+                  'retrofit-shell-nav-toggle--hidden': open(),
+                }}
                 onClick={() => setOpen(true)}
                 attr:aria-expanded={open() ? 'true' : 'false'}
-                attr:aria-controls="retrofit-shell-nav"
               />
             </Show>
             <main class="retrofit-shell-main">{routerProps.children}</main>

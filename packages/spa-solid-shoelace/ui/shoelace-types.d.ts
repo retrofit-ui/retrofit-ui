@@ -121,6 +121,22 @@ declare module 'solid-js' {
         'on:sl-hide'?: SlEventHandler;
         'on:sl-request-close'?: SlEventHandler;
       };
+      'sl-drawer': JSX.HTMLAttributes<HTMLElement> & {
+        open?: boolean;
+        'prop:open'?: boolean;
+        label?: string;
+        'attr:label'?: string;
+        placement?: 'top' | 'end' | 'bottom' | 'start';
+        contained?: boolean;
+        'no-header'?: boolean;
+        children?: JSX.Element;
+        'on:sl-show'?: SlEventHandler;
+        'on:sl-hide'?: SlEventHandler;
+        'on:sl-after-show'?: SlEventHandler;
+        'on:sl-after-hide'?: SlEventHandler;
+        'on:sl-initial-focus'?: SlEventHandler;
+        'on:sl-request-close'?: SlEventHandler;
+      };
       'sl-skeleton': JSX.HTMLAttributes<HTMLElement> & {
         effect?: 'none' | 'sheen' | 'pulse';
       };

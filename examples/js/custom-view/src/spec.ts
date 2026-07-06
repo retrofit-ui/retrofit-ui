@@ -27,9 +27,4 @@ export interface RatingSpec {
  * about, plus our custom kind. Server code returns this; client dispatches on
  * `spec.kind`.
  */
-export type AppSpec =
-  | RootSpec
-  | RatingSpec
-  | TextSpec
-  | TabsSpec
-  | DetailsSpec;
+export type AppSpec = RootSpec | RatingSpec | TextSpec | TabsSpec | DetailsSpec;

@@ -380,5 +380,3 @@ test.describe('ViewSpec-only kinds delegated through SpecRenderer', () => {
 7. Add changeset.
 8. Run `pnpm typecheck`, `pnpm lint` (`--write` then fix residue), `pnpm test`, and the
    `custom-view` e2e suite. Verify every "After" success criterion.
-</content>
-</invoke>

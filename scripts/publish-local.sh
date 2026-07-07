@@ -104,10 +104,19 @@ fi
 log "building all packages"
 pnpm build
 
+# Guard (#130): pack each public package and abort if any workspace: range
+# would leak to npm. set -e makes a non-zero exit stop the publish.
+log "verifying packed manifests have no workspace: ranges"
+node scripts/verify-publish-manifests.mjs
+
 # ── Publish ───────────────────────────────────────────────────────────────────
 # `changeset publish` iterates public packages whose local version > registry
-# version and runs `npm publish` on each. Idempotent: if a version is already
-# on the registry, it's skipped.
+# version. When it detects pnpm it runs `pnpm publish` on each, which resolves
+# `workspace:^` ranges to concrete versions. If pnpm is NOT detected (e.g. a
+# cwd with no reachable pnpm-lock.yaml) it SILENTLY falls back to `npm publish`,
+# which ships the manifest verbatim and leaks `workspace:^` — the #130 bug. The
+# guard above is what catches that regardless of which path runs. Idempotent:
+# versions already on the registry are skipped.
 
 log "publishing to npm"
 if [ -n "${NPM_TOKEN:-}" ] && ! npm whoami >/dev/null 2>&1; then

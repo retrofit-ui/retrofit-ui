@@ -1,4 +1,9 @@
-import type { RootSpec } from '@retrofit-ui/core';
+import type {
+  DetailsSpec,
+  RootSpec,
+  TabsSpec,
+  TextSpec,
+} from '@retrofit-ui/core';
 import { SpecRenderer } from '@retrofit-ui/spa-solid-shoelace/components';
 import { Match, Switch } from 'solid-js';
 import type { AppSpec, RatingSpec } from '../src/spec';
@@ -14,8 +19,13 @@ export function ExtendedRenderer(props: { spec: AppSpec; apiBase: string }) {
   return (
     <Switch
       fallback={
-        // Not a custom kind — hand it to retrofit-ui.
-        <SpecRenderer spec={props.spec as RootSpec} apiBase={props.apiBase} />
+        // Not a custom kind — hand it to retrofit-ui. SpecRenderer accepts
+        // RootSpec plus the standalone ViewSpec kinds (text/tabs/details), so
+        // no lie is needed for those built-in leaves.
+        <SpecRenderer
+          spec={props.spec as RootSpec | TextSpec | TabsSpec | DetailsSpec}
+          apiBase={props.apiBase}
+        />
       }
     >
       <Match when={props.spec.kind === 'rating'}>

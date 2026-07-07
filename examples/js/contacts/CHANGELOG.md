@@ -1,5 +1,14 @@
 # @retrofit-ui-examples/contacts
 
+## 0.0.6
+
+### Patch Changes
+
+- Updated dependencies [25626e7]
+- Updated dependencies [a410786]
+- Updated dependencies [8bcd504]
+  - @retrofit-ui/spa-solid-shoelace@0.4.0
+
 ## 0.0.5
 
 ### Patch Changes

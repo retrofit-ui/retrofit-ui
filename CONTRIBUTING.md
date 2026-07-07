@@ -128,6 +128,21 @@ Version bumps cascade: because `builder-zod` and `spa-solid-shoelace` declare `@
 
 ---
 
+## Publishing: the `workspace:` invariant
+
+Internal dependencies are declared with the pnpm **workspace protocol** in source — e.g. `packages/spa-solid-shoelace/package.json` has `"@retrofit-ui/core": "workspace:^"`. **This is intentional and must stay.** It's how pnpm links packages together during development so changes propagate without republishing.
+
+`pnpm publish` / `pnpm pack` rewrite `workspace:^` to a concrete range (e.g. `^0.2.0`) at pack time, so the *published* artifact never contains the protocol string. The danger is `changeset publish`: it runs `pnpm publish` **only when it detects pnpm**, and silently falls back to `npm publish` otherwise — which ships the manifest verbatim and leaks `workspace:^`. External consumers then hit `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` (this was [#130](https://github.com/retrofit-ui/retrofit-ui/issues/130)).
+
+To enforce the invariant, `pnpm verify:publish` (`scripts/verify-publish-manifests.mjs`) packs every public package and fails if any `dependencies` / `peerDependencies` / `optionalDependencies` value still starts with `workspace:`. It runs on every PR (`ci.yml`), before every release publish (`release.yml`), and inside `scripts/publish-local.sh`.
+
+**Rules:**
+- Do **not** "fix" `workspace:` ranges in `packages/*/package.json` — they belong there.
+- Never run `npm publish` directly from a package directory; it bypasses the resolution and the guard.
+- If `verify:publish` fails, the packed tarball is bad — don't publish.
+
+---
+
 ## First-time setup (for maintainers)
 
 One-time bootstrap:

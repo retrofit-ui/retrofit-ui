@@ -7,15 +7,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
+      - uses: pnpm/action-setup@v4
+        # No `version:` — reads packageManager from root package.json, so the
+        # PR guard exercises the SAME pnpm that performs the real publish.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      # Packs each public package and fails if any workspace: range would ship
+      # to npm (see scripts/verify-publish-manifests.mjs). Build must run first
+      # so pack has dist/ to include.
+      - run: pnpm verify:publish
+      - run: pnpm test:publish-guard
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test

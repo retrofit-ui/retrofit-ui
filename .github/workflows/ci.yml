@@ -1,6 +1,9 @@
 name: CI
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '.github/workflows/ci-docs.yml'
 
 jobs:
   ci:
@@ -15,7 +18,7 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - run: pnpm -r --filter '!@retrofit-ui/docs' run build
       # Packs each public package and fails if any workspace: range would ship
       # to npm (see scripts/verify-publish-manifests.mjs). Build must run first
       # so pack has dist/ to include.

@@ -632,9 +632,23 @@ function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
   );
 }
 
-// ── TextPane ──────────────────────────────────────────────────────────────────
+// ── TextViewComponent ───────────────────────────────────────────────────────
+//
+// The following three leaf panes are `export`ed (following the `*ViewComponent`
+// naming precedent set by `CardViewComponent` below) so that `SpecRenderer` can
+// render these ViewSpec-only kinds directly, sharing the *same* rendering logic
+// used here by `ViewRenderer`. This prevents the two dispatch tables from
+// drifting apart — the drift that caused issue #133.
+//
+// Note on recursion: `TabsViewComponent` recurses through `ViewRenderer` for its
+// tab children, and `ViewRenderer`'s `form`/`table` branches call
+// `useSearchParams` (Solid Router). This is not a new requirement introduced by
+// exporting these — `SpecRenderer` already renders `page` via `PageView`, which
+// uses the router, and `SpecRenderer` is always mounted inside the SPA's
+// `HashRouter`. A bare `text`/`details` spec reaches no router code; only a
+// `tabs` spec whose children include a `form`/`table` does.
 
-function TextPane(props: { spec: TextSpec }) {
+export function TextViewComponent(props: { spec: TextSpec }) {
   const style = (): Record<string, string> => {
     if (props.spec.variant === 'muted')
       return { color: 'var(--sl-color-neutral-600)', margin: '0' };
@@ -649,9 +663,9 @@ function TextPane(props: { spec: TextSpec }) {
   return <p style={style()}>{props.spec.content}</p>;
 }
 
-// ── TabsPane ──────────────────────────────────────────────────────────────────
+// ── TabsViewComponent ─────────────────────────────────────────────────────────
 
-function TabsPane(props: { spec: TabsSpec }) {
+export function TabsViewComponent(props: { spec: TabsSpec }) {
   return (
     <sl-tab-group placement={props.spec.placement ?? 'top'}>
       <For each={props.spec.tabs}>
@@ -674,9 +688,9 @@ function TabsPane(props: { spec: TabsSpec }) {
   );
 }
 
-// ── DetailsPane ───────────────────────────────────────────────────────────────
+// ── DetailsViewComponent ──────────────────────────────────────────────────────
 
-function DetailsPane(props: { spec: DetailsSpec }) {
+export function DetailsViewComponent(props: { spec: DetailsSpec }) {
   return (
     <div>
       <For each={props.spec.items}>
@@ -805,13 +819,13 @@ function ViewRenderer(props: { spec: ViewSpec }) {
         <CardViewComponent spec={props.spec as CardSpec} />
       </Match>
       <Match when={props.spec.kind === 'text'}>
-        <TextPane spec={props.spec as TextSpec} />
+        <TextViewComponent spec={props.spec as TextSpec} />
       </Match>
       <Match when={props.spec.kind === 'tabs'}>
-        <TabsPane spec={props.spec as TabsSpec} />
+        <TabsViewComponent spec={props.spec as TabsSpec} />
       </Match>
       <Match when={props.spec.kind === 'details'}>
-        <DetailsPane spec={props.spec as DetailsSpec} />
+        <DetailsViewComponent spec={props.spec as DetailsSpec} />
       </Match>
     </Switch>
   );

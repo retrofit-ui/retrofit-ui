@@ -72,6 +72,49 @@ app.get('/api/product-ratings', (_req, res) => {
   res.json(spec);
 });
 
+// ViewSpec-only kinds (`text`/`tabs`/`details`). These have a single unwrapped
+// shape, so the stock SpecRenderer now renders them directly — before issue
+// #133 they fell through to "Unknown spec kind". ExtendedRenderer doesn't know
+// these kinds, so they exercise its delegation to SpecRenderer.
+app.get('/api/hello-text', (_req, res) => {
+  const spec: AppSpec = {
+    kind: 'text',
+    content: 'Rendered by SpecRenderer',
+    variant: 'body',
+  };
+  res.json(spec);
+});
+
+// A `tabs` spec whose panels contain a `text` child also exercises the
+// ViewRenderer recursion path that SpecRenderer reaches for tab children.
+app.get('/api/hello-tabs', (_req, res) => {
+  const spec: AppSpec = {
+    kind: 'tabs',
+    tabs: [
+      {
+        label: 'First',
+        children: [{ kind: 'text', content: 'Tab one via SpecRenderer' }],
+      },
+      {
+        label: 'Second',
+        children: [{ kind: 'text', content: 'Tab two via SpecRenderer' }],
+      },
+    ],
+  };
+  res.json(spec);
+});
+
+app.get('/api/hello-details', (_req, res) => {
+  const spec: AppSpec = {
+    kind: 'details',
+    items: [
+      { summary: 'What is this?', body: 'A details spec via SpecRenderer.' },
+      { summary: 'Open by default', body: 'This one starts open.', open: true },
+    ],
+  };
+  res.json(spec);
+});
+
 // Serve the built Vite client (after `pnpm build`). During dev the SPA is
 // served by Vite on a different port; this only kicks in for e2e / prod.
 if (existsSync(clientDist)) {

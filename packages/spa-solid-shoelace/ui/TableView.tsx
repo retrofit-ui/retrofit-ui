@@ -57,6 +57,7 @@ import {
   Switch,
   useContext,
 } from 'solid-js';
+import { useHttp } from './actions';
 import { ApiBaseContext } from './context';
 import { PageView } from './PageView';
 import { showToast } from './toast';
@@ -239,6 +240,7 @@ function DataRow(props: {
   resource: string;
   onRefresh: () => void;
 }) {
+  const send = useHttp();
   const navigate = useNavigate();
   const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
   const [editing, setEditing] = createSignal(false);
@@ -268,7 +270,7 @@ function DataRow(props: {
     const id = String(cellValue(props.row[idField()]));
     const url = ep.url.replace('{id}', id);
     try {
-      const res = await fetch(url, {
+      const res = await send(url, {
         method: ep.method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values()),
@@ -291,7 +293,7 @@ function DataRow(props: {
     const id = String(cellValue(props.row[idField()]));
     const url = ep.url.replace('{id}', id);
     try {
-      const res = await fetch(url, { method: ep.method });
+      const res = await send(url, { method: ep.method });
       if (res.ok) {
         showToast('success', 'Deleted successfully');
         props.onRefresh();
@@ -414,6 +416,7 @@ function DataRow(props: {
 }
 
 function NewRow(props: { spec: TableSpec; onCreated: () => void }) {
+  const send = useHttp();
   const emptyValues = () =>
     Object.fromEntries(
       props.spec.columns.map((col) => [
@@ -431,7 +434,7 @@ function NewRow(props: { spec: TableSpec; onCreated: () => void }) {
     if (!ep) return;
     setAdding(true);
     try {
-      const res = await fetch(ep.url, {
+      const res = await send(ep.url, {
         method: ep.method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values()),
@@ -489,6 +492,7 @@ function DataRowComponent(props: {
   spec: TableSpec;
   onRefresh: () => void;
 }) {
+  const send = useHttp();
   const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
   const [editing, setEditing] = createSignal(false);
   const [values, setValues] = createSignal<Record<string, unknown>>(
@@ -517,7 +521,7 @@ function DataRowComponent(props: {
     const id = String(cellValue(props.row[idField()]));
     const url = ep.url.replace('{id}', id);
     try {
-      const res = await fetch(url, {
+      const res = await send(url, {
         method: ep.method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values()),
@@ -540,7 +544,7 @@ function DataRowComponent(props: {
     const id = String(cellValue(props.row[idField()]));
     const url = ep.url.replace('{id}', id);
     try {
-      const res = await fetch(url, { method: ep.method });
+      const res = await send(url, { method: ep.method });
       if (res.ok) {
         showToast('success', 'Deleted successfully');
         props.onRefresh();

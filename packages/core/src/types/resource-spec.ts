@@ -1,10 +1,9 @@
+import type { HttpAction } from './action';
 import type { Field } from './form';
 import type { Cell, Column } from './table';
 
-export interface EndpointDirective {
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  url: string;
-}
+/** A `{ method, url }` pair. Every endpoint directive is also an http action. */
+export type EndpointDirective = HttpAction;
 
 /** Per-row action button shown in the table's actions column. */
 export interface RowAction {

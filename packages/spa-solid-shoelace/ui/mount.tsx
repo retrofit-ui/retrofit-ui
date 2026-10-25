@@ -5,7 +5,9 @@ import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import type { RootSpec } from '@retrofit-ui/core';
 import { HashRouter, Route } from '@solidjs/router';
 import { render } from 'solid-js/web';
-import { SpecRenderer } from './SpecRenderer';
+import type { ActionHandlers } from './actions';
+import type { Kit } from './kinds';
+import { createRenderer, type Renderer } from './renderer';
 import './layout.css';
 
 const SHOELACE_CDN =
@@ -23,6 +25,10 @@ export interface InitOptions {
   shoelacePath?: string;
   /** Watch rootElement for dynamically added islands via MutationObserver. */
   observe?: boolean;
+  /** Kinds and action handlers to add to the built-in ones. */
+  kits?: Kit[];
+  /** Action handlers that override every kit's. */
+  actions?: ActionHandlers;
 }
 
 export interface IslandController {
@@ -35,6 +41,7 @@ export interface IslandController {
 }
 
 let controller: IslandController | null = null;
+let renderer: Renderer = createRenderer();
 const mounted = new Map<HTMLElement, () => void>();
 
 function renderError(element: HTMLElement, message: string): void {
@@ -55,7 +62,9 @@ function mountIsland(
       <HashRouter>
         <Route
           path="/*all"
-          component={() => <SpecRenderer spec={spec} apiBase={apiBase} />}
+          component={() => (
+            <renderer.SpecRenderer spec={spec} apiBase={apiBase} />
+          )}
         />
       </HashRouter>
     ),
@@ -133,6 +142,7 @@ export function init(options: InitOptions): IslandController {
   }
 
   const { rootElement, apiBase } = options;
+  renderer = createRenderer({ kits: options.kits, actions: options.actions });
 
   setBasePath(options.shoelacePath ?? SHOELACE_CDN);
 

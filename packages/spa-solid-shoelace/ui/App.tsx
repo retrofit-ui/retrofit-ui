@@ -6,6 +6,7 @@ import { CalendarView } from './CalendarView';
 import { ApiBaseContext } from './context';
 import { FormView } from './FormView';
 import { MarkdownView } from './MarkdownView';
+import { createRenderer, type Renderer } from './renderer';
 import { StatView } from './StatView';
 import { TableView } from './TableView';
 import { TimelineView } from './TimelineView';
@@ -92,15 +93,18 @@ export function App(props: {
    */
   nav?: NavItem[];
   title?: string;
+  /** Kinds and actions the shell renders with. Defaults to the built-ins. */
+  renderer?: Renderer;
 }) {
   const nav = () => props.nav ?? DEFAULT_NAV;
+  const renderer = props.renderer ?? createRenderer();
   // Drawer is hidden by default; no persistence across reloads. Drawer
   // semantics are "transient — open to navigate, close after" rather
   // than a persistent sidebar preference.
   const [open, setOpen] = createSignal(false);
 
   return (
-    <ApiBaseContext.Provider value={props.apiBase ?? '/api/ui'}>
+    <renderer.Root apiBase={props.apiBase ?? '/api/ui'}>
       <HashRouter
         root={(routerProps) => (
           <div
@@ -142,6 +146,6 @@ export function App(props: {
         <Route path="/:resource/:id" component={FormView} />
       </HashRouter>
       <ToastContainer />
-    </ApiBaseContext.Provider>
+    </renderer.Root>
   );
 }

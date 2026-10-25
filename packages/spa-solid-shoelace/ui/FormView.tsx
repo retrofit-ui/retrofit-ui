@@ -25,6 +25,7 @@ import {
   Show,
   useContext,
 } from 'solid-js';
+import { useHttp } from './actions';
 import { ApiBaseContext } from './context';
 import { showToast } from './toast';
 
@@ -248,6 +249,7 @@ function singularize(name: string): string {
 }
 
 function FormEditor(props: FormEditorProps) {
+  const send = useHttp();
   const fLayout = () => props.spec.metadata?.layout;
   const hideLabel = () => fLayout()?.labelPosition === 'hidden';
   const formContainerStyle = () =>
@@ -346,7 +348,7 @@ function FormEditor(props: FormEditorProps) {
     setSubmitting(true);
     setSubmitError(undefined);
     try {
-      const res = await fetch(action.url, {
+      const res = await send(action.url, {
         method: action.method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values()),
@@ -376,7 +378,7 @@ function FormEditor(props: FormEditorProps) {
     if (!action) return;
     setShowDeleteDialog(false);
     try {
-      const res = await fetch(action.url, { method: action.method });
+      const res = await send(action.url, { method: action.method });
       if (!res.ok) {
         showToast('danger', `Delete failed: ${res.status}`);
         return;

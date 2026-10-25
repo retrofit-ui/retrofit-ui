@@ -11,21 +11,16 @@ import '@shoelace-style/shoelace/dist/components/tab/tab.js';
 import '@shoelace-style/shoelace/dist/components/textarea/textarea.js';
 
 import type {
-  CalendarSpec,
   CardSpec,
   Column,
   DetailsSpec,
   FilterFormSpec,
   FormSpec,
   LayoutConfig,
-  MarkdownViewSpec,
   PageSpec,
-  StatSpec,
   TableSpec,
   TabsSpec,
   TextSpec,
-  TimelineSpec,
-  TreeSpec,
   ViewSpec,
 } from '@retrofit-ui/core';
 import { useSearchParams } from '@solidjs/router';
@@ -41,11 +36,8 @@ import {
   Switch,
   useContext,
 } from 'solid-js';
-import { CalendarViewComponent } from './CalendarView';
-import { MarkdownViewComponent } from './MarkdownView';
-import { StatViewComponent } from './StatView';
-import { TimelineViewComponent } from './TimelineView';
-import { TreeViewComponent } from './TreeView';
+import { ActionHandlers, useHttp } from './actions';
+import { RenderSpec } from './kinds';
 import { showToast } from './toast';
 import { cellFormatted, cellValue } from './utils';
 
@@ -118,7 +110,7 @@ function substituteParams(
 
 // ── FilterFormPane ────────────────────────────────────────────────────────────
 
-function FilterFormPane(props: { spec: FilterFormSpec }) {
+export function FilterFormPane(props: { spec: FilterFormSpec }) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   return (
@@ -207,9 +199,10 @@ function FilterFormPane(props: { spec: FilterFormSpec }) {
 
 // ── FormPane ──────────────────────────────────────────────────────────────────
 
-function FormPane(props: { spec: FormSpec; title?: string }) {
+export function FormPane(props: { spec: FormSpec; title?: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { refresh } = useContext(PageRefreshContext);
+  const send = useHttp();
   const autoSubmit = () => !!props.spec.metadata?.autoSubmit;
   const fLayout = () => props.spec.metadata?.layout;
   const hideLabel = () => fLayout()?.labelPosition === 'hidden';
@@ -296,7 +289,7 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
     setSubmitting(true);
     setSubmitError(undefined);
     try {
-      const res = await fetch(ep.url, {
+      const res = await send(ep.url, {
         method: ep.method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values()),
@@ -478,7 +471,7 @@ function FormPane(props: { spec: FormSpec; title?: string }) {
 
 // ── TablePane ─────────────────────────────────────────────────────────────────
 
-function TablePane(props: { spec: TableSpec }) {
+export function TablePane(props: { spec: TableSpec }) {
   const [searchParams] = useSearchParams();
   const { count } = useContext(PageRefreshContext);
 
@@ -564,7 +557,7 @@ function TablePane(props: { spec: TableSpec }) {
   );
 }
 
-// ── BoxPane + ViewRenderer ────────────────────────────────────────────────────
+// ── BoxPane, flex and grid ────────────────────────────────────────────────────
 
 function boxStyle(lc?: LayoutConfig): Record<string, string | undefined> {
   const isGrid = !!(lc?.columns ?? lc?.columnTemplate);
@@ -625,28 +618,21 @@ function gridStyle(spec: {
 function BoxPane(props: { layout?: LayoutConfig; children: ViewSpec[] }) {
   return (
     <div style={boxStyle(props.layout)}>
-      <For each={props.children}>
-        {(child) => <ViewRenderer spec={child} />}
-      </For>
+      <For each={props.children}>{(child) => <RenderSpec spec={child} />}</For>
     </div>
   );
 }
 
 // ── TextViewComponent ───────────────────────────────────────────────────────
 //
-// The following three leaf panes are `export`ed (following the `*ViewComponent`
-// naming precedent set by `CardViewComponent` below) so that `SpecRenderer` can
-// render these ViewSpec-only kinds directly, sharing the *same* rendering logic
-// used here by `ViewRenderer`. This prevents the two dispatch tables from
-// drifting apart — the drift that caused issue #133.
+// Every view here is registered as a built-in kind (see builtins.tsx), and
+// every container renders its children through `RenderSpec`, so there is one
+// dispatch table for top-level specs and nested ones alike.
 //
-// Note on recursion: `TabsViewComponent` recurses through `ViewRenderer` for its
-// tab children, and `ViewRenderer`'s `form`/`table` branches call
-// `useSearchParams` (Solid Router). This is not a new requirement introduced by
-// exporting these — `SpecRenderer` already renders `page` via `PageView`, which
-// uses the router, and `SpecRenderer` is always mounted inside the SPA's
-// `HashRouter`. A bare `text`/`details` spec reaches no router code; only a
-// `tabs` spec whose children include a `form`/`table` does.
+// Note on recursion: a wrapped `form`/`table` child (`{ kind, spec }`) renders
+// a page pane that calls `useSearchParams` (Solid Router), so a container whose
+// children include one must be mounted under a router. A bare `text`/`details`
+// spec reaches no router code.
 
 export function TextViewComponent(props: { spec: TextSpec }) {
   const style = (): Record<string, string> => {
@@ -679,7 +665,7 @@ export function TabsViewComponent(props: { spec: TabsSpec }) {
         {(tab, i) => (
           <sl-tab-panel name={`panel-${i()}`} active={i() === 0}>
             <For each={tab.children}>
-              {(child) => <ViewRenderer spec={child} />}
+              {(child) => <RenderSpec spec={child} />}
             </For>
           </sl-tab-panel>
         )}
@@ -716,13 +702,13 @@ export function CardViewComponent(props: { spec: CardSpec }) {
       </Show>
       <div class="retrofit-card-body">
         <For each={props.spec.children}>
-          {(child) => <ViewRenderer spec={child} />}
+          {(child) => <RenderSpec spec={child} />}
         </For>
       </div>
       <Show when={props.spec.footer}>
         {(footer) => (
           <div slot="footer">
-            <ViewRenderer spec={footer()} />
+            <RenderSpec spec={footer()} />
           </div>
         )}
       </Show>
@@ -730,104 +716,26 @@ export function CardViewComponent(props: { spec: CardSpec }) {
   );
 }
 
-function ViewRenderer(props: { spec: ViewSpec }) {
+type FlexSpec = Extract<ViewSpec, { kind: 'flex' }>;
+type GridSpec = Extract<ViewSpec, { kind: 'grid' }>;
+
+export function FlexViewComponent(props: { spec: FlexSpec }) {
   return (
-    <Switch>
-      <Match when={props.spec.kind === 'flex'}>
-        {(_item) => {
-          const s = props.spec as {
-            kind: 'flex';
-            direction?: 'row' | 'column';
-            gap?: string;
-            wrap?: boolean;
-            align?: string;
-            justify?: string;
-            children: ViewSpec[];
-          };
-          return (
-            <div style={flexStyle(s)}>
-              <For each={s.children}>
-                {(child) => <ViewRenderer spec={child} />}
-              </For>
-            </div>
-          );
-        }}
-      </Match>
-      <Match when={props.spec.kind === 'grid'}>
-        {(_item) => {
-          const s = props.spec as {
-            kind: 'grid';
-            columns?: number;
-            columnTemplate?: string;
-            gap?: string;
-            align?: string;
-            justify?: string;
-            children: ViewSpec[];
-          };
-          return (
-            <div style={gridStyle(s)}>
-              <For each={s.children}>
-                {(child) => <ViewRenderer spec={child} />}
-              </For>
-            </div>
-          );
-        }}
-      </Match>
-      <Match when={props.spec.kind === 'filter-form'}>
-        <FilterFormPane
-          spec={
-            (props.spec as { kind: 'filter-form'; spec: FilterFormSpec }).spec
-          }
-        />
-      </Match>
-      <Match when={props.spec.kind === 'form'}>
-        <FormPane
-          spec={
-            (props.spec as { kind: 'form'; spec: FormSpec; title?: string })
-              .spec
-          }
-          title={
-            (props.spec as { kind: 'form'; spec: FormSpec; title?: string })
-              .title
-          }
-        />
-      </Match>
-      <Match when={props.spec.kind === 'table'}>
-        <TablePane
-          spec={(props.spec as { kind: 'table'; spec: TableSpec }).spec}
-        />
-      </Match>
-      <Match when={props.spec.kind === 'markdown'}>
-        {(_item) => {
-          const s = props.spec as { kind: 'markdown'; spec: MarkdownViewSpec };
-          return <MarkdownViewComponent spec={s.spec} />;
-        }}
-      </Match>
-      <Match when={props.spec.kind === 'stat'}>
-        <StatViewComponent spec={props.spec as StatSpec} />
-      </Match>
-      <Match when={props.spec.kind === 'calendar'}>
-        <CalendarViewComponent spec={props.spec as CalendarSpec} />
-      </Match>
-      <Match when={props.spec.kind === 'tree'}>
-        <TreeViewComponent spec={props.spec as TreeSpec} />
-      </Match>
-      <Match when={props.spec.kind === 'timeline'}>
-        <TimelineViewComponent spec={props.spec as TimelineSpec} />
-      </Match>
-      <Match when={props.spec.kind === 'card'}>
-        <CardViewComponent spec={props.spec as CardSpec} />
-      </Match>
-      <Match when={props.spec.kind === 'text'}>
-        <TextViewComponent spec={props.spec as TextSpec} />
-      </Match>
-      <Match when={props.spec.kind === 'tabs'}>
-        <TabsViewComponent spec={props.spec as TabsSpec} />
-      </Match>
-      <Match when={props.spec.kind === 'details'}>
-        <DetailsViewComponent spec={props.spec as DetailsSpec} />
-      </Match>
-    </Switch>
+    <div style={flexStyle(props.spec)}>
+      <For each={props.spec.children}>
+        {(child) => <RenderSpec spec={child} />}
+      </For>
+    </div>
+  );
+}
+
+export function GridViewComponent(props: { spec: GridSpec }) {
+  return (
+    <div style={gridStyle(props.spec)}>
+      <For each={props.spec.children}>
+        {(child) => <RenderSpec spec={child} />}
+      </For>
+    </div>
   );
 }
 
@@ -845,12 +753,14 @@ export function PageView(props: { spec: PageSpec; onRefresh?: () => void }) {
 
   return (
     <PageRefreshContext.Provider value={ctx}>
-      <div class="retrofit-view">
-        <Show when={props.spec.title}>
-          <h1 class="retrofit-page-title">{props.spec.title}</h1>
-        </Show>
-        <BoxPane layout={props.spec.layout} children={props.spec.children} />
-      </div>
+      <ActionHandlers handlers={{ refresh: () => ctx.refresh() }}>
+        <div class="retrofit-view">
+          <Show when={props.spec.title}>
+            <h1 class="retrofit-page-title">{props.spec.title}</h1>
+          </Show>
+          <BoxPane layout={props.spec.layout} children={props.spec.children} />
+        </div>
+      </ActionHandlers>
     </PageRefreshContext.Provider>
   );
 }

@@ -6,6 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import type { CalendarSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, onCleanup, onMount, Show, useContext } from 'solid-js';
+import { useHttp } from './actions';
 import { ApiBaseContext } from './context';
 
 function viewNameToFullCalendar(view: CalendarSpec['defaultView']): string {
@@ -26,6 +27,7 @@ function substituteParams(url: string, params: Record<string, string>): string {
 }
 
 function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
+  const send = useHttp();
   let el!: HTMLDivElement;
   let cal: Calendar | undefined;
   const navigate = useNavigate();
@@ -62,7 +64,7 @@ function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
           return;
         }
         const url = substituteParams(ep.url, { id: info.event.id });
-        const res = await fetch(url, {
+        const res = await send(url, {
           method: ep.method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -79,7 +81,7 @@ function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
           return;
         }
         const url = substituteParams(ep.url, { id: info.event.id });
-        const res = await fetch(url, {
+        const res = await send(url, {
           method: ep.method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -99,6 +101,7 @@ function CalendarInner(props: { spec: CalendarSpec; resource: string }) {
 }
 
 function CalendarStandalone(props: { spec: CalendarSpec }) {
+  const send = useHttp();
   let el!: HTMLDivElement;
   let cal: Calendar | undefined;
 
@@ -123,7 +126,7 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
           return;
         }
         const url = substituteParams(ep.url, { id: info.event.id });
-        const res = await fetch(url, {
+        const res = await send(url, {
           method: ep.method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -140,7 +143,7 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
           return;
         }
         const url = substituteParams(ep.url, { id: info.event.id });
-        const res = await fetch(url, {
+        const res = await send(url, {
           method: ep.method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

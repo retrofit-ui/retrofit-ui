@@ -7,6 +7,7 @@ import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 import type { TreeSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import { createResource, createSignal, For, Show, useContext } from 'solid-js';
+import { useHttp } from './actions';
 import { ApiBaseContext } from './context';
 import { showToast } from './toast';
 import type { TreeNode } from './tree-utils';
@@ -26,6 +27,7 @@ function TreeItem(props: { treeNode: TreeNode; spec: TreeSpec }) {
 }
 
 export function TreeViewComponent(props: { spec: TreeSpec }) {
+  const send = useHttp();
   const [flatNodes] = createResource(async () => {
     const res = await fetch(props.spec.endpoint.url, {
       method: props.spec.endpoint.method,
@@ -51,7 +53,7 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
     try {
       for (const id of selectedIds()) {
         const url = deleteEp.url.replace('{id}', id);
-        const res = await fetch(url, { method: deleteEp.method });
+        const res = await send(url, { method: deleteEp.method });
         if (!res.ok) {
           showToast('danger', `Delete failed for id ${id}`);
           return;
@@ -151,6 +153,7 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
 }
 
 export function TreeView() {
+  const send = useHttp();
   const params = useParams<{ resource: string }>();
   const navigate = useNavigate();
   const apiBase = useContext(ApiBaseContext);
@@ -188,7 +191,7 @@ export function TreeView() {
     try {
       for (const id of selectedIds()) {
         const url = s.actions.delete.url.replace('{id}', id);
-        const res = await fetch(url, { method: s.actions.delete.method });
+        const res = await send(url, { method: s.actions.delete.method });
         if (!res.ok) {
           showToast('danger', `Delete failed for id ${id}`);
           return;

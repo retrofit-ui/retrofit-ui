@@ -1,10 +1,11 @@
+import type { Spec } from '@retrofit-ui/core';
 import { type JSX, useContext } from 'solid-js';
 import { ActionHandlers } from './actions';
 import { builtinKinds } from './builtins';
 import { ApiBaseContext } from './context';
 import {
-  type AnySpec,
-  type KindComponent,
+  type FallbackComponent,
+  type KindComponents,
   type Kit,
   type Registry,
   RegistryContext,
@@ -18,7 +19,7 @@ export interface RendererOptions {
   /** Handlers that override every kit's, for this renderer. */
   actions?: ActionHandlers;
   /** Drawn for a node whose kind is missing or not registered. */
-  fallback?: KindComponent;
+  fallback?: FallbackComponent;
 }
 
 export interface RootProps {
@@ -34,7 +35,7 @@ export interface Renderer {
   Root: (props: RootProps) => JSX.Element;
   /** `Root` around a single spec. */
   SpecRenderer: (
-    props: Omit<RootProps, 'children'> & { spec: AnySpec },
+    props: Omit<RootProps, 'children'> & { spec: Spec },
   ) => JSX.Element;
   registry: Registry;
 }
@@ -56,9 +57,13 @@ export function Scope(props: RootProps) {
 
 export function createRenderer(options: RendererOptions = {}): Renderer {
   const kits = options.kits ?? [];
-  const kinds: Record<string, KindComponent> = { ...builtinKinds };
+  const kinds: KindComponents = { ...builtinKinds };
   for (const kit of kits) {
-    for (const def of kit.kinds ?? []) kinds[def.kind] = def.component;
+    for (const def of kit.kinds ?? []) {
+      // `def` pairs a kind with its component; TS can't express that
+      // through an index, so it is widened for the assignment.
+      (kinds as Record<string, unknown>)[def.kind] = def.component;
+    }
   }
   const registry: Registry = {
     kinds,
@@ -88,9 +93,7 @@ export function createRenderer(options: RendererOptions = {}): Renderer {
     );
   }
 
-  function SpecRenderer(
-    props: Omit<RootProps, 'children'> & { spec: AnySpec },
-  ) {
+  function SpecRenderer(props: Omit<RootProps, 'children'> & { spec: Spec }) {
     return (
       <Root apiBase={props.apiBase} actions={props.actions}>
         <RenderSpec spec={props.spec} />

@@ -1,44 +1,47 @@
-import type { RootSpec, ViewSpec } from '@retrofit-ui/core';
+import type { Spec, SpecKind, SpecOf } from '@retrofit-ui/core';
 import { type Component, createContext, useContext } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import type { ActionHandlers } from './actions';
 
-/** The least a spec node has: a `kind` to dispatch on. */
-export interface SpecNode {
-  kind: string;
+/** A component that draws one kind; `props.spec` is that kind's spec. */
+export type KindComponent<K extends SpecKind> = Component<{ spec: SpecOf<K> }>;
+
+export interface KindDefinition<K extends SpecKind> {
+  kind: K;
+  component: KindComponent<K>;
 }
 
-/**
- * What a renderer accepts. Listing the built-in shapes lets an object literal
- * be checked against them; any other kind passes as a `SpecNode`.
- */
-export type AnySpec = RootSpec | ViewSpec | SpecNode;
+/** A `KindDefinition` for any one registered kind. */
+export type AnyKindDefinition = {
+  [K in SpecKind]: KindDefinition<K>;
+}[SpecKind];
+
+/** Components by kind. A renderer has one for every built-in kind. */
+export type KindComponents = { [K in SpecKind]?: KindComponent<K> };
 
 /**
- * A component that draws one spec kind. The default `never` is the widest
- * storable form: any `KindComponent<FooSpec>` is assignable to it.
+ * Drawn for a node the registry has no component for: an unregistered kind,
+ * or a node whose `kind` is missing (e.g. a spec still streaming in).
  */
-export type KindComponent<S = never> = Component<{ spec: S }>;
-
-export interface KindDefinition<S extends SpecNode = SpecNode> {
-  kind: S['kind'];
-  component: KindComponent<S>;
-}
+export type FallbackComponent = Component<{ spec: { kind?: unknown } }>;
 
 /**
  * A kit is the unit an app or library contributes: its spec kinds, plus
  * handlers for the action types those kinds dispatch. A kit kind registered
  * under a built-in name (`form`, `card`, ...) replaces the built-in.
+ *
+ * Its kinds and action types must also be added to `SpecKinds` and
+ * `ActionKinds` (see `@retrofit-ui/core`), so specs and handlers are checked.
  */
 export interface Kit {
   name: string;
-  kinds?: { kind: string; component: KindComponent }[];
+  kinds?: AnyKindDefinition[];
   actions?: ActionHandlers;
 }
 
-export function defineKind<S extends SpecNode>(
-  definition: KindDefinition<S>,
-): KindDefinition<S> {
+export function defineKind<K extends SpecKind>(
+  definition: KindDefinition<K>,
+): KindDefinition<K> {
   return definition;
 }
 
@@ -47,9 +50,8 @@ export function defineKit(kit: Kit): Kit {
 }
 
 export interface Registry {
-  kinds: Readonly<Record<string, KindComponent>>;
-  /** Drawn for a node whose kind is missing or not registered. */
-  fallback: KindComponent;
+  kinds: Readonly<KindComponents>;
+  fallback: FallbackComponent;
 }
 
 export const RegistryContext = createContext<Registry>();
@@ -59,19 +61,24 @@ export const RegistryContext = createContext<Registry>();
  * registered for its kind. Containers, built-in or not, render their children
  * through this, which is what lets any kind nest inside any other.
  */
-export function RenderSpec(props: { spec: AnySpec }) {
+export function RenderSpec(props: { spec: Spec }) {
   const registry = useContext(RegistryContext);
   if (!registry) {
     throw new Error(
       '[retrofit-ui] <RenderSpec> must be rendered inside a renderer (SpecRenderer or createRenderer().Root)',
     );
   }
-  const component = () =>
-    (typeof props.spec?.kind === 'string' &&
-      Object.hasOwn(registry.kinds, props.spec.kind) &&
-      registry.kinds[props.spec.kind]) ||
-    registry.fallback;
-  return <Dynamic component={component()} spec={props.spec as never} />;
+  // The registry is keyed by kind, so the component found for `spec.kind` is
+  // the one for that spec; TypeScript can't relate the two through a lookup.
+  const component = (): Component<{ spec: Spec }> => {
+    const kind: unknown = props.spec?.kind;
+    const found =
+      typeof kind === 'string' && Object.hasOwn(registry.kinds, kind)
+        ? registry.kinds[kind as SpecKind]
+        : undefined;
+    return (found ?? registry.fallback) as Component<{ spec: Spec }>;
+  };
+  return <Dynamic component={component()} spec={props.spec} />;
 }
 
 export function UnsupportedKind(props: { spec: { kind?: unknown } }) {

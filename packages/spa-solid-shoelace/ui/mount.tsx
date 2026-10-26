@@ -2,11 +2,10 @@ import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.j
 import '@shoelace-style/shoelace/dist/themes/light.css';
 import '@shoelace-style/shoelace/dist/components/alert/alert.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
-import type { RootSpec } from '@retrofit-ui/core';
+import type { Spec } from '@retrofit-ui/core';
 import { HashRouter, Route } from '@solidjs/router';
 import { render } from 'solid-js/web';
 import type { ActionHandlers } from './actions';
-import type { Kit } from './kinds';
 import { createRenderer, type Renderer } from './renderer';
 import './layout.css';
 
@@ -25,15 +24,17 @@ export interface InitOptions {
   shoelacePath?: string;
   /** Watch rootElement for dynamically added islands via MutationObserver. */
   observe?: boolean;
-  /** Kinds and action handlers to add to the built-in ones. */
-  kits?: Kit[];
-  /** Action handlers that override every kit's. */
+  /**
+   * Action handlers to add to or override the built-ins, e.g. an `http`
+   * handler that adds auth headers. (Custom kinds can't be added here: this
+   * bundle carries its own Solid, which components built elsewhere can't share.)
+   */
   actions?: ActionHandlers;
 }
 
 export interface IslandController {
   /** Explicitly mount a spec onto an element. Returns SolidJS disposal function. */
-  mount(spec: RootSpec, element: HTMLElement): () => void;
+  mount(spec: Spec, element: HTMLElement): () => void;
   /** Unmount a single island and release its resources. */
   unmount(element: HTMLElement): void;
   /** Unmount all islands managed by this controller. */
@@ -52,7 +53,7 @@ function renderError(element: HTMLElement, message: string): void {
 }
 
 function mountIsland(
-  spec: RootSpec,
+  spec: Spec,
   element: HTMLElement,
   apiBase: string,
 ): () => void {
@@ -83,13 +84,13 @@ async function processWithSrc(
   try {
     const res = await fetch(src);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    let spec = (await res.json()) as RootSpec;
+    let spec = (await res.json()) as Spec;
 
     const inlineRaw = element.getAttribute('data-retrofit');
     if (inlineRaw) {
       try {
-        const patch = JSON.parse(inlineRaw) as Partial<RootSpec>;
-        spec = { ...spec, ...patch } as RootSpec;
+        const patch = JSON.parse(inlineRaw) as Partial<Spec>;
+        spec = { ...spec, ...patch } as Spec;
       } catch {
         renderError(element, `Invalid JSON in data-retrofit patch`);
         return;
@@ -106,7 +107,7 @@ function processInline(element: HTMLElement, apiBase: string): void {
   const raw = element.getAttribute('data-retrofit');
   if (!raw) return;
   try {
-    mountIsland(JSON.parse(raw) as RootSpec, element, apiBase);
+    mountIsland(JSON.parse(raw) as Spec, element, apiBase);
   } catch {
     renderError(element, `Invalid JSON in data-retrofit attribute`);
   }
@@ -142,7 +143,7 @@ export function init(options: InitOptions): IslandController {
   }
 
   const { rootElement, apiBase } = options;
-  renderer = createRenderer({ kits: options.kits, actions: options.actions });
+  renderer = createRenderer({ actions: options.actions });
 
   setBasePath(options.shoelacePath ?? SHOELACE_CDN);
 

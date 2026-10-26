@@ -1,14 +1,9 @@
-import type {
-  DetailsSpec,
-  RootSpec,
-  TabsSpec,
-  TextSpec,
-} from '@retrofit-ui/core';
+import type { Spec, SpecNode } from '@retrofit-ui/core';
 
 /**
- * A custom spec kind, defined entirely in userland. Extending retrofit-ui
- * does not require patching @retrofit-ui/core — we just declare the wire
- * shape here and teach one renderer to handle it (see client/RatingView.tsx).
+ * A custom spec kind, defined entirely in userland: declare its wire shape,
+ * register it in `SpecKinds`, and give the client renderer a component for
+ * it (see client/ExtendedRenderer.tsx). No patch to retrofit-ui required.
  */
 export interface RatingItem {
   label: string;
@@ -16,15 +11,19 @@ export interface RatingItem {
   note?: string;
 }
 
-export interface RatingSpec {
-  kind: 'rating';
+export interface RatingSpec extends SpecNode<'rating'> {
   items: RatingItem[];
   metadata?: { title?: string };
 }
 
-/**
- * The union our app's renderer accepts: everything retrofit-ui already knows
- * about, plus our custom kind. Server code returns this; client dispatches on
- * `spec.kind`.
- */
-export type AppSpec = RootSpec | RatingSpec | TextSpec | TabsSpec | DetailsSpec;
+// Registering the kind makes it part of `Spec`, so it type-checks anywhere a
+// spec can go, including inside built-in containers like `card` and `page`.
+// Server and client both import this file, so both see the registration.
+declare module '@retrofit-ui/core' {
+  interface SpecKinds {
+    rating: RatingSpec;
+  }
+}
+
+/** Any spec this app serves: the built-in kinds plus `rating`. */
+export type AppSpec = Spec;

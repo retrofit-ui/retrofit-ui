@@ -42,8 +42,7 @@ const theme = {
 };
 app.get('/retrofit.json', (_req, res) => res.json({ apiBase: '/api', theme }));
 
-// A "regular" retrofit-ui spec (built-in kind). Renders via the stock
-// SpecRenderer — nothing custom required.
+// A "regular" retrofit-ui spec (built-in kind). Nothing custom required.
 app.get('/api/hello-stat', (_req, res) => {
   const spec: AppSpec = {
     kind: 'stat',
@@ -57,7 +56,7 @@ app.get('/api/hello-stat', (_req, res) => {
 });
 
 // A custom spec (kind: 'rating'). The stock SpecRenderer would emit
-// "Unknown spec kind"; our client's ExtendedRenderer handles it.
+// "Unsupported spec kind"; the client's renderer has the rating kit.
 app.get('/api/product-ratings', (_req, res) => {
   const spec: RatingSpec = {
     kind: 'rating',
@@ -72,10 +71,7 @@ app.get('/api/product-ratings', (_req, res) => {
   res.json(spec);
 });
 
-// ViewSpec-only kinds (`text`/`tabs`/`details`). These have a single unwrapped
-// shape, so the stock SpecRenderer now renders them directly — before issue
-// #133 they fell through to "Unknown spec kind". ExtendedRenderer doesn't know
-// these kinds, so they exercise its delegation to SpecRenderer.
+// More built-in kinds, rendered by the same renderer as the custom one.
 app.get('/api/hello-text', (_req, res) => {
   const spec: AppSpec = {
     kind: 'text',
@@ -85,8 +81,7 @@ app.get('/api/hello-text', (_req, res) => {
   res.json(spec);
 });
 
-// A `tabs` spec whose panels contain a `text` child also exercises the
-// ViewRenderer recursion path that SpecRenderer reaches for tab children.
+// A `tabs` spec: its panels' children render through the same registry.
 app.get('/api/hello-tabs', (_req, res) => {
   const spec: AppSpec = {
     kind: 'tabs',
@@ -98,6 +93,26 @@ app.get('/api/hello-tabs', (_req, res) => {
       {
         label: 'Second',
         children: [{ kind: 'text', content: 'Tab two via SpecRenderer' }],
+      },
+    ],
+  };
+  res.json(spec);
+});
+
+// The custom kind nested inside built-in containers: a card in a page. Its
+// children are `Spec[]`, which includes `rating` once it is registered.
+app.get('/api/rated-card', (_req, res) => {
+  const spec: AppSpec = {
+    kind: 'page',
+    title: 'Ratings in a card',
+    children: [
+      {
+        kind: 'card',
+        header: 'Brewers',
+        children: [
+          { kind: 'text', content: 'Scored by the team.' },
+          { kind: 'rating', items: [{ label: 'Aeropress', score: 4.5 }] },
+        ],
       },
     ],
   };

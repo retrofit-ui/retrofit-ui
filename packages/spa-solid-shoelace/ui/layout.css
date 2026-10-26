@@ -473,3 +473,11 @@
 .retrofit-calendar th {
   border-color: var(--sl-color-neutral-200);
 }
+
+/* A form's heading inside a page (outside one, a form is a routed editor
+   with a page title and back button instead). */
+.retrofit-form-title {
+  margin: 0 0 var(--sl-spacing-medium);
+  font-size: var(--sl-font-size-large);
+  font-weight: var(--sl-font-weight-semibold);
+}

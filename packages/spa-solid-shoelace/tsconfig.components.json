@@ -1,12 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "ui",
-    "outDir": "dist/components/types",
     "declaration": true,
-    "emitDeclarationOnly": true,
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": ["ui/components.tsx", "ui/shoelace-types.d.ts"]
+  "include": ["ui/components.tsx", "ui/mount.tsx", "ui/shoelace-types.d.ts"]
 }

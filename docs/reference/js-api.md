@@ -111,53 +111,91 @@ class FormCustomizer {
 
 ## Types
 
+All spec types come from `@retrofit-ui/core` (types only, no runtime code); `@retrofit-ui/builder-zod` re-exports the common ones.
+
+### `Spec`, `SpecKinds`, `SpecNode`, `ContainerSpec`
+
+```typescript
+interface SpecNode<K extends string = string> {
+  kind: K;
+}
+
+/** A spec that lays out other specs. */
+interface ContainerSpec<K extends string = string> extends SpecNode<K> {
+  children: Spec[];
+}
+
+/** Every kind, keyed by `kind`. Augment it to add your own (see Extending). */
+interface SpecKinds {
+  table: TableSpec; form: FormSpec; 'filter-form': FilterFormSpec;
+  markdown: MarkdownViewSpec; stat: StatSpec; calendar: CalendarSpec;
+  tree: TreeSpec; timeline: TimelineSpec; text: TextSpec; details: DetailsSpec;
+  page: PageSpec; card: CardSpec; flex: FlexSpec; grid: GridSpec; tabs: TabsSpec;
+}
+
+type Spec = SpecKinds[keyof SpecKinds];
+type SpecOf<K extends keyof SpecKinds> = SpecKinds[K];
+```
+
+`page`, `card`, `flex` and `grid` extend `ContainerSpec`; `tabs` holds `{ label, children: Spec[] }[]`. A spec has the same shape wherever it appears — at the top level or as a child.
+
 ### `EndpointDirective`
 
 ```typescript
+/** An http action; `type` may be omitted. */
 interface EndpointDirective {
+  type?: 'http';
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  url: string; // may contain {id} placeholder
+  url: string; // may contain {param} placeholders
 }
 ```
 
 ### `TableSpec`
 
 ```typescript
-interface TableSpec {
+interface TableSpec extends SpecNode<'table'> {
   columns: Column[];
+  rows?: Record<string, Cell>[]; // inline rows; otherwise fetched from `list`
+  idField?: string;
   endpoints: {
-    list?:   EndpointDirective;
+    list?:   EndpointDirective; // in a page, {param}s are filled from its filters
     find?:   EndpointDirective;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;
   };
   rowActions?: RowAction[];
-  metadata?: { title?: string };
+  metadata?: {
+    title?: string;
+    pagination?: { pageSize: number; totalRows: number; pageSizeOptions?: number[] };
+  };
 }
 ```
 
 ### `FormSpec`
 
 ```typescript
-interface FormSpec {
+interface FormSpec extends SpecNode<'form'> {
   fields: Field[];
   endpoints: {
-    find?:   EndpointDirective;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;
   };
-  metadata?: { title?: string };
+  metadata?: {
+    title?: string;
+    submitLabel?: string; // default "Create", or "Save" when editing
+    autoSubmit?: boolean; // in a page: write changes to its filters instead
+    layout?: FormLayoutConfig;
+  };
 }
 ```
 
 ### `MarkdownViewSpec`
 
 ```typescript
-interface MarkdownViewSpec {
-  entityEndpoint: EndpointDirective;
-  field: string;
+interface MarkdownViewSpec extends SpecNode<'markdown'> {
+  content: string;
   metadata?: { title?: string };
 }
 ```
@@ -168,13 +206,21 @@ interface MarkdownViewSpec {
 interface Column {
   key: string;
   label: string;
-  type: 'string' | 'number' | 'date' | 'boolean' | 'enum' | 'custom';
-  sortable?: boolean;
-  filterable?: boolean;
-  editable?: boolean;
+  type: 'string' | 'number' | 'date' | 'datetime' | 'time' | 'boolean' | 'enum' | 'custom';
+  sortable?: boolean;   // default false
+  filterable?: boolean; // default false
+  editable?: boolean;   // default false
   width?: string;
-  alignment?: 'left' | 'center' | 'right';
+  alignment?: 'left' | 'center' | 'right'; // default 'left'
   options?: FieldOption[];
+  badgeVariants?: Record<string, 'primary' | 'success' | 'neutral' | 'warning' | 'danger'>;
+  format?: 'currency' | 'bytes' | 'percent' | 'decimal';
+  currency?: string;
+}
+
+interface Cell {
+  value: unknown;
+  formatted?: string; // server-formatted display text
 }
 ```
 
@@ -184,14 +230,21 @@ interface Column {
 interface Field {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'date' | 'select'
-      | 'multiselect' | 'checkbox' | 'radio' | 'textarea' | 'markdown' | 'file';
-  required?: boolean;
-  readOnly?: boolean;
+  type: 'text' | 'email' | 'password' | 'number' | 'date' | 'datetime' | 'time'
+      | 'select' | 'multiselect' | 'checkbox' | 'switch' | 'radio' | 'radio-group'
+      | 'textarea' | 'markdown' | 'file' | 'color' | 'tags' | 'rating';
+  required?: boolean; // default false
+  readOnly?: boolean; // default false
+  value?: unknown;    // initial value
   placeholder?: string;
   helpText?: string;
+  tooltip?: string;
   validation?: { required?: boolean; min?: number; max?: number; pattern?: string };
   options?: FieldOption[];
+  colorFormat?: 'hex' | 'rgb' | 'hsl';
+  colorSwatches?: string[];
+  ratingMax?: number;
+  ratingPrecision?: number;
 }
 ```
 
@@ -211,6 +264,29 @@ interface RowAction {
   label: string;
   routePattern: string; // e.g. '/{id}/render'
 }
+```
+
+### Actions
+
+```typescript
+interface ActionDescriptor<T extends string = string> { type: T }
+interface NavigateAction extends ActionDescriptor<'navigate'> { to: string }
+interface RefreshAction extends ActionDescriptor<'refresh'> {}
+
+/** One action type: its descriptor, the input it is dispatched with, its result. */
+interface ActionEntry<A, Input = undefined, Result = unknown> {
+  action: A; input: Input; result: Result;
+}
+
+/** Every action type, keyed by `type`. Augment it to add your own. */
+interface ActionKinds {
+  navigate: ActionEntry<NavigateAction, undefined, void>;
+  refresh: ActionEntry<RefreshAction, undefined, void>;
+  // `http` is registered by @retrofit-ui/spa-solid-shoelace:
+  // ActionEntry<EndpointDirective, { init?: RequestInit } | undefined, Response>
+}
+
+type Action = ActionKinds[keyof ActionKinds]['action'];
 ```
 
 ### `RetrofitTheme`

@@ -3,23 +3,26 @@ export {
   ActionHandlers,
   builtinActions,
   type Dispatch,
-  type Dispatchable,
   type HttpInput,
+  type InputOf,
+  type ResultOf,
+  type TypeOf,
   useActions,
   useHttp,
 } from './actions';
 export { builtinKinds } from './builtins';
 export { FormViewComponent } from './FormView';
 export {
-  type AnySpec,
+  type AnyKindDefinition,
   defineKind,
   defineKit,
+  type FallbackComponent,
   type KindComponent,
+  type KindComponents,
   type KindDefinition,
   type Kit,
   type Registry,
   RenderSpec,
-  type SpecNode,
   UnsupportedKind,
 } from './kinds';
 export { configureMarked } from './MarkdownView';

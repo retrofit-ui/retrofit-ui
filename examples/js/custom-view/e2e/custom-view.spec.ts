@@ -83,7 +83,7 @@ test.describe('Custom rating view (handled by ExtendedRenderer)', () => {
 // they fall through to the stock SpecRenderer. Before the fix these rendered as
 // "Unknown spec kind"; now they render their real content.
 
-test.describe('ViewSpec-only kinds delegated through SpecRenderer', () => {
+test.describe('built-in kinds render alongside the custom one', () => {
   test('text spec renders its content, not an error', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Built-in: text view' }).click();
@@ -265,5 +265,18 @@ test.describe('Theming', () => {
       .evaluate((el) => getComputedStyle(el).color);
     expect(emptyColor).not.toBe(PRIMARY_600);
     expect(emptyColor).not.toBe(PRIMARY_700);
+  });
+});
+
+test.describe('custom kinds nest inside built-in containers', () => {
+  test('a rating inside a card inside a page renders', async ({ page }) => {
+    await page.goto('/');
+    await page
+      .getByRole('button', { name: 'Custom kind inside a card' })
+      .click();
+    await expect(page.locator('sl-card')).toBeVisible();
+    await expect(page.getByText('Scored by the team.')).toBeVisible();
+    await expect(page.locator('sl-card').getByText('Aeropress')).toBeVisible();
+    await expect(page.locator('.retrofit-error-message')).toHaveCount(0);
   });
 });

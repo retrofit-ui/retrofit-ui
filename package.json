@@ -19,13 +19,15 @@
     "release": "pnpm build && changeset publish",
     "verify:publish": "node scripts/verify-publish-manifests.mjs",
     "test:publish-guard": "vitest run scripts",
-    "prepare": "test -n \"$CI\" || lefthook install"
+    "prepare": "test -n \"$CI\" || lefthook install",
+    "check:consumer-types": "node scripts/check-consumer-types.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
     "@changesets/cli": "^2.29.8",
     "@vitest/coverage-v8": "^4.1.8",
     "lefthook": "^1.11.13",
+    "publint": "^0.3.25",
     "typescript": "^5.9.3",
     "vitest": "^4.1.8"
   }

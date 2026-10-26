@@ -4,7 +4,11 @@
 // This file must NOT import anything Node-only (no express, no fs, no
 // @retrofit-ui/spa-solid-shoelace since it exports a Node path).
 
-import type { MarkdownViewSpec, ViewSpec } from '@retrofit-ui/builder-zod';
+import type {
+  FormSpec,
+  MarkdownViewSpec,
+  Spec,
+} from '@retrofit-ui/builder-zod';
 import {
   CardViewBuilder,
   col,
@@ -22,28 +26,25 @@ export const MESSAGES: Record<string, string> = {
   '3': 'How does my workload this week **compare to last week**?',
 };
 
-const DOWNLOAD_FOOTER: ViewSpec = {
+const DOWNLOAD_FOOTER: FormSpec = {
   kind: 'form',
-  spec: {
-    kind: 'form',
-    fields: [],
-    endpoints: { create: { url: '/api/chat-messages/export', method: 'POST' } },
-  },
+  fields: [],
+  endpoints: { create: { url: '/api/chat-messages/export', method: 'POST' } },
 };
 
-function userMessage(id: string): ViewSpec {
+function userMessage(id: string): Spec {
   const spec: MarkdownViewSpec = {
     kind: 'markdown',
     content: MESSAGES[id] ?? '',
   };
   return new CardViewBuilder()
     .header('You')
-    .add({ kind: 'markdown', spec })
+    .add(spec)
     .footer(DOWNLOAD_FOOTER)
     .build();
 }
 
-function assistantReply(content: ViewSpec): ViewSpec {
+function assistantReply(content: Spec): Spec {
   return new CardViewBuilder()
     .header('Assistant')
     .add(content)
@@ -208,12 +209,7 @@ export function buildChatSpec() {
     .add(assistantReply(col('1rem').add(todayStats).add(todayTimeline).build()))
     .add(userMessage('2'))
     .add(
-      assistantReply(
-        col('1rem')
-          .add(deadlineStats)
-          .add({ kind: 'table', spec: deadlineTable })
-          .build(),
-      ),
+      assistantReply(col('1rem').add(deadlineStats).add(deadlineTable).build()),
     )
     .add(userMessage('3'))
     .add(

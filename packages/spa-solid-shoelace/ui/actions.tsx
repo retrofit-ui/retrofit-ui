@@ -1,11 +1,43 @@
-import type { AnyAction, HttpAction, NavigateAction } from '@retrofit-ui/core';
+import type {
+  Action,
+  ActionEntry,
+  ActionKinds,
+  ActionType,
+  HttpAction,
+} from '@retrofit-ui/core';
 import { createContext, type JSX, useContext } from 'solid-js';
 
+/** What an http handler receives as input: the RequestInit to send. */
+export interface HttpInput {
+  init?: RequestInit;
+}
+
+// The renderer owns http's input and result types, so it registers the type.
+declare module '@retrofit-ui/core' {
+  interface ActionKinds {
+    http: ActionEntry<HttpAction, HttpInput | undefined, Response>;
+  }
+}
+
+/** The type an action is handled under. An action without one is http. */
+export type TypeOf<A> = A extends { type: infer T extends ActionType }
+  ? T
+  : 'http';
+export type InputOf<T extends ActionType> = ActionKinds[T]['input'];
+export type ResultOf<T extends ActionType> = ActionKinds[T]['result'];
+
+/** The input argument, optional when the type's input may be undefined. */
+type InputArgs<T extends ActionType> =
+  undefined extends InputOf<T> ? [input?: InputOf<T>] : [input: InputOf<T>];
+
 /**
- * Anything a component can dispatch: a built-in action (checked against its
- * shape), an untyped http one, or any namespaced `{ type, ... }`.
+ * Runs an action through the nearest handler for its type. The input is
+ * checked against the type's registered input, and the result is typed.
  */
-export type Dispatchable = AnyAction;
+export type Dispatch = <A extends Action>(
+  action: A,
+  ...input: InputArgs<TypeOf<A>>
+) => Promise<ResultOf<TypeOf<A>>>;
 
 /**
  * Handles one action type. `input` carries the runtime values the dispatching
@@ -13,47 +45,47 @@ export type Dispatchable = AnyAction;
  * the spec's fixed descriptor. `next` hands the action to the handler further
  * out, so an override can wrap the default rather than replace it.
  */
-export type ActionHandler<
-  A extends Dispatchable = Dispatchable,
-  I = unknown,
-> = (action: A, input: I, next: () => Promise<unknown>) => unknown;
+export type ActionHandler<T extends ActionType> = (
+  action: ActionKinds[T]['action'],
+  input: InputOf<T>,
+  next: () => Promise<ResultOf<T>>,
+) => HandlerReturn<ResultOf<T>>;
 
 /**
- * Handlers keyed by action type. Each handler narrows its own action and
- * input; `never` parameters make every such handler storable here.
+ * What a handler may return. For a type whose result is `void`, anything:
+ * as with any void callback, the return value is ignored.
  */
-export type ActionHandlers = Record<
-  string,
-  (action: never, input: never, next: () => Promise<unknown>) => unknown
->;
+type HandlerReturn<R> = [R] extends [void] ? unknown : R | Promise<R>;
 
-export type Dispatch = (
-  action: Dispatchable,
-  input?: unknown,
-) => Promise<unknown>;
+/** Handlers keyed by action type. */
+export type ActionHandlers = { [T in ActionType]?: ActionHandler<T> };
 
-/** What an http handler receives as input: the RequestInit to send. */
-export interface HttpInput {
-  init?: RequestInit;
-}
+// Handlers are looked up by a runtime string, so the chain itself is untyped;
+// `ActionHandlers` and `Dispatch` give callers the per-type types.
+type Untyped = (action: { type?: string }, input: unknown) => Promise<unknown>;
+type UntypedHandler = (
+  action: unknown,
+  input: unknown,
+  next: () => Promise<unknown>,
+) => unknown;
 
-export function actionType(action: Dispatchable): string {
+export function actionType(action: { type?: string }): string {
   return action.type ?? 'http';
 }
 
-function unhandled(action: Dispatchable): Promise<never> {
+const unhandled: Untyped = (action) => {
   const type = actionType(action);
   console.error(
     `[retrofit-ui] no handler registered for action "${type}"`,
     action,
   );
   return Promise.reject(new Error(`No handler for action "${type}"`));
-}
+};
 
-export const builtinActions: ActionHandlers = {
-  http: (action: HttpAction, input: HttpInput | undefined) =>
+export const builtinActions = {
+  http: (action, input) =>
     fetch(action.url, { ...input?.init, method: action.method }),
-  navigate: (action: NavigateAction) => {
+  navigate: (action) => {
     if (action.to.startsWith('#')) window.location.hash = action.to.slice(1);
     else window.location.assign(action.to);
   },
@@ -63,16 +95,18 @@ export const builtinActions: ActionHandlers = {
       action,
     );
   },
-};
+} satisfies ActionHandlers;
 
-function chain(handlers: ActionHandlers, parent: Dispatch): Dispatch {
+function chain(handlers: ActionHandlers, parent: Untyped): Untyped {
   return (action, input) => {
     const type = actionType(action);
-    const handler = Object.hasOwn(handlers, type) ? handlers[type] : undefined;
+    const handler = Object.hasOwn(handlers, type)
+      ? (handlers[type as ActionType] as UntypedHandler | undefined)
+      : undefined;
     if (!handler) return parent(action, input);
     try {
       return Promise.resolve(
-        handler(action as never, input as never, () => parent(action, input)),
+        handler(action, input, () => parent(action, input)),
       );
     } catch (err) {
       return Promise.reject(err);
@@ -80,9 +114,7 @@ function chain(handlers: ActionHandlers, parent: Dispatch): Dispatch {
   };
 }
 
-const ActionsContext = createContext<Dispatch>(
-  chain(builtinActions, unhandled),
-);
+const ActionsContext = createContext<Untyped>(chain(builtinActions, unhandled));
 
 /**
  * Registers handlers for everything rendered inside it. Inner handlers win;
@@ -101,7 +133,7 @@ export function ActionHandlers(props: {
 }
 
 export function useActions(): { dispatch: Dispatch } {
-  return { dispatch: useContext(ActionsContext) };
+  return { dispatch: useContext(ActionsContext) as Dispatch };
 }
 
 /**
@@ -112,14 +144,14 @@ export function useHttp(): (
   url: string,
   init?: RequestInit,
 ) => Promise<Response> {
-  const dispatch = useContext(ActionsContext);
+  const { dispatch } = useActions();
   return (url, init) =>
     dispatch(
       {
         type: 'http',
         method: (init?.method ?? 'GET') as HttpAction['method'],
         url,
-      } satisfies HttpAction,
-      { init } satisfies HttpInput,
-    ) as Promise<Response>;
+      },
+      { init },
+    );
 }

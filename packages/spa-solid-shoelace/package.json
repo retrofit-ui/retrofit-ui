@@ -1,7 +1,7 @@
 {
   "name": "@retrofit-ui/spa-solid-shoelace",
   "version": "0.3.0",
-  "description": "Prebuilt SolidJS + Shoelace renderer for retrofit-ui — drop into any server as static assets; no frontend build required",
+  "description": "Prebuilt SolidJS + Shoelace renderer for retrofit-ui \u2014 drop into any server as static assets; no frontend build required",
   "keywords": [
     "retrofit-ui",
     "server-driven-ui",
@@ -31,10 +31,13 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./renderer": "./dist/renderer/retrofit-ui.js",
+    "./renderer": {
+      "types": "./dist/types/renderer.d.ts",
+      "import": "./dist/renderer/retrofit-ui.js"
+    },
     "./renderer.css": "./dist/renderer/spa-solid-shoelace.css",
     "./components": {
-      "types": "./dist/components/types/components.d.ts",
+      "types": "./dist/types/components.d.ts",
       "import": "./dist/components/spec-renderer.js"
     }
   },
@@ -51,7 +54,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup && vite build && vite build --config vite.renderer.config.ts && vite build --config vite.components.config.ts && tsc -p tsconfig.components.json",
+    "build": "tsup && vite build && vite build --config vite.renderer.config.ts && vite build --config vite.components.config.ts && tsup --config tsup.types.config.ts",
     "dev": "vite",
     "test": "vitest run",
     "test:watch": "vitest",

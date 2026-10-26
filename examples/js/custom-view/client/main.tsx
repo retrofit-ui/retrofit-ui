@@ -50,6 +50,7 @@ const ENDPOINTS = [
   { path: '/api/hello-text', label: 'Built-in: text view' },
   { path: '/api/hello-tabs', label: 'Built-in: tabs view' },
   { path: '/api/hello-details', label: 'Built-in: details view' },
+  { path: '/api/rated-card', label: 'Custom kind inside a card' },
 ] as const;
 
 function Home(props: { apiBase: string }) {

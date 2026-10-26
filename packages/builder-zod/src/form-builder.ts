@@ -5,7 +5,7 @@ import type {
   FormSpec,
 } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape } from 'zod';
-import { formFromSchema } from './FormBuilder';
+import { getShape, zodFieldToField } from './mappers';
 
 export class FormSpecBuilder<S extends ZodRawShape> {
   private _fieldOverrides: Record<string, Partial<Field>> = {};
@@ -55,11 +55,14 @@ export class FormSpecBuilder<S extends ZodRawShape> {
   }
 
   build(): FormSpec {
-    const builder = formFromSchema(this._schema);
-    if (this._updateSchema) {
-      builder.withMutability(this._updateSchema);
-    }
-    const baseFields = builder.build().fields;
+    // A field the update schema leaves out can't be changed once created.
+    const updatable = this._updateSchema
+      ? new Set(Object.keys(this._updateSchema.shape))
+      : null;
+    const baseFields = Object.entries(getShape(this._schema)).map(
+      ([key, schema]) =>
+        zodFieldToField(key, schema, updatable !== null && !updatable.has(key)),
+    );
     const fields = baseFields.map((field) => {
       const withOverride = this._fieldOverrides[field.name]
         ? { ...field, ...this._fieldOverrides[field.name] }

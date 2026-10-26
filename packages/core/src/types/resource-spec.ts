@@ -1,5 +1,6 @@
 import type { HttpAction } from './action';
 import type { Field } from './form';
+import type { SpecNode } from './spec';
 import type { Cell, Column } from './table';
 
 /** A `{ method, url }` pair. Every endpoint directive is also an http action. */
@@ -13,8 +14,7 @@ export interface RowAction {
 }
 
 /** Returned by GET /api/ui/{resource} — drives the table view. */
-export interface TableSpec {
-  kind: 'table';
+export interface TableSpec extends SpecNode<'table'> {
   columns: Column[];
   rows?: Record<string, Cell>[];
   /**
@@ -25,7 +25,8 @@ export interface TableSpec {
    */
   idField?: string;
   endpoints: {
-    list?: EndpointDirective; // used by PageView filter-tables
+    /** Fetches rows. Inside a page, `{param}`s are filled from the page's filters. */
+    list?: EndpointDirective;
     find?: EndpointDirective; // enables row clicks + ID extraction
     create?: EndpointDirective; // shows "New" button when present
     update?: EndpointDirective; // enables inline row save
@@ -50,8 +51,7 @@ export interface FormLayoutConfig {
 }
 
 /** Returned by GET /api/ui/{resource}/:id — drives new and edit form views. */
-export interface FormSpec {
-  kind: 'form';
+export interface FormSpec extends SpecNode<'form'> {
   fields: Field[];
   endpoints: {
     create?: EndpointDirective;
@@ -60,21 +60,22 @@ export interface FormSpec {
   };
   metadata?: {
     title?: string;
+    /** Submit button text. Defaults to "Create", or "Save" when editing. */
+    submitLabel?: string;
+    /** Inside a page: write each change to the page's filters instead of submitting. */
     autoSubmit?: boolean;
     layout?: FormLayoutConfig;
   };
 }
 
 /** Returned by GET /api/ui/{resource}/:id/render — drives the markdown render view. */
-export interface MarkdownViewSpec {
-  kind: 'markdown';
+export interface MarkdownViewSpec extends SpecNode<'markdown'> {
   content: string;
   metadata?: { title?: string };
 }
 
 /** Returned by GET /api/ui/{resource}/tree — drives the tree view. */
-export interface TreeSpec {
-  kind: 'tree';
+export interface TreeSpec extends SpecNode<'tree'> {
   endpoint: EndpointDirective;
   idField: string;
   parentField: string;
@@ -97,8 +98,7 @@ export interface TimelineEvent {
 }
 
 /** Returned by GET /api/ui/{resource}/timeline or GET /api/ui/{resource}/:id/timeline */
-export interface TimelineSpec {
-  kind: 'timeline';
+export interface TimelineSpec extends SpecNode<'timeline'> {
   events: TimelineEvent[];
   metadata?: { title?: string };
 }
@@ -113,8 +113,7 @@ export interface Stat {
 }
 
 /** Returned by GET /api/ui/{resource}/stats — drives the stat/KPI grid view. */
-export interface StatSpec {
-  kind: 'stat';
+export interface StatSpec extends SpecNode<'stat'> {
   stats: Stat[];
   metadata?: { title?: string };
 }
@@ -130,8 +129,7 @@ export interface CalendarEvent {
 }
 
 /** Returned by GET /api/ui/{resource}/calendar — drives the calendar view. */
-export interface CalendarSpec {
-  kind: 'calendar';
+export interface CalendarSpec extends SpecNode<'calendar'> {
   events: CalendarEvent[];
   defaultView?: 'month' | 'week' | 'day' | 'list';
   editable?: boolean;

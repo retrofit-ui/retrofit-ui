@@ -1,5 +1,6 @@
+import type { FormSpec, TableSpec } from '@retrofit-ui/core';
 import { describe, expect, it } from 'vitest';
-import { col, grid, pageSpec, row } from '../page-builder';
+import { col, filterForm, grid, pageSpec, row } from '../page-builder';
 
 describe('row()', () => {
   it('produces a flex spec with direction row', () => {
@@ -72,22 +73,10 @@ describe('grid()', () => {
 describe('LayoutContainerBuilder.add()', () => {
   it('collects children in insertion order', () => {
     const spec = row()
-      .add({
-        kind: 'table',
-        spec: { kind: 'table', columns: [], endpoints: {} },
-      })
-      .add({
-        kind: 'markdown',
-        spec: {
-          kind: 'markdown',
-          content: 'hello',
-        },
-      })
+      .add({ kind: 'table', columns: [], endpoints: {} })
+      .add({ kind: 'markdown', content: 'hello' })
       .build();
-    const children = (spec as { children: unknown[] }).children;
-    expect(children).toHaveLength(2);
-    expect((children[0] as { kind: string }).kind).toBe('table');
-    expect((children[1] as { kind: string }).kind).toBe('markdown');
+    expect(spec.children.map((c) => c.kind)).toEqual(['table', 'markdown']);
   });
 });
 
@@ -183,5 +172,50 @@ describe('pageSpec() — PageSpecBuilder', () => {
     expect(spec.title).toBeUndefined();
     expect(spec.layout).toBeUndefined();
     expect(spec.children).toHaveLength(0);
+  });
+});
+
+describe('page children are flat specs', () => {
+  const table: TableSpec = { kind: 'table', columns: [], endpoints: {} };
+  const form: FormSpec = {
+    kind: 'form',
+    fields: [],
+    endpoints: {},
+    metadata: { autoSubmit: true },
+  };
+
+  it('adds tables, markdown and filter forms as-is, not wrapped', () => {
+    const filters = filterForm()
+      .field('status', { label: 'Status', type: 'text' })
+      .build();
+    const spec = pageSpec()
+      .filterForm(filters)
+      .table(table)
+      .markdown({ kind: 'markdown', content: 'hi' })
+      .build();
+    expect(spec.children).toEqual([
+      {
+        kind: 'filter-form',
+        fields: [{ name: 'status', label: 'Status', type: 'text' }],
+      },
+      table,
+      { kind: 'markdown', content: 'hi' },
+    ]);
+  });
+
+  it('puts a form title into metadata, keeping the rest', () => {
+    const spec = pageSpec().form(form, 'Filter').build();
+    expect(spec.children).toEqual([
+      { ...form, metadata: { autoSubmit: true, title: 'Filter' } },
+    ]);
+    expect(pageSpec().form(form).build().children).toEqual([form]);
+  });
+
+  it('does the same inside layout containers', () => {
+    const spec = col().table(table).form(form, 'New').build();
+    expect(spec.children).toEqual([
+      table,
+      { ...form, metadata: { autoSubmit: true, title: 'New' } },
+    ]);
   });
 });

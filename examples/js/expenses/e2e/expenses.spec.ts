@@ -180,11 +180,14 @@ test.describe('Expenses dashboard layout (row — form beside table)', () => {
       page.locator('th').filter({ hasText: 'Description' }),
     ).toBeVisible();
 
-    const panes = page.locator('.retrofit-pane');
-    const formBox = await panes.first().boundingBox();
-    const tableBox = await panes.last().boundingBox();
-    // Side by side: both panes start at the same vertical position
-    expect(Math.abs((formBox?.y ?? 0) - (tableBox?.y ?? 0))).toBeLessThan(30);
+    const formBox = await page.locator('form').first().boundingBox();
+    const tableBox = await page.locator('table.retrofit-table').boundingBox();
+    // Side by side: the table starts to the right of the form, at about the
+    // same height.
+    expect(tableBox?.x ?? 0).toBeGreaterThan(
+      (formBox?.x ?? 0) + (formBox?.width ?? 0) - 1,
+    );
+    expect(Math.abs((formBox?.y ?? 0) - (tableBox?.y ?? 0))).toBeLessThan(80);
   });
 
   test('submitting dashboard form adds a row to the adjacent table', async ({

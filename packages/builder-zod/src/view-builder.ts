@@ -7,7 +7,7 @@ import type {
   TableSpec,
 } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
-import { tableFromSchema } from './TableBuilder';
+import { getShape, zodFieldToColumn } from './mappers';
 
 function getDef(schema: ZodTypeAny): Record<string, unknown> {
   return schema._def as unknown as Record<string, unknown>;
@@ -140,7 +140,9 @@ export class TableViewBuilder<S extends ZodRawShape> {
       : null;
 
     const shape = this._schema.shape as unknown as Record<string, ZodTypeAny>;
-    const baseColumns = tableFromSchema(this._schema, []).build().columns;
+    const baseColumns = Object.entries(getShape(this._schema)).map(
+      ([key, schema]) => zodFieldToColumn(key, schema),
+    );
 
     let columns = baseColumns.map((col) => {
       const editable = editableKeys ? editableKeys.has(col.key) : false;

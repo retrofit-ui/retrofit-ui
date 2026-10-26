@@ -130,53 +130,50 @@ const spec = {
           children: [
             {
               kind: 'table',
-              spec: {
-                kind: 'table',
-                columns: [
-                  {
-                    key: 'title',
-                    label: 'Task',
-                    type: 'string',
-                    editable: true,
-                  },
-                  {
-                    key: 'status',
-                    label: 'Status',
-                    type: 'enum',
-                    editable: true,
-                    options: [
-                      { label: 'Todo', value: 'todo' },
-                      { label: 'In Progress', value: 'in_progress' },
-                      { label: 'Done', value: 'done' },
-                    ],
-                    badgeVariants: {
-                      todo: 'neutral',
-                      in_progress: 'primary',
-                      done: 'success',
-                    },
-                  },
-                  {
-                    key: 'priority',
-                    label: 'Priority',
-                    type: 'enum',
-                    options: [
-                      { label: 'Low', value: 'low' },
-                      { label: 'Medium', value: 'medium' },
-                      { label: 'High', value: 'high' },
-                    ],
-                    badgeVariants: {
-                      low: 'neutral',
-                      medium: 'warning',
-                      high: 'danger',
-                    },
-                  },
-                ],
-                endpoints: {
-                  list: { method: 'GET', url: '/landing/tasks' },
-                  create: { method: 'POST', url: '/landing/tasks' },
-                  update: { method: 'PUT', url: '/landing/tasks/{id}' },
-                  delete: { method: 'DELETE', url: '/landing/tasks/{id}' },
+              columns: [
+                {
+                  key: 'title',
+                  label: 'Task',
+                  type: 'string',
+                  editable: true,
                 },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  type: 'enum',
+                  editable: true,
+                  options: [
+                    { label: 'Todo', value: 'todo' },
+                    { label: 'In Progress', value: 'in_progress' },
+                    { label: 'Done', value: 'done' },
+                  ],
+                  badgeVariants: {
+                    todo: 'neutral',
+                    in_progress: 'primary',
+                    done: 'success',
+                  },
+                },
+                {
+                  key: 'priority',
+                  label: 'Priority',
+                  type: 'enum',
+                  options: [
+                    { label: 'Low', value: 'low' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'High', value: 'high' },
+                  ],
+                  badgeVariants: {
+                    low: 'neutral',
+                    medium: 'warning',
+                    high: 'danger',
+                  },
+                },
+              ],
+              endpoints: {
+                list: { method: 'GET', url: '/landing/tasks' },
+                create: { method: 'POST', url: '/landing/tasks' },
+                update: { method: 'PUT', url: '/landing/tasks/{id}' },
+                delete: { method: 'DELETE', url: '/landing/tasks/{id}' },
               },
             },
           ],
@@ -186,44 +183,41 @@ const spec = {
           children: [
             {
               kind: 'form',
-              spec: {
-                kind: 'form',
-                fields: [
-                  {
-                    name: 'name',
-                    label: 'Name',
-                    type: 'text',
-                    required: true,
-                    placeholder: 'Jane Smith',
-                  },
-                  {
-                    name: 'email',
-                    label: 'Email',
-                    type: 'email',
-                    required: true,
-                    placeholder: 'jane@example.com',
-                  },
-                  {
-                    name: 'role',
-                    label: 'Role',
-                    type: 'select',
-                    options: [
-                      { label: 'Engineer', value: 'engineer' },
-                      { label: 'Designer', value: 'designer' },
-                      { label: 'Product', value: 'product' },
-                      { label: 'Other', value: 'other' },
-                    ],
-                  },
-                  {
-                    name: 'message',
-                    label: 'Message',
-                    type: 'textarea',
-                    placeholder: 'What are you building?',
-                  },
-                ],
-                endpoints: {},
-                metadata: { title: 'Get in touch' },
-              },
+              fields: [
+                {
+                  name: 'name',
+                  label: 'Name',
+                  type: 'text',
+                  required: true,
+                  placeholder: 'Jane Smith',
+                },
+                {
+                  name: 'email',
+                  label: 'Email',
+                  type: 'email',
+                  required: true,
+                  placeholder: 'jane@example.com',
+                },
+                {
+                  name: 'role',
+                  label: 'Role',
+                  type: 'select',
+                  options: [
+                    { label: 'Engineer', value: 'engineer' },
+                    { label: 'Designer', value: 'designer' },
+                    { label: 'Product', value: 'product' },
+                    { label: 'Other', value: 'other' },
+                  ],
+                },
+                {
+                  name: 'message',
+                  label: 'Message',
+                  type: 'textarea',
+                  placeholder: 'What are you building?',
+                },
+              ],
+              endpoints: {},
+              metadata: { title: 'Get in touch', submitLabel: 'Send' },
             },
           ],
         },

@@ -1,6 +1,7 @@
+import type { Spec } from '@retrofit-ui/core';
 import { Show, useContext } from 'solid-js';
 import type { ActionHandlers } from './actions';
-import { type AnySpec, RegistryContext, RenderSpec } from './kinds';
+import { RegistryContext, RenderSpec } from './kinds';
 import { createRenderer, Scope } from './renderer';
 
 const defaultRenderer = createRenderer();
@@ -11,7 +12,7 @@ const defaultRenderer = createRenderer();
  * built-in ones.
  */
 export function SpecRenderer(props: {
-  spec: AnySpec;
+  spec: Spec;
   apiBase?: string;
   actions?: ActionHandlers;
 }) {

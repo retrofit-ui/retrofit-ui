@@ -82,7 +82,7 @@ pageSpec()
 | `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | (none) | CSS `align-items` |
 | `justify` | `'start' \| 'center' \| 'end' \| 'space-between' \| 'space-around'` | (none) | CSS `justify-content` |
 
-`wrap`, `align`, and `justify` exist on the underlying `ViewSpec` type but are not currently exposed as arguments on `row()` / `col()` — only `gap` is available as a builder shorthand.
+`wrap`, `align`, and `justify` exist on the underlying `FlexSpec` type but are not currently exposed as arguments on `row()` / `col()` — only `gap` is available as a builder shorthand.
 
 ## Grid layout
 
@@ -182,10 +182,12 @@ pageSpec()
 
 All three return a `LayoutContainerBuilder` with these chainable methods:
 
-- `.add(spec)` — append any `ViewSpec` (leaf or nested layout)
-- `.form(spec, title?)` — shorthand for `.add({ kind: 'form', spec, title })`
-- `.table(spec)` — shorthand for `.add({ kind: 'table', spec })`
-- `.filterForm(spec)` — shorthand for `.add({ kind: 'filter-form', spec })`
-- `.markdown(spec)` — shorthand for `.add({ kind: 'markdown', spec })`
+- `.add(spec)` — append any `Spec` (leaf or nested layout)
+- `.form(spec, title?)` — append a form; `title`, if given, becomes its `metadata.title`
+- `.table(spec)`, `.filterForm(spec)`, `.markdown(spec)` — append that spec as-is
 
-Call `.build()` to produce the `ViewSpec` object to pass to `pageSpec().add(...)`.
+Children are always the specs themselves — the same shape a spec has at the top level. Call `.build()` to produce the `FlexSpec` / `GridSpec` to pass to `pageSpec().add(...)`.
+
+### Inside a page
+
+A page shares its filters with the specs inside it. A `filter-form` writes them (into the url's search params, so a filtered view can be linked to); a table fills them into the `{param}`s of its `list` url and refetches when they change; a form seeds matching fields from them, writes them back when `metadata.autoSubmit` is set, and after a successful write refreshes the page so sibling tables reload. Outside a page, a form is a routed editor with a back button.

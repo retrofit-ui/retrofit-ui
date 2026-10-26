@@ -24,6 +24,7 @@ jobs:
       # so pack has dist/ to include.
       - run: pnpm verify:publish
       - run: pnpm test:publish-guard
+      - run: pnpm check:consumer-types
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test

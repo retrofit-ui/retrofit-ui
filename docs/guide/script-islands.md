@@ -91,13 +91,13 @@ When you already have the spec (e.g., server-rendered into the HTML), embed it d
 Hold the controller returned by `init()` to mount views imperatively — useful when your framework controls when DOM nodes appear:
 
 ```typescript
+import type { Spec } from '@retrofit-ui/core';
 import { init } from '@retrofit-ui/spa-solid-shoelace/renderer';
-import type { RootSpec } from '@retrofit-ui/spa-solid-shoelace/renderer';
 
 const controller = init({ rootElement: document.body, apiBase: '/api/ui' });
 
 // Mount a spec onto a specific element
-const spec: RootSpec = {
+const spec: Spec = {
   kind: 'timeline',
   events: [
     { timestamp: '2026-06-01T10:00:00Z', title: 'Order placed', variant: 'primary' },

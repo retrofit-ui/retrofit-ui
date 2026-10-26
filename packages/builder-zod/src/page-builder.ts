@@ -1,15 +1,24 @@
 import type {
   FilterField,
   FilterFormSpec,
+  FlexSpec,
   FormSpec,
+  GridSpec,
   LayoutConfig,
   MarkdownViewSpec,
   PageSpec,
+  Spec,
   TableSpec,
-  ViewSpec,
 } from '@retrofit-ui/core';
 
-// ── FilterFormSpecBuilder (unchanged) ────────────────────────────────────────
+/** A form with `title`, if given, as its metadata title. */
+function titled(spec: FormSpec, title?: string): FormSpec {
+  return title === undefined
+    ? spec
+    : { ...spec, metadata: { ...spec.metadata, title } };
+}
+
+// ── FilterFormSpecBuilder ────────────────────────────────────────────────────
 
 export class FilterFormSpecBuilder {
   private _fields: FilterField[] = [];
@@ -20,7 +29,7 @@ export class FilterFormSpecBuilder {
   }
 
   build(): FilterFormSpec {
-    return { fields: this._fields };
+    return { kind: 'filter-form', fields: this._fields };
   }
 }
 
@@ -31,36 +40,32 @@ export function filterForm(): FilterFormSpecBuilder {
 // ── LayoutContainerBuilder ────────────────────────────────────────────────────
 
 export class LayoutContainerBuilder {
-  private _children: ViewSpec[] = [];
+  private _children: Spec[] = [];
 
   constructor(
     private readonly _kind: 'flex' | 'grid',
     private readonly _props: object = {},
   ) {}
 
-  add(child: ViewSpec): this {
+  add(child: Spec): this {
     this._children.push(child);
     return this;
   }
 
   form(spec: FormSpec, title?: string): this {
-    return this.add({
-      kind: 'form',
-      spec,
-      ...(title !== undefined && { title }),
-    });
+    return this.add(titled(spec, title));
   }
 
   table(spec: TableSpec): this {
-    return this.add({ kind: 'table', spec });
+    return this.add(spec);
   }
 
   filterForm(spec: FilterFormSpec): this {
-    return this.add({ kind: 'filter-form', spec });
+    return this.add(spec);
   }
 
   markdown(spec: MarkdownViewSpec): this {
-    return this.add({ kind: 'markdown', spec });
+    return this.add(spec);
   }
 
   /** Extract the layout configuration for use with PageSpecBuilder.layout(). */
@@ -68,12 +73,12 @@ export class LayoutContainerBuilder {
     return { ...this._props } as LayoutConfig;
   }
 
-  build(): ViewSpec {
+  build(): FlexSpec | GridSpec {
     return {
-      kind: this._kind,
       ...this._props,
+      kind: this._kind,
       children: this._children,
-    } as unknown as ViewSpec;
+    } as FlexSpec | GridSpec;
   }
 }
 
@@ -106,7 +111,7 @@ export function grid(columns: number, gap?: string): LayoutContainerBuilder {
 export class PageSpecBuilder {
   private _title?: string;
   private _layout?: LayoutConfig;
-  private _children: ViewSpec[] = [];
+  private _children: Spec[] = [];
 
   title(t: string): this {
     this._title = t;
@@ -120,31 +125,27 @@ export class PageSpecBuilder {
     return this;
   }
 
-  /** Add any ViewSpec (leaf or nested layout container) as a child. */
-  add(child: ViewSpec): this {
+  /** Add any spec (leaf or nested layout container) as a child. */
+  add(child: Spec): this {
     this._children.push(child);
     return this;
   }
 
   // Convenience shortcuts — sugar over .add()
   filterForm(spec: FilterFormSpec): this {
-    return this.add({ kind: 'filter-form', spec });
+    return this.add(spec);
   }
 
   form(spec: FormSpec, title?: string): this {
-    return this.add({
-      kind: 'form',
-      spec,
-      ...(title !== undefined && { title }),
-    });
+    return this.add(titled(spec, title));
   }
 
   table(spec: TableSpec): this {
-    return this.add({ kind: 'table', spec });
+    return this.add(spec);
   }
 
   markdown(spec: MarkdownViewSpec): this {
-    return this.add({ kind: 'markdown', spec });
+    return this.add(spec);
   }
 
   build(): PageSpec {

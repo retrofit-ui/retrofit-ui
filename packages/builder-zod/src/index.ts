@@ -5,24 +5,24 @@ export type {
   EndpointDirective,
   FilterField,
   FilterFormSpec,
+  FlexSpec,
   FormLayoutConfig,
   FormSpec,
+  GridSpec,
   LayoutConfig,
   MarkdownViewSpec,
   PageSpec,
-  Pane,
   RowAction,
+  Spec,
   Stat,
   StatSpec,
   TableSpec,
   TimelineEvent,
   TimelineSpec,
   TreeSpec,
-  ViewSpec,
 } from '@retrofit-ui/core';
 export { CalendarView, CalendarViewBuilder } from './calendar-builder';
 export { CardView, CardViewBuilder } from './card-builder';
-export { FormBuilder, formFromSchema } from './FormBuilder';
 export { FormSpecBuilder, formSpec } from './form-builder';
 export {
   col,
@@ -35,7 +35,6 @@ export {
   row,
 } from './page-builder';
 export { StatView, StatViewBuilder } from './stat-view-builder';
-export { TableBuilder, tableFromSchema } from './TableBuilder';
 export type { RetrofitTheme } from './theme';
 export { TimelineView, TimelineViewBuilder } from './timeline-builder';
 export { TreeView, TreeViewBuilder } from './tree-builder';

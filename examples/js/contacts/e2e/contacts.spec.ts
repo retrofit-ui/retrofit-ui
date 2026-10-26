@@ -36,13 +36,15 @@ test.describe('Contacts table view', () => {
     expect(bgColor).toBe('rgb(20, 83, 45)'); // #14532d green-900
   });
 
-  test('all seed contacts are visible without pagination', async ({ page }) => {
+  test('a table inside a page paginates as its spec says', async ({ page }) => {
     await page.goto(TABLE_URL);
     await waitForTable(page);
 
-    // TablePane inside PageView shows all contacts (no pagination controls)
+    // pageSize is 2: the first page holds the first two seed contacts.
     await expect(page.getByText('Alice Johnson')).toBeVisible();
     await expect(page.getByText('Bob Smith')).toBeVisible();
+    await expect(page.getByText('Carol White')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Next page' }).click();
     await expect(page.getByText('Carol White')).toBeVisible();
   });
 });

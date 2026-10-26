@@ -46,13 +46,13 @@ app.get('/api/ui/items/new', (_req, res) => {
 ```tsx [SolidJS Components]
 import { createResource } from 'solid-js';
 import { SpecRenderer } from '@retrofit-ui/spa-solid-shoelace/components';
-import type { RootSpec } from '@retrofit-ui/core';
+import type { Spec } from '@retrofit-ui/core';
 
 function NewItemForm() {
   // Fetch the form spec (or build it inline)
   const [spec] = createResource(async () => {
     const res = await fetch('/api/ui/items/new');
-    return res.json() as Promise<RootSpec>;
+    return res.json() as Promise<Spec>;
   });
 
   return (

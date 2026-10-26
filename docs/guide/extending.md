@@ -2,29 +2,28 @@
 
 **Best for:** teams that need a view type retrofit-ui doesn't ship — a rating widget, a map, a Gantt chart — without forking `@retrofit-ui/spa-solid-shoelace`.
 
-retrofit-ui specs are transport-only JSON, so a "custom kind" is just a shape you and the client both agree on. The client extension seam is **composition**: import the stock `SpecRenderer`, wrap it in a `<Switch>` that handles your kinds first, and delegate everything else.
+retrofit-ui specs are transport-only JSON, so a "custom kind" is a shape you and the client agree on. You **register** it in two places: its type in `SpecKinds` (so specs that use it type-check everywhere, including inside built-in containers), and its component in a **kit** (so the renderer can draw it). Built-in containers — `page`, `card`, `flex`, `grid`, `tabs` — render their children through the same registry, so your kind nests anywhere a built-in can, and built-ins nest inside yours.
 
 ::: tip
-This path assumes the [SolidJS Components](/guide/solidjs-components) adoption style. The prebuilt SPA bundle (`distPath` from `@retrofit-ui/spa-solid-shoelace`) can't render unknown kinds — its `SpecRenderer` is compiled with a fixed `<Switch>`. If you want a custom kind, you own the client build.
+This path assumes the [SolidJS Components](/guide/solidjs-components) adoption style: you build the client. The prebuilt bundles — the hosted SPA (`distPath`) and script islands (`./renderer`) — carry their own copy of Solid, which a component built elsewhere can't share, so they render the built-in kinds only.
 :::
 
-## The three pieces
+## The four pieces
 
-Extending retrofit-ui always looks the same:
-
-1. **Declare the spec shape.** A TypeScript interface with a unique `kind` discriminator. Widen the union your app accepts.
-2. **Write the component.** A SolidJS component that takes `{ spec }` and renders it.
-3. **Compose a renderer.** A wrapper around `SpecRenderer` that dispatches on `kind`.
+1. **Declare the spec shape** and register it in `SpecKinds`.
+2. **Write the component.** A SolidJS component that takes `{ spec }`.
+3. **Put it in a kit** and build a renderer with `createRenderer({ kits })`.
+4. Optionally, **declare actions** the component dispatches, and register their handlers.
 
 A working example lives in [`examples/js/custom-view`](https://github.com/retrofit-ui/retrofit-ui/tree/main/examples/js/custom-view).
 
-## 1. Declare the spec shape
+## 1. Declare and register the spec shape
 
-Put the type in a file both server and client can import. Nothing here touches `@retrofit-ui/core`.
+Put the type in a file both server and client import.
 
 ```ts
 // src/spec.ts
-import type { RootSpec } from '@retrofit-ui/core';
+import type { Spec, SpecNode } from '@retrofit-ui/core';
 
 export interface RatingItem {
   label: string;
@@ -32,17 +31,41 @@ export interface RatingItem {
   note?: string;
 }
 
-export interface RatingSpec {
-  kind: 'rating';
+export interface RatingSpec extends SpecNode<'rating'> {
   items: RatingItem[];
   metadata?: { title?: string };
 }
 
-// The union your app's renderer accepts.
-export type AppSpec = RootSpec | RatingSpec;
+declare module '@retrofit-ui/core' {
+  interface SpecKinds {
+    rating: RatingSpec;
+  }
+}
+
+// Every spec your app serves: the built-ins plus `rating`.
+export type AppSpec = Spec;
 ```
 
-Pick a `kind` string that won't collide with built-ins (`table`, `form`, `stat`, `calendar`, `tree`, `timeline`, `markdown`, `card`, `page`). Namespace it if you're unsure — `'acme.rating'` is fine.
+`SpecKinds` maps each `kind` to its spec type, and `Spec` is the union of all of them. Registering `rating` makes it a `Spec`, so this type-checks — and an unregistered kind, or a rating with a wrong field, is a compile error:
+
+```ts
+const page: Spec = {
+  kind: 'page',
+  children: [{ kind: 'card', children: [{ kind: 'rating', items: [] }] }],
+};
+```
+
+Each entry's key must equal its `kind`. Pick one that won't collide with a built-in (`table`, `form`, `filter-form`, `stat`, `calendar`, `tree`, `timeline`, `markdown`, `text`, `details`, `card`, `page`, `flex`, `grid`, `tabs`); namespace it if unsure — `'acme.rating'` is fine.
+
+A container of your own extends `ContainerSpec`, whose `children` are `Spec[]`:
+
+```ts
+import type { ContainerSpec } from '@retrofit-ui/core';
+
+export interface PanelSpec extends ContainerSpec<'acme.panel'> {
+  accent?: string;
+}
+```
 
 Follow existing conventions where sensible: `metadata.title` at the top means the user gets the familiar page-title behaviour for free.
 
@@ -76,58 +99,85 @@ export function RatingView(props: { spec: RatingSpec }) {
 }
 ```
 
-If your view needs data at render time, use `createResource` and read `apiBase` from `ApiBaseContext` — the same context the built-in views use.
+If your view needs data at render time, use `createResource` and read `apiBase` from `ApiBaseContext` — the same context the built-in views use. A container renders each child with `<RenderSpec spec={child} />`, which draws it with whatever the surrounding renderer has registered for its kind.
 
-## 3. Compose a renderer
+## 3. Put it in a kit and build a renderer
 
-The extension mechanism is a `<Switch>` with `SpecRenderer` as the fallback. Custom kinds match first; everything else delegates.
+A kit is the unit you contribute: its kinds, and handlers for the action types they dispatch. `defineKind` infers `props.spec` from the kind.
 
 ```tsx
 // client/ExtendedRenderer.tsx
-import type { RootSpec } from '@retrofit-ui/core';
-import { SpecRenderer } from '@retrofit-ui/spa-solid-shoelace/components';
-import { Match, Switch } from 'solid-js';
-import type { AppSpec, RatingSpec } from '../src/spec';
+import {
+  createRenderer,
+  defineKind,
+  defineKit,
+} from '@retrofit-ui/spa-solid-shoelace/components';
+import type { AppSpec } from '../src/spec';
 import { RatingView } from './RatingView';
 
+export const ratingKit = defineKit({
+  name: 'rating',
+  kinds: [defineKind({ kind: 'rating', component: RatingView })],
+});
+
+const renderer = createRenderer({ kits: [ratingKit] });
+
 export function ExtendedRenderer(props: { spec: AppSpec; apiBase: string }) {
-  return (
-    <Switch
-      fallback={
-        <SpecRenderer spec={props.spec as RootSpec} apiBase={props.apiBase} />
-      }
-    >
-      <Match when={props.spec.kind === 'rating'}>
-        <RatingView spec={props.spec as RatingSpec} />
-      </Match>
-    </Switch>
-  );
+  return <renderer.SpecRenderer spec={props.spec} apiBase={props.apiBase} />;
 }
 ```
 
-Wire this into your app the same way you'd wire `SpecRenderer`:
+`createRenderer` returns `SpecRenderer` (one spec) and `Root` (a scope to render several `<RenderSpec>`s in). Kits apply in order; a kit kind registered under a built-in name replaces the built-in — and `builtinKinds` exports the built-in components, so an override can wrap one instead of rewriting it. A node whose kind isn't registered draws `fallback` ("Unsupported spec kind" by default).
 
-```tsx
-import { HashRouter, Route } from '@solidjs/router';
-import { ExtendedRenderer } from './ExtendedRenderer';
+## 4. Actions
 
-<HashRouter>
-  <Route
-    path="/*all"
-    component={() => <ExtendedRenderer spec={mySpec} apiBase="/api" />}
-  />
-</HashRouter>
+When a component needs something to happen — add to cart, open a record — the spec carries an **action**: plain data with a `type`, never a template. The component dispatches it with the runtime values as a separate input, and the handler registered for that type decides what to do. Register the type in `ActionKinds` with its descriptor, input and result:
+
+```ts
+import type { ActionDescriptor, ActionEntry } from '@retrofit-ui/core';
+
+export interface RateAction extends ActionDescriptor<'acme.rate'> {
+  stars: number;
+}
+
+declare module '@retrofit-ui/core' {
+  interface ActionKinds {
+    'acme.rate': ActionEntry<RateAction, { itemId: string }, boolean>;
+  }
+}
 ```
 
-That's it. Add another kind later? Add another `<Match>`. Remove a kind? Delete the `<Match>` and the fallback catches it (as "Unknown spec kind" from the stock renderer).
+```tsx
+const { dispatch } = useActions();
+const saved = await dispatch(props.spec.onRate, { itemId: item.id }); // boolean
+```
+
+Handlers are registered per type — in a kit, in `createRenderer({ actions })`, or for one subtree with `<renderer.Root actions={...}>` — and the innermost wins. Each receives `next()`, the handler further out, so it can wrap rather than replace it:
+
+```ts
+createRenderer({
+  kits: [ratingKit],
+  actions: {
+    'acme.rate': async (action, input) => saveRating(input.itemId, action.stars),
+    // Every write a built-in form or table makes goes through `http`.
+    http: async (action, input, next) => {
+      const response = await next();
+      if (response.ok && action.method !== 'GET') refetchPage();
+      return response;
+    },
+  },
+});
+```
+
+Built-in types are `http`, `navigate` (`{ type: 'navigate', to }`) and `refresh` (refetches the surrounding page). Dispatching an unregistered type, a descriptor missing a field, or the wrong input is a compile error; dispatching a type nothing handles rejects at runtime.
 
 ## Server side
 
-The server just returns JSON matching your spec shape. There's no builder or schema requirement for a custom kind — that's a separate convenience `@retrofit-ui/builder-zod` provides for the built-ins.
+The server just returns JSON matching your spec shape. Import the same `src/spec.ts` and the registration applies there too, so the server's specs are checked against it:
 
 ```ts
 app.get('/api/product-ratings', (_req, res) => {
-  const spec: RatingSpec = {
+  const spec: AppSpec = {
     kind: 'rating',
     metadata: { title: 'Product ratings' },
     items: [
@@ -139,7 +189,7 @@ app.get('/api/product-ratings', (_req, res) => {
 });
 ```
 
-If you want a builder for your kind, follow the pattern in `@retrofit-ui/builder-zod` — small classes with fluent `.metadata()` / `.build()` methods. There's no framework hook to register with; a builder is just ergonomic sugar over the JSON.
+A server in another language just emits the JSON. If you want a builder for your kind, follow the pattern in `@retrofit-ui/builder-zod` — small classes with fluent methods and `.build()`.
 
 ## Theming: one theme, both surfaces
 
@@ -205,20 +255,18 @@ The `examples/js/custom-view` project is a runnable version of all of this: viol
 
 Some things live inside the built-in components and aren't seams:
 
-- **Adding a new field type to `FormView`** (e.g. a color picker). The field-type dispatch is baked into `FormView.tsx`. Options: submit an upstream PR, or replace `FormView` entirely in your `ExtendedRenderer` when `kind === 'form'`.
+- **Adding a new field type to `FormView`** (e.g. a color picker). The field-type dispatch is baked into `FormView.tsx`. Options: submit an upstream PR, or replace the `form` kind in your kit.
 - **Adding a new column cell type to `TableView`**. Same story — the cell renderer is a hardcoded switch inside `TableView.tsx`.
-- **Injecting middleware into the fetch calls the built-in views make.** They call `fetch` directly. If you need auth headers or retry logic globally, use a service worker or wrap `window.fetch`.
-
-For everything spec-shaped, the composition pattern above is the answer.
+- **Intercepting the reads the built-in views make.** Writes (form submits, row edits and deletes) go through the `http` action, so an `http` handler sees them; data loads and spec fetches still call `fetch` directly.
 
 ## When to choose this style
 
 | Criterion                              | Extending retrofit-ui         |
 | -------------------------------------- | ----------------------------- |
 | Frontend build required                | Yes — you own the SolidJS app |
-| Changes to `@retrofit-ui/core`         | None                          |
+| Changes to `@retrofit-ui/core`         | None (you augment its registries) |
 | Changes to `spa-solid-shoelace`        | None                          |
-| Works with prebuilt SPA (`distPath`)   | No                            |
-| Mixes built-in and custom kinds        | Yes — freely                  |
+| Works with the prebuilt SPA or islands | No — they render built-in kinds only |
+| Mixes built-in and custom kinds        | Yes — at any depth            |
 
 If you don't need a new kind and just want to embed views, prefer [Script Islands](/guide/script-islands) or the [Hosted SPA](/guide/hosted-spa). Reach for extension only when the spec you need genuinely isn't in the catalog.

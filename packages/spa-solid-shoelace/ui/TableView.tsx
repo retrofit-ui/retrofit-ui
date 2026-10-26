@@ -60,6 +60,7 @@ import {
 import { useHttp } from './actions';
 import { ApiBaseContext } from './context';
 import { PageView } from './PageView';
+import { usePage } from './page-context';
 import { showToast } from './toast';
 import { cellFormatted, cellValue, rawRow, substitutePattern } from './utils';
 
@@ -644,21 +645,36 @@ export function TableViewComponent(props: { spec: TableSpec }) {
     null,
   );
 
+  const page = usePage();
+
+  // Refetches when the page, page size, inline rows, the surrounding page's
+  // filters or its version change.
   const [data, { refetch }] = createResource(
-    () => [currentPage(), currentPageSize()] as const,
-    async ([page, pageSizeOverride]) => {
-      if (props.spec.rows) return props.spec.rows;
+    () =>
+      [
+        currentPage(),
+        currentPageSize(),
+        props.spec.rows,
+        page?.filters(),
+        page?.version(),
+      ] as const,
+    async ([pageNumber, pageSizeOverride, inlineRows, filters]) => {
+      if (inlineRows) return inlineRows;
       const ep = props.spec.endpoints?.list;
       if (!ep) return [];
       const pagination = props.spec.metadata?.pagination;
-      let url = ep.url;
-      if (pagination) {
-        const pageSize = pageSizeOverride ?? pagination.pageSize;
-        url = substitutePattern(url, {
-          page: String(page),
-          pageSize: String(pageSize),
-        });
+      const pageSize = pageSizeOverride ?? pagination?.pageSize;
+      const params: Record<string, string> = {};
+      for (const [name, value] of Object.entries(filters ?? {})) {
+        params[name] = encodeURIComponent(value);
       }
+      const url = substitutePattern(ep.url, {
+        ...params,
+        ...(pagination && {
+          page: encodeURIComponent(String(pageNumber)),
+          pageSize: encodeURIComponent(String(pageSize)),
+        }),
+      });
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch table data');
       const raw = (await res.json()) as Record<string, unknown>[];

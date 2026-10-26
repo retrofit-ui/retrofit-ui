@@ -1,21 +1,21 @@
-import type { CardSpec, ViewSpec } from '@retrofit-ui/core';
+import type { CardSpec, Spec } from '@retrofit-ui/core';
 
 export class CardViewBuilder {
   private _header?: string;
-  private _children: ViewSpec[] = [];
-  private _footer?: ViewSpec;
+  private _children: Spec[] = [];
+  private _footer?: Spec;
 
   header(text: string): this {
     this._header = text;
     return this;
   }
 
-  add(child: ViewSpec): this {
+  add(child: Spec): this {
     this._children.push(child);
     return this;
   }
 
-  footer(spec: ViewSpec): this {
+  footer(spec: Spec): this {
     this._footer = spec;
     return this;
   }

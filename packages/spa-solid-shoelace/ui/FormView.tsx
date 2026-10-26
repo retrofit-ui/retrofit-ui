@@ -18,15 +18,18 @@ import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 import type { FormSpec } from '@retrofit-ui/core';
 import { useNavigate, useParams } from '@solidjs/router';
 import {
+  createEffect,
   createResource,
   createSignal,
   createUniqueId,
   For,
+  on,
   Show,
   useContext,
 } from 'solid-js';
 import { useHttp } from './actions';
 import { ApiBaseContext } from './context';
+import { usePage } from './page-context';
 import { showToast } from './toast';
 
 function isoToDatetimeLocal(iso: string): string {
@@ -250,6 +253,10 @@ function singularize(name: string): string {
 
 function FormEditor(props: FormEditorProps) {
   const send = useHttp();
+  // Inside a page the form seeds from and (with autoSubmit) writes the page's
+  // filters, and refreshes the page after a write instead of navigating.
+  const page = usePage();
+  const autoSubmit = () => !!page && !!props.spec.metadata?.autoSubmit;
   const fLayout = () => props.spec.metadata?.layout;
   const hideLabel = () => fLayout()?.labelPosition === 'hidden';
   const formContainerStyle = () =>
@@ -283,7 +290,11 @@ function FormEditor(props: FormEditorProps) {
     return { method: ep.method, url: ep.url.replace('{id}', props.id) };
   };
 
-  const submitLabel = () => (props.id ? 'Save' : 'Create');
+  const submitLabel = () =>
+    props.spec.metadata?.submitLabel ?? (props.id ? 'Save' : 'Create');
+  // A form that only creates starts empty again after each submit; one that
+  // updates keeps what was saved.
+  const resetsAfterSubmit = () => !props.id && !props.spec.endpoints?.update;
 
   const title = () => {
     const base = props.spec.metadata?.title ?? singularize(props.resource);
@@ -296,6 +307,8 @@ function FormEditor(props: FormEditorProps) {
   const initialValues = () =>
     Object.fromEntries(
       visibleFields().map((f) => {
+        const filtered = page?.filters()[f.name];
+        if (filtered) return [f.name, filtered];
         const existing = props.entity[f.name];
         if (f.type === 'datetime')
           return [f.name, isoToDatetimeLocal(String(existing ?? ''))];
@@ -318,8 +331,27 @@ function FormEditor(props: FormEditorProps) {
   );
   const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
 
+  // Fields named like a page filter follow it when another form changes it.
+  createEffect(
+    on(
+      () => page?.filters(),
+      (filters) => {
+        const updates: Record<string, unknown> = {};
+        for (const f of visibleFields()) {
+          const value = filters?.[f.name];
+          if (value) updates[f.name] = value;
+        }
+        if (Object.keys(updates).length > 0) {
+          setValues((prev) => ({ ...prev, ...updates }));
+        }
+      },
+      { defer: true },
+    ),
+  );
+
   function setValue(name: string, val: unknown) {
     setValues((prev) => ({ ...prev, [name]: val }));
+    if (autoSubmit()) page?.setFilter(name, String(val ?? ''));
   }
 
   function validate(): boolean {
@@ -365,6 +397,11 @@ function FormEditor(props: FormEditorProps) {
         'success',
         props.id ? 'Saved successfully' : 'Created successfully',
       );
+      if (resetsAfterSubmit()) {
+        setValues(initialValues());
+        setErrors({});
+      }
+      page?.refresh();
       props.onDone();
     } catch (err) {
       setSubmitError(String(err));
@@ -384,6 +421,7 @@ function FormEditor(props: FormEditorProps) {
         return;
       }
       showToast('success', 'Deleted successfully');
+      page?.refresh();
       props.onDone();
     } catch (err) {
       showToast('danger', `Delete failed: ${String(err)}`);
@@ -392,10 +430,19 @@ function FormEditor(props: FormEditorProps) {
 
   return (
     <div>
-      <button type="button" onClick={props.onDone} class="retrofit-back-btn">
-        &larr; Back
-      </button>
-      <h1 class="retrofit-page-title">{title()}</h1>
+      <Show
+        when={!page}
+        fallback={
+          <Show when={props.spec.metadata?.title}>
+            {(heading) => <h2 class="retrofit-form-title">{heading()}</h2>}
+          </Show>
+        }
+      >
+        <button type="button" onClick={props.onDone} class="retrofit-back-btn">
+          &larr; Back
+        </button>
+        <h1 class="retrofit-page-title">{title()}</h1>
+      </Show>
       <form onSubmit={handleSubmit} style={formContainerStyle()}>
         <For each={visibleFields()}>
           {(field) => {
@@ -744,9 +791,11 @@ function FormEditor(props: FormEditorProps) {
           <p class="retrofit-error-message">{submitError()}</p>
         </Show>
         <div class="retrofit-form-actions">
-          <sl-button type="submit" variant="primary" disabled={submitting()}>
-            {submitLabel()}
-          </sl-button>
+          <Show when={!autoSubmit()}>
+            <sl-button type="submit" variant="primary" disabled={submitting()}>
+              {submitLabel()}
+            </sl-button>
+          </Show>
           <Show when={deleteAction()}>
             <sl-button
               type="button"

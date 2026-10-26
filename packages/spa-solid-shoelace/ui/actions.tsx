@@ -55,6 +55,7 @@ export type ActionHandler<T extends ActionType> = (
  * What a handler may return. For a type whose result is `void`, anything:
  * as with any void callback, the return value is ignored.
  */
+// biome-ignore lint/suspicious/noConfusingVoidType: detecting a void result is the point
 type HandlerReturn<R> = [R] extends [void] ? unknown : R | Promise<R>;
 
 /** Handlers keyed by action type. */

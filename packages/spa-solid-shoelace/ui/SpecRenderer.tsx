@@ -1,6 +1,6 @@
 import { Show, useContext } from 'solid-js';
 import type { ActionHandlers } from './actions';
-import { RegistryContext, RenderSpec, type SpecNode } from './kinds';
+import { type AnySpec, RegistryContext, RenderSpec } from './kinds';
 import { createRenderer, Scope } from './renderer';
 
 const defaultRenderer = createRenderer();
@@ -11,7 +11,7 @@ const defaultRenderer = createRenderer();
  * built-in ones.
  */
 export function SpecRenderer(props: {
-  spec: SpecNode;
+  spec: AnySpec;
   apiBase?: string;
   actions?: ActionHandlers;
 }) {

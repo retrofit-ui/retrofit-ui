@@ -11,6 +11,7 @@ export {
 export { builtinKinds } from './builtins';
 export { FormViewComponent } from './FormView';
 export {
+  type AnySpec,
   defineKind,
   defineKit,
   type KindComponent,

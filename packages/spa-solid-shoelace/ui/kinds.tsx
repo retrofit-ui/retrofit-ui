@@ -1,3 +1,4 @@
+import type { RootSpec, ViewSpec } from '@retrofit-ui/core';
 import { type Component, createContext, useContext } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import type { ActionHandlers } from './actions';
@@ -6,6 +7,12 @@ import type { ActionHandlers } from './actions';
 export interface SpecNode {
   kind: string;
 }
+
+/**
+ * What a renderer accepts. Listing the built-in shapes lets an object literal
+ * be checked against them; any other kind passes as a `SpecNode`.
+ */
+export type AnySpec = RootSpec | ViewSpec | SpecNode;
 
 /**
  * A component that draws one spec kind. The default `never` is the widest
@@ -52,7 +59,7 @@ export const RegistryContext = createContext<Registry>();
  * registered for its kind. Containers, built-in or not, render their children
  * through this, which is what lets any kind nest inside any other.
  */
-export function RenderSpec(props: { spec: SpecNode }) {
+export function RenderSpec(props: { spec: AnySpec }) {
   const registry = useContext(RegistryContext);
   if (!registry) {
     throw new Error(

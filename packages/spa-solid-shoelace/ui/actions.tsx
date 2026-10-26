@@ -1,12 +1,11 @@
-import type {
-  ActionDescriptor,
-  HttpAction,
-  NavigateAction,
-} from '@retrofit-ui/core';
+import type { AnyAction, HttpAction, NavigateAction } from '@retrofit-ui/core';
 import { createContext, type JSX, useContext } from 'solid-js';
 
-/** Anything a component can dispatch: a typed action, or an untyped http one. */
-export type Dispatchable = ActionDescriptor | HttpAction;
+/**
+ * Anything a component can dispatch: a built-in action (checked against its
+ * shape), an untyped http one, or any namespaced `{ type, ... }`.
+ */
+export type Dispatchable = AnyAction;
 
 /**
  * Handles one action type. `input` carries the runtime values the dispatching

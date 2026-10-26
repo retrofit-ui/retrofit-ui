@@ -3,12 +3,12 @@ import { ActionHandlers } from './actions';
 import { builtinKinds } from './builtins';
 import { ApiBaseContext } from './context';
 import {
+  type AnySpec,
   type KindComponent,
   type Kit,
   type Registry,
   RegistryContext,
   RenderSpec,
-  type SpecNode,
   UnsupportedKind,
 } from './kinds';
 
@@ -34,7 +34,7 @@ export interface Renderer {
   Root: (props: RootProps) => JSX.Element;
   /** `Root` around a single spec. */
   SpecRenderer: (
-    props: Omit<RootProps, 'children'> & { spec: SpecNode },
+    props: Omit<RootProps, 'children'> & { spec: AnySpec },
   ) => JSX.Element;
   registry: Registry;
 }
@@ -89,7 +89,7 @@ export function createRenderer(options: RendererOptions = {}): Renderer {
   }
 
   function SpecRenderer(
-    props: Omit<RootProps, 'children'> & { spec: SpecNode },
+    props: Omit<RootProps, 'children'> & { spec: AnySpec },
   ) {
     return (
       <Root apiBase={props.apiBase} actions={props.actions}>

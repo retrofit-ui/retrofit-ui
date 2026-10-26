@@ -190,4 +190,4 @@ Children are always the specs themselves — the same shape a spec has at the to
 
 ### Inside a page
 
-A page shares its filters with the specs inside it. A `filter-form` writes them (into the url's search params, so a filtered view can be linked to); a table fills them into the `{param}`s of its `list` url and refetches when they change; a form seeds matching fields from them, writes them back when `metadata.autoSubmit` is set, and after a successful write refreshes the page so sibling tables reload. Outside a page, a form is a routed editor with a back button.
+A page shares its filters with the specs inside it. A `filter-form` writes them (into the url's search params, so a filtered view can be linked to); a table fills them into the `{param}`s of its `list` url and refetches when they change; a form seeds matching fields from them, writes them back when `metadata.autoSubmit` is set, and after a successful write refreshes the page so sibling tables reload. Outside a page, a form is a standalone editor: with `metadata.onDone` it shows a back button, and dispatches `onDone` after a successful write.

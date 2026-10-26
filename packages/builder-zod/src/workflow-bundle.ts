@@ -26,32 +26,60 @@ export class TableCustomizer {
 
 export class FormCustomizer {
   readonly _fieldOverrides: Record<string, Partial<Field>> = {};
+  _title?: string;
 
   fieldOverride(key: string, override: Partial<Field>): this {
     this._fieldOverrides[key] = { ...this._fieldOverrides[key], ...override };
     return this;
   }
+
+  /** The record's name in form headings: "New <title>", "Edit <title>". */
+  title(title: string): this {
+    this._title = title;
+    return this;
+  }
 }
 
+type FormFactory = (edit?: {
+  values: Record<string, unknown>;
+  params: Record<string, string | number>;
+}) => FormSpec;
+
 /**
- * Pure data holder produced by {@link WorkflowBundleBuilder.build}. Holds the
- * two complementary specs (table + form). Serving them is the host server's
- * job — see the JS examples for the plain-Express route wiring.
+ * Produced by {@link WorkflowBundleBuilder.build}: the resource's table, plus
+ * its create form and, per record, its edit form. Serving them is the host
+ * server's job — see the JS examples for the plain-Express route wiring.
  */
 export class WorkflowBundle {
   constructor(
     readonly tableSpec: TableSpec,
-    readonly formSpec: FormSpec,
+    private readonly _form: FormFactory,
   ) {}
+
+  /** The create form: submits to `create`. */
+  get createForm(): FormSpec {
+    return this._form();
+  }
+
+  /**
+   * One record's edit form: prefilled with `values`, submitting to `update`
+   * with `{param}`s filled from `params`, e.g. `editForm(post, { id: post.id })`.
+   */
+  editForm(
+    values: Record<string, unknown>,
+    params: Record<string, string | number>,
+  ): FormSpec {
+    return this._form({ values, params });
+  }
 }
 
 export class WorkflowBundleBuilder<S extends ZodRawShape> {
   private _updateSchema?: ZodObject<ZodRawShape>;
   private _tableCustomizer = new TableCustomizer();
   private _formCustomizer = new FormCustomizer();
+  private _route?: string;
   private _endpoints: {
     list?: EndpointDirective;
-    find?: EndpointDirective;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;
@@ -80,13 +108,18 @@ export class WorkflowBundleBuilder<S extends ZodRawShape> {
     return this;
   }
 
-  list(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, list: directive };
+  /**
+   * The resource's hash route, e.g. `/contacts` (see `crudRoutes`). Gives the
+   * table a "New" button to `<route>/new` and sends forms back to `<route>`
+   * when done.
+   */
+  route(path: string): this {
+    this._route = `/${path.replace(/^[#/]+|\/+$/g, '')}`;
     return this;
   }
 
-  find(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, find: directive };
+  list(directive: EndpointDirective): this {
+    this._endpoints = { ...this._endpoints, list: directive };
     return this;
   }
 
@@ -118,25 +151,39 @@ export class WorkflowBundleBuilder<S extends ZodRawShape> {
       tableBuilder.metadata(this._tableCustomizer._metadata);
     }
     if (this._endpoints.list) tableBuilder.list(this._endpoints.list);
-    if (this._endpoints.find) tableBuilder.find(this._endpoints.find);
     if (this._endpoints.create) tableBuilder.create(this._endpoints.create);
     if (this._endpoints.update) tableBuilder.update(this._endpoints.update);
     if (this._endpoints.delete) tableBuilder.delete(this._endpoints.delete);
+    const route = this._route;
+    if (route && this._endpoints.create) {
+      tableBuilder.toolbar('New', { type: 'navigate', to: `#${route}/new` });
+    }
     const tableSpec = tableBuilder.build();
 
-    // Build form spec
-    const formBuilder = new FormSpecBuilder(this._schema, this._updateSchema);
-    for (const [key, override] of Object.entries(
-      this._formCustomizer._fieldOverrides,
-    )) {
-      formBuilder.fieldOverride(key, override);
-    }
-    if (this._endpoints.create) formBuilder.create(this._endpoints.create);
-    if (this._endpoints.update) formBuilder.update(this._endpoints.update);
-    if (this._endpoints.delete) formBuilder.delete(this._endpoints.delete);
-    const formSpecResult = formBuilder.build();
+    const schema = this._schema;
+    const updateSchema = this._updateSchema;
+    const customizer = this._formCustomizer;
+    const endpoints = this._endpoints;
+    const makeForm: FormFactory = (edit) => {
+      const form = new FormSpecBuilder(schema, updateSchema);
+      for (const [key, override] of Object.entries(
+        customizer._fieldOverrides,
+      )) {
+        form.fieldOverride(key, override);
+      }
+      if (customizer._title) form.title(customizer._title);
+      if (route) form.onDone({ type: 'navigate', to: `#${route}` });
+      if (edit) {
+        form.edit().values(edit.values).params(edit.params);
+        if (endpoints.update) form.update(endpoints.update);
+        if (endpoints.delete) form.delete(endpoints.delete);
+      } else if (endpoints.create) {
+        form.create(endpoints.create);
+      }
+      return form.build();
+    };
 
-    return new WorkflowBundle(tableSpec, formSpecResult);
+    return new WorkflowBundle(tableSpec, makeForm);
   }
 }
 

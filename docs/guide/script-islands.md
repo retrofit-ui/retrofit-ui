@@ -23,7 +23,7 @@ In this style you load a single script, call `init()` once, then drop `<div>` el
   import '@shoelace-style/shoelace/dist/themes/light.css';
 
   document.addEventListener('DOMContentLoaded', () => {
-    init({ rootElement: document.body, apiBase: '/api/ui' });
+    init({ rootElement: document.body });
   });
 </script>
 ```
@@ -32,7 +32,7 @@ In this style you load a single script, call `init()` once, then drop `<div>` el
 import { init } from '@retrofit-ui/spa-solid-shoelace/renderer';
 import '@shoelace-style/shoelace/dist/themes/light.css';
 
-init({ rootElement: document.body, apiBase: '/api/ui' });
+init({ rootElement: document.body });
 ```
 
 :::
@@ -40,8 +40,10 @@ init({ rootElement: document.body, apiBase: '/api/ui' });
 `init()` returns an `IslandController` you can hold onto for programmatic mounting and teardown later.
 
 ::: info Pick your own URL prefix
-`apiBase` is the prefix retrofit-ui prepends to a resource name when fetching its spec — nothing more. `/api/ui` above is a convention, not a requirement: set it to `/admin-ui`, `/pages`, or `/` to match whatever routes your server exposes.
+Islands have no `apiBase`: each `data-retrofit-src` is fetched exactly as written, and so is every endpoint url inside a spec. `/api/ui` below is a convention, not a requirement — serve specs from `/admin-ui`, `/pages`, or anywhere else.
 :::
+
+`init()` takes `{ rootElement, theme?, shoelacePath?, observe?, actions? }`. `actions` adds or overrides action handlers for every island, e.g. an `http` handler that adds auth headers, or a `navigate` handler that hands links to your own router (see [Event Handling](/guide/event-handling#overriding-handlers)). Custom kinds can't be added here: the bundle carries its own Solid.
 
 ## Mounting views with data attributes
 
@@ -94,7 +96,7 @@ Hold the controller returned by `init()` to mount views imperatively — useful 
 import type { Spec } from '@retrofit-ui/core';
 import { init } from '@retrofit-ui/spa-solid-shoelace/renderer';
 
-const controller = init({ rootElement: document.body, apiBase: '/api/ui' });
+const controller = init({ rootElement: document.body });
 
 // Mount a spec onto a specific element
 const spec: Spec = {
@@ -121,7 +123,6 @@ Pass `observe: true` to scan new elements as they are added to the DOM — usefu
 ```typescript
 init({
   rootElement: document.body,
-  apiBase: '/api/ui',
   observe: true,           // MutationObserver watches for new [data-retrofit*] elements
 });
 ```
@@ -133,7 +134,6 @@ By default the renderer loads Shoelace icons and assets from the jsDelivr CDN. O
 ```typescript
 init({
   rootElement: document.body,
-  apiBase: '/api/ui',
   shoelacePath: '/assets/shoelace/',
 });
 ```
@@ -147,6 +147,6 @@ init({
 | Each view is independent | Yes |
 | Spec fetched at runtime | Yes (`data-retrofit-src`) or inline (`data-retrofit`) |
 | Reactive to external state | No — re-mount to update |
-| Navigation between views | Not built-in; host page manages routing |
+| Navigation between views | Not built-in; a link sets the host page's `location.hash` (or `location`) unless you pass a `navigate` handler |
 
 For a dedicated admin page with built-in routing, see [Hosted SPA](/guide/hosted-spa). For SolidJS apps that want reactive props and lifecycle hooks, see [SolidJS Components](/guide/solidjs-components).

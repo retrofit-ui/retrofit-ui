@@ -1,8 +1,7 @@
 import type { Spec } from '@retrofit-ui/core';
-import { type JSX, useContext } from 'solid-js';
+import type { JSX } from 'solid-js';
 import { ActionHandlers } from './actions';
 import { builtinKinds } from './builtins';
-import { ApiBaseContext } from './context';
 import {
   type FallbackComponent,
   type KindComponents,
@@ -23,8 +22,6 @@ export interface RendererOptions {
 }
 
 export interface RootProps {
-  /** Prefix for spec fetches. Inherited from an outer renderer when omitted. */
-  apiBase?: string;
   /** Handlers for this subtree only; they win over the renderer's own. */
   actions?: ActionHandlers;
   children: JSX.Element;
@@ -40,18 +37,12 @@ export interface Renderer {
   registry: Registry;
 }
 
-/**
- * The per-subtree part of a renderer: an apiBase and extra action handlers,
- * under whatever registry is already in scope.
- */
+/** Extra action handlers for a subtree, under whatever registry is in scope. */
 export function Scope(props: RootProps) {
-  const outerApiBase = useContext(ApiBaseContext);
   return (
-    <ApiBaseContext.Provider value={props.apiBase ?? outerApiBase}>
-      <ActionHandlers handlers={props.actions ?? {}}>
-        {props.children}
-      </ActionHandlers>
-    </ApiBaseContext.Provider>
+    <ActionHandlers handlers={props.actions ?? {}}>
+      {props.children}
+    </ActionHandlers>
   );
 }
 
@@ -78,9 +69,7 @@ export function createRenderer(options: RendererOptions = {}): Renderer {
   function Root(props: RootProps) {
     const withKitActions = (i: number): JSX.Element =>
       i === levels.length ? (
-        <Scope apiBase={props.apiBase} actions={props.actions}>
-          {props.children}
-        </Scope>
+        <Scope actions={props.actions}>{props.children}</Scope>
       ) : (
         <ActionHandlers handlers={levels[i] ?? {}}>
           {withKitActions(i + 1)}
@@ -95,7 +84,7 @@ export function createRenderer(options: RendererOptions = {}): Renderer {
 
   function SpecRenderer(props: Omit<RootProps, 'children'> & { spec: Spec }) {
     return (
-      <Root apiBase={props.apiBase} actions={props.actions}>
+      <Root actions={props.actions}>
         <RenderSpec spec={props.spec} />
       </Root>
     );

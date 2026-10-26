@@ -1,6 +1,6 @@
 # Table View
 
-The table view is driven by a `TableSpec` returned from `GET /api/ui/{resource}`. It renders a data table with optional inline editing, row actions, and CRUD buttons.
+The table view is driven by a `TableSpec` — in the hosted SPA, the spec served for a route such as `#/posts`. It renders a data table with optional inline editing, row links, row actions, and toolbar buttons.
 
 <PreviewBlock>
 
@@ -365,19 +365,56 @@ TableView.schema(TodoSchema)
 
 :::
 
-## Row actions
+## Row links
 
-Add custom buttons to each row that navigate to a different route:
+Every link in a table is resolved on the server: each row carries its own finished link, and the client only follows it. With inline rows, pass `rowLink` a function from row to link — it runs in the builder, once per row:
 
 ```typescript
-TableView.schema(PostSchema)
-  .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
-  .list({ method: 'GET', url: '/posts' })
-  .find({ method: 'GET', url: '/posts/{id}' })
+TableView.forRows(PostSchema, posts)
+  .rowLink((row) => `#/posts/${String(row.id)}`) // clicking a row opens #/posts/7
   .build();
 ```
 
-`routePattern` is appended to `#/{resource}/` in the SPA's hash router. `{id}` is substituted with the row's id field at render time.
+The link lands in a hidden field of each row, and the spec's `rowLinkField` names it; the field needn't be a column. A row the function returns `undefined` for isn't clickable.
+
+Rows fetched from `list()` are never seen by the builder, so the list endpoint returns the links itself. Point `rowLinkField` at the field that holds them:
+
+```typescript
+// GET /posts returns [{ id: 7, title: '…', link: '#/posts/7' }, …]
+TableView.schema(PostSchema)
+  .list({ method: 'GET', url: '/posts' })
+  .rowLinkField('link')
+  .build();
+```
+
+## Toolbar
+
+Buttons above the table come from `toolbar(label, action, variant?)`. Each one dispatches its action — typically a `navigate` to a create form. There is no automatic "New" button:
+
+```typescript
+TableView.forRows(PostSchema, posts)
+  .toolbar('New', { type: 'navigate', to: '#/posts/new' }, 'primary')
+  .build();
+```
+
+## Row actions
+
+Add buttons to each row that open a link of their own. Like `rowLink`, `rowAction(label, link)` resolves the link per row in the builder; a row it returns `undefined` for gets no button:
+
+```typescript
+TableView.forRows(PostSchema, posts)
+  .rowAction('Preview', (row) => `#/posts/${String(row.id)}/preview`)
+  .build();
+```
+
+In the spec this is `rowActions: [{ label: 'Preview', linkField: '…' }]`, where `linkField` names the row field holding that button's link. Since `rowAction` needs the rows, it applies to `forRows()` / `rows()`; for rows fetched from `list()`, have the list endpoint return a link field and set `rowActions` on the built spec:
+
+```typescript
+const spec = TableView.schema(PostSchema)
+  .list({ method: 'GET', url: '/posts' }) // rows carry `previewLink`
+  .build();
+res.json({ ...spec, rowActions: [{ label: 'Preview', linkField: 'previewLink' }] });
+```
 
 <PreviewBlock title="Row actions">
 
@@ -424,10 +461,9 @@ TableView.schema(PostSchema)
 ::: details Spec
 
 ```typescript
-TableView.schema(PostSchema)
-  .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
-  .find({ method: 'GET', url: '/posts/{id}' })
-  .list({ method: 'GET', url: '/posts' })
+TableView.forRows(PostSchema, posts)
+  .rowAction('Preview', (row) => `#/posts/${String(row.id)}/preview`)
+  .rowLink((row) => `#/posts/${String(row.id)}`)
   .build()
 ```
 
@@ -437,13 +473,14 @@ TableView.schema(PostSchema)
 
 | Method | Effect when present |
 |--------|---------------------|
-| `list` | Fetches row data. Required for the table to show any rows. |
-| `find` | Makes rows clickable, navigating to the form view at `/{resource}/{id}`. |
-| `create` | Shows a "New" button (or a new-row form if `updateSchema` is set). |
-| `update` | Enables inline save (requires `updateSchema`) or form save. |
+| `list` | Fetches row data, unless the spec has inline `rows`. |
+| `create` | With editable columns (`updateSchema`), adds an inline new-row form. It adds no "New" button — use `toolbar()`. |
+| `update` | Enables inline save (requires `updateSchema`). |
 | `delete` | Shows a "Delete" button per row. |
 
-URL patterns use `{id}` as a placeholder — e.g. `/posts/{id}` — substituted at runtime.
+Inline save and delete are the one place the client fills a url from a row: `{id}` in the `update`/`delete` url is replaced with the row's id field (`idField`, derived from the url) when the user clicks. Write the placeholder as `{id}`. A `list` url inside a [page](/guide/layouts) also gets `{param}`s from the page's filters, and `{page}`/`{pageSize}` when the table is paginated. Everything else — row links, row actions, toolbar actions — arrives finished.
+
+There is no `find` endpoint: opening a record is a row link to a route whose spec is that record's form.
 
 ## Java
 
@@ -461,5 +498,9 @@ TableSpec.builder()
     .create(EndpointDirective.post("/posts"))
     .build();
 ```
+
+::: warning
+The Java starter hasn't caught up: it emits no `kind`, row links, toolbars or route table (its `find` is ignored by the SPA), so its specs don't drive the current hosted SPA. See the [Java Quickstart](/guide/java-quickstart).
+:::
 
 In Java you specify column types and enum options explicitly since there is no schema reflection layer.

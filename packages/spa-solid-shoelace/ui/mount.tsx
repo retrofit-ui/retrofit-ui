@@ -15,7 +15,6 @@ const SHOELACE_CDN =
 export interface InitOptions {
   /** Root element that scopes all island scanning and DOM observation. */
   rootElement: HTMLElement;
-  apiBase: string;
   theme?: {
     cssVariables?: Record<string, string>;
     extraCss?: string;
@@ -52,20 +51,14 @@ function renderError(element: HTMLElement, message: string): void {
   element.replaceChildren(p);
 }
 
-function mountIsland(
-  spec: Spec,
-  element: HTMLElement,
-  apiBase: string,
-): () => void {
+function mountIsland(spec: Spec, element: HTMLElement): () => void {
   mounted.get(element)?.();
   const dispose = render(
     () => (
       <HashRouter>
         <Route
           path="/*all"
-          component={() => (
-            <renderer.SpecRenderer spec={spec} apiBase={apiBase} />
-          )}
+          component={() => <renderer.SpecRenderer spec={spec} />}
         />
       </HashRouter>
     ),
@@ -75,10 +68,7 @@ function mountIsland(
   return dispose;
 }
 
-async function processWithSrc(
-  element: HTMLElement,
-  apiBase: string,
-): Promise<void> {
+async function processWithSrc(element: HTMLElement): Promise<void> {
   const src = element.getAttribute('data-retrofit-src');
   if (!src) return;
   try {
@@ -97,36 +87,36 @@ async function processWithSrc(
       }
     }
 
-    mountIsland(spec, element, apiBase);
+    mountIsland(spec, element);
   } catch (err) {
     renderError(element, `Failed to load spec from ${src}: ${String(err)}`);
   }
 }
 
-function processInline(element: HTMLElement, apiBase: string): void {
+function processInline(element: HTMLElement): void {
   const raw = element.getAttribute('data-retrofit');
   if (!raw) return;
   try {
-    mountIsland(JSON.parse(raw) as Spec, element, apiBase);
+    mountIsland(JSON.parse(raw) as Spec, element);
   } catch {
     renderError(element, `Invalid JSON in data-retrofit attribute`);
   }
 }
 
-function processElement(element: HTMLElement, apiBase: string): void {
+function processElement(element: HTMLElement): void {
   if (element.hasAttribute('data-retrofit-src')) {
-    void processWithSrc(element, apiBase);
+    void processWithSrc(element);
   } else {
-    processInline(element, apiBase);
+    processInline(element);
   }
 }
 
-function scanDOM(root: HTMLElement, apiBase: string): void {
+function scanDOM(root: HTMLElement): void {
   // The :not() ensures elements with both attributes are processed once via processWithSrc
   for (const el of root.querySelectorAll<HTMLElement>(
     '[data-retrofit-src], [data-retrofit]:not([data-retrofit-src])',
   )) {
-    processElement(el, apiBase);
+    processElement(el);
   }
 }
 
@@ -142,7 +132,7 @@ export function init(options: InitOptions): IslandController {
     return controller;
   }
 
-  const { rootElement, apiBase } = options;
+  const { rootElement } = options;
   renderer = createRenderer({ actions: options.actions });
 
   setBasePath(options.shoelacePath ?? SHOELACE_CDN);
@@ -158,7 +148,7 @@ export function init(options: InitOptions): IslandController {
     document.head.appendChild(style);
   }
 
-  scanDOM(rootElement, apiBase);
+  scanDOM(rootElement);
 
   if (options.observe) {
     const observer = new MutationObserver((mutations) => {
@@ -169,12 +159,12 @@ export function init(options: InitOptions): IslandController {
             node.hasAttribute('data-retrofit-src') ||
             node.hasAttribute('data-retrofit')
           ) {
-            processElement(node, apiBase);
+            processElement(node);
           }
           for (const el of node.querySelectorAll<HTMLElement>(
             '[data-retrofit-src], [data-retrofit]:not([data-retrofit-src])',
           )) {
-            processElement(el, apiBase);
+            processElement(el);
           }
         }
       }
@@ -183,7 +173,7 @@ export function init(options: InitOptions): IslandController {
   }
 
   controller = {
-    mount: (spec, el) => mountIsland(spec, el, apiBase),
+    mount: (spec, el) => mountIsland(spec, el),
     unmount: (el) => {
       mounted.get(el)?.();
       mounted.delete(el);

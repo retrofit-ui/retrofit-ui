@@ -16,19 +16,15 @@ import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
 
 import type { FormSpec } from '@retrofit-ui/core';
-import { useNavigate, useParams } from '@solidjs/router';
 import {
   createEffect,
-  createResource,
   createSignal,
   createUniqueId,
   For,
   on,
   Show,
-  useContext,
 } from 'solid-js';
-import { useHttp } from './actions';
-import { ApiBaseContext } from './context';
+import { useActions, useHttp } from './actions';
 import { usePage } from './page-context';
 import { showToast } from './toast';
 
@@ -41,106 +37,18 @@ function datetimeLocalToIso(local: string): string {
   return Number.isNaN(d.getTime()) ? '' : d.toISOString();
 }
 
-interface FormViewData {
-  spec: FormSpec;
-  entity: Record<string, unknown>;
-}
-
-async function fetchFormView(
-  resource: string,
-  id: string | undefined,
-  apiBase: string,
-): Promise<FormViewData> {
-  const idParam = id ?? 'new';
-  const res = await fetch(`${apiBase}/${resource}/${idParam}`);
-  if (!res.ok) throw new Error(`Failed to fetch form spec for ${resource}`);
-  const spec = (await res.json()) as FormSpec;
-
-  const entity: Record<string, unknown> = {};
-  for (const f of spec.fields) {
-    if (f.value !== undefined) entity[f.name] = f.value;
-  }
-  return { spec, entity };
-}
-
-export function FormViewComponent(props: {
-  spec: FormSpec;
-  entity?: Record<string, unknown>;
-  id?: string;
-  resource?: string;
-  onDone?: () => void;
-}) {
-  const entity = () => {
-    if (props.entity) return props.entity;
-    return Object.fromEntries(
+export function FormViewComponent(props: { spec: FormSpec }) {
+  // A field's `value` is its current value when editing.
+  const entity = () =>
+    Object.fromEntries(
       props.spec.fields
         .filter((f) => f.value !== undefined)
         .map((f) => [f.name, f.value]),
     );
-  };
 
   return (
     <div class="retrofit-view">
-      <FormEditor
-        spec={props.spec}
-        entity={entity()}
-        resource={props.resource ?? ''}
-        id={props.id}
-        onDone={props.onDone ?? (() => {})}
-      />
-    </div>
-  );
-}
-
-export function FormView() {
-  const params = useParams<{ resource: string; id?: string }>();
-  const navigate = useNavigate();
-  const apiBase = useContext(ApiBaseContext);
-
-  const isNew = () => !params.id || params.id === 'new';
-
-  const [data] = createResource(
-    () => ({ resource: params.resource, id: params.id }),
-    ({ resource, id }) => fetchFormView(resource, id, apiBase),
-  );
-
-  return (
-    <div class="retrofit-view">
-      <Show when={data.loading}>
-        <div
-          style={{
-            display: 'flex',
-            'flex-direction': 'column',
-            gap: 'var(--sl-spacing-medium)',
-          }}
-        >
-          <For each={Array(4).fill(null)}>
-            {() => (
-              <div>
-                <sl-skeleton
-                  effect="sheen"
-                  style={{ width: '30%', 'margin-bottom': '4px' }}
-                />
-                <sl-skeleton effect="sheen" />
-              </div>
-            )}
-          </For>
-        </div>
-      </Show>
-      <Show when={data.error}>
-        <p class="retrofit-error-message">Error: {String(data.error)}</p>
-      </Show>
-      <Show when={data()}>
-        {(d) => (
-          <FormEditor
-            spec={d().spec}
-            entity={d().entity}
-            resource={params.resource}
-            id={isNew() ? undefined : params.id}
-            onDone={() => navigate(`/${params.resource}`)}
-          />
-        )}
-      </Show>
+      <FormEditor spec={props.spec} entity={entity()} />
     </div>
   );
 }
@@ -241,18 +149,17 @@ function TagsInput(props: TagsInputProps) {
 interface FormEditorProps {
   spec: FormSpec;
   entity: Record<string, unknown>;
-  resource: string;
-  id: string | undefined;
-  onDone: () => void;
-}
-
-function singularize(name: string): string {
-  const s = name.endsWith('s') ? name.slice(0, -1) : name;
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function FormEditor(props: FormEditorProps) {
   const send = useHttp();
+  const { dispatch } = useActions();
+  const editing = () => props.spec.metadata?.mode === 'edit';
+  const onDone = () => props.spec.metadata?.onDone;
+  const done = () => {
+    const action = onDone();
+    if (action) void dispatch(action);
+  };
   // Inside a page the form seeds from and (with autoSubmit) writes the page's
   // filters, and refreshes the page after a write instead of navigating.
   const page = usePage();
@@ -274,35 +181,25 @@ function FormEditor(props: FormEditorProps) {
             fLayout()?.direction === 'row' ? ('wrap' as const) : undefined,
         };
 
-  const submitAction = () => {
-    if (props.id) {
-      const ep = props.spec.endpoints?.update;
-      if (!ep) return undefined;
-      return { method: ep.method, url: ep.url.replace('{id}', props.id) };
-    }
-    return props.spec.endpoints?.create;
-  };
-
-  const deleteAction = () => {
-    if (!props.id) return undefined;
-    const ep = props.spec.endpoints?.delete;
-    if (!ep) return undefined;
-    return { method: ep.method, url: ep.url.replace('{id}', props.id) };
-  };
+  // Endpoints arrive resolved by the server, e.g. `/contacts/7`.
+  const submitAction = () =>
+    editing() ? props.spec.endpoints?.update : props.spec.endpoints?.create;
+  const deleteAction = () =>
+    editing() ? props.spec.endpoints?.delete : undefined;
 
   const submitLabel = () =>
-    props.spec.metadata?.submitLabel ?? (props.id ? 'Save' : 'Create');
-  // A form that only creates starts empty again after each submit; one that
-  // updates keeps what was saved.
-  const resetsAfterSubmit = () => !props.id && !props.spec.endpoints?.update;
+    props.spec.metadata?.submitLabel ?? (editing() ? 'Save' : 'Create');
 
   const title = () => {
-    const base = props.spec.metadata?.title ?? singularize(props.resource);
-    return props.id ? `Edit ${base}` : `New ${base}`;
+    const base = props.spec.metadata?.title;
+    const verb = editing() ? 'Edit' : 'New';
+    return base ? `${verb} ${base}` : verb;
   };
 
   const visibleFields = () =>
-    props.id ? props.spec.fields : props.spec.fields.filter((f) => !f.readOnly);
+    editing()
+      ? props.spec.fields
+      : props.spec.fields.filter((f) => !f.readOnly);
 
   const initialValues = () =>
     Object.fromEntries(
@@ -395,14 +292,16 @@ function FormEditor(props: FormEditorProps) {
       }
       showToast(
         'success',
-        props.id ? 'Saved successfully' : 'Created successfully',
+        editing() ? 'Saved successfully' : 'Created successfully',
       );
-      if (resetsAfterSubmit()) {
+      // A create form starts empty again; an edit form keeps what was saved.
+      if (!editing()) {
         setValues(initialValues());
         setErrors({});
       }
-      page?.refresh();
-      props.onDone();
+      // Whatever owns this form's spec reloads it (see `refresh`).
+      void dispatch({ type: 'refresh' });
+      done();
     } catch (err) {
       setSubmitError(String(err));
     } finally {
@@ -421,8 +320,9 @@ function FormEditor(props: FormEditorProps) {
         return;
       }
       showToast('success', 'Deleted successfully');
-      page?.refresh();
-      props.onDone();
+      // Whatever owns this form's spec reloads it (see `refresh`).
+      void dispatch({ type: 'refresh' });
+      done();
     } catch (err) {
       showToast('danger', `Delete failed: ${String(err)}`);
     }
@@ -438,9 +338,11 @@ function FormEditor(props: FormEditorProps) {
           </Show>
         }
       >
-        <button type="button" onClick={props.onDone} class="retrofit-back-btn">
-          &larr; Back
-        </button>
+        <Show when={onDone()}>
+          <button type="button" onClick={done} class="retrofit-back-btn">
+            &larr; Back
+          </button>
+        </Show>
         <h1 class="retrofit-page-title">{title()}</h1>
       </Show>
       <form onSubmit={handleSubmit} style={formContainerStyle()}>

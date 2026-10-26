@@ -1,10 +1,12 @@
 import type {
+  Action,
   Cell,
   Column,
   EndpointDirective,
   FieldOption,
   RowAction,
   TableSpec,
+  ToolbarButton,
 } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
 import { getShape, zodFieldToColumn } from './mappers';
@@ -35,11 +37,21 @@ function deriveEnumOptions(schema: ZodTypeAny): FieldOption[] | undefined {
   }));
 }
 
+/** Resolves one row's link, or nothing for no link. */
+export type RowLink = (row: Record<string, unknown>) => string | undefined;
+
+// Row fields the builder adds to carry each row's resolved links.
+const ROW_LINK = '_link';
+const rowActionField = (i: number) => `_action${i}`;
+
 export class TableViewBuilder<S extends ZodRawShape> {
   private _updateSchema?: ZodObject<ZodRawShape>;
   private _columnOverrides: Record<string, Partial<Column>> = {};
   private _formatters = new Map<string, (v: unknown) => string>();
-  private _rowActions: RowAction[] = [];
+  private _rowActions: { label: string; link: RowLink }[] = [];
+  private _rowLink?: RowLink;
+  private _rowLinkField?: string;
+  private _toolbar: ToolbarButton[] = [];
   private _visibleKeys?: string[];
   private _endpoints: TableSpec['endpoints'] = {};
   private _rows?: Record<string, unknown>[];
@@ -93,8 +105,35 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return this;
   }
 
-  rowAction(action: RowAction): this {
-    this._rowActions.push(action);
+  /**
+   * Makes each row open `link(row)`, e.g. `(r) => `#/posts/${r.id}``. Links
+   * are resolved here, per row, so the client does no templating. Applies to
+   * inline `rows()`; for rows fetched from `list()`, see `rowLinkField()`.
+   */
+  rowLink(link: RowLink): this {
+    this._rowLink = link;
+    return this;
+  }
+
+  /** For `list()` rows: the field in each fetched row that holds its link. */
+  rowLinkField(field: string): this {
+    this._rowLinkField = field;
+    return this;
+  }
+
+  /** A per-row button opening `link(row)`; rows it returns no link for get none. */
+  rowAction(label: string, link: RowLink): this {
+    this._rowActions.push({ label, link });
+    return this;
+  }
+
+  /** A button above the table, e.g. `toolbar('New', { type: 'navigate', to: '#/posts/new' })`. */
+  toolbar(
+    label: string,
+    action: Action,
+    variant?: ToolbarButton['variant'],
+  ): this {
+    this._toolbar.push({ label, action, ...(variant && { variant }) });
     return this;
   }
 
@@ -111,11 +150,6 @@ export class TableViewBuilder<S extends ZodRawShape> {
 
   list(directive: EndpointDirective): this {
     this._endpoints = { ...this._endpoints, list: directive };
-    return this;
-  }
-
-  find(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, find: directive };
     return this;
   }
 
@@ -157,14 +191,10 @@ export class TableViewBuilder<S extends ZodRawShape> {
       columns = columns.filter((c) => keySet.has(c.key));
     }
 
-    // Row links and update/delete URLs are keyed by an id field. Derive it from
-    // whichever endpoint carries a {param} (find/update/delete should agree) and
-    // expose it explicitly so the SPA doesn't have to re-parse the url. Tables
-    // with no navigating/mutating endpoint don't need an id at all.
+    // Inline update/delete urls are keyed by an id field. Derive it from the
+    // endpoint's {param} and expose it so the SPA needn't re-parse the url.
     const idField =
-      idParam(this._endpoints.find) ??
-      idParam(this._endpoints.update) ??
-      idParam(this._endpoints.delete);
+      idParam(this._endpoints.update) ?? idParam(this._endpoints.delete);
     const columnKeys = new Set(columns.map((c) => c.key));
 
     const rows =
@@ -181,7 +211,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
               }),
             );
             // Carry the id even when it is hidden via visibleColumns(), so the
-            // client can still resolve a row link / mutation target.
+            // client can still resolve a mutation target.
             if (
               idField !== undefined &&
               !columnKeys.has(idField) &&
@@ -189,9 +219,18 @@ export class TableViewBuilder<S extends ZodRawShape> {
             ) {
               cells[idField] = { value: row[idField] };
             }
+            const link = this._rowLink?.(row);
+            if (link) cells[ROW_LINK] = { value: link };
+            this._rowActions.forEach((action, i) => {
+              const to = action.link(row);
+              if (to) cells[rowActionField(i)] = { value: to };
+            });
             return cells;
           })
         : undefined;
+
+    const rowLinkField =
+      this._rowLinkField ?? (this._rowLink ? ROW_LINK : undefined);
 
     return {
       kind: 'table' as const,
@@ -199,7 +238,16 @@ export class TableViewBuilder<S extends ZodRawShape> {
       ...(idField !== undefined && { idField }),
       endpoints: this._endpoints,
       ...(rows !== undefined && { rows }),
-      ...(this._rowActions.length > 0 && { rowActions: this._rowActions }),
+      ...(rowLinkField !== undefined && { rowLinkField }),
+      ...(this._toolbar.length > 0 && { toolbar: this._toolbar }),
+      ...(this._rowActions.length > 0 && {
+        rowActions: this._rowActions.map(
+          ({ label }, i): RowAction => ({
+            label,
+            linkField: rowActionField(i),
+          }),
+        ),
+      }),
       ...(this._metadata !== undefined && { metadata: this._metadata }),
     };
   }

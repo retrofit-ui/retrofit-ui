@@ -1,6 +1,6 @@
 # Calendar View
 
-The calendar view renders an interactive calendar powered by [FullCalendar](https://fullcalendar.io/). Events are embedded in the spec by the server — the UI displays them and optionally supports drag-drop rescheduling and date-click creation.
+The calendar view renders an interactive calendar powered by [FullCalendar](https://fullcalendar.io/). Events are embedded in the spec by the server — the UI displays them, opens an event's link on click, and optionally supports drag-drop rescheduling.
 
 <PreviewBlock>
 
@@ -61,9 +61,9 @@ CalendarView.events(events)
 
 ## How it works
 
-The SPA navigates to `#/{resource}/calendar` and fetches a `CalendarSpec` from `GET /api/ui/{resource}/calendar`. The spec includes all events pre-populated — no secondary fetches for initial render.
+In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/events/calendar')` — points at the endpoint serving the `CalendarSpec`. The spec includes all events pre-populated — no secondary fetches for initial render.
 
-FullCalendar is initialized from the spec's `events` array and options. Subsequent interactions (clicking an event, dragging to reschedule) call your CRUD endpoints directly.
+FullCalendar is initialized from the spec's `events` array and options. Clicking an event opens its `link`; dragging to reschedule calls your `update` endpoint directly.
 
 ## Basic setup (JS)
 
@@ -96,6 +96,7 @@ app.get('/schedule/events/calendar', async (_req, res) => {
 | `end` | `string` | — | ISO 8601 datetime or date string |
 | `color` | `string` | — | CSS colour for this event's chip |
 | `allDay` | `boolean` | — | Renders as an all-day event when `true` |
+| `link` | `string` | — | Finished link opened when the event is clicked, e.g. `#/events/3` |
 
 ```typescript
 CalendarView.events([
@@ -135,24 +136,24 @@ Users can switch between all four views using the toolbar buttons.
 
 ## CRUD endpoints
 
-Configure endpoints to enable event interactions:
+Navigation is data in the spec — each event's `link`, and `toolbar` buttons — while endpoints enable event interactions:
 
 ```typescript
-CalendarView.events(events)
-  .find({ method: 'GET', url: '/events/{id}' })       // event click → navigate to detail form
-  .create({ method: 'POST', url: '/events' })          // date click → navigate to new form
-  .update({ method: 'PUT', url: '/events/{id}' })      // drag-drop / resize → API call
-  .delete({ method: 'DELETE', url: '/events/{id}' })   // for use via the renderer
+CalendarView.events(
+  rows.map((e) => ({ id: String(e.id), title: e.title, start: e.start, link: `#/events/${e.id}` })),
+)
+  .toolbar('New', { type: 'navigate', to: '#/events/new' }) // button above the calendar
+  .update({ method: 'PUT', url: '/events/{id}' })            // drag-drop / resize → API call
   .editable()
   .build();
 ```
 
-| Endpoint | Trigger | Behaviour |
-|----------|---------|-----------|
-| `find` | Click on an event | Navigates to `#/{resource}/{id}` |
-| `create` | Click on an empty date | Navigates to `#/{resource}/new?start={date}` |
-| `update` | Drag-drop or resize an event | Calls the endpoint with `{ start, end }` in the body; reverts if the request fails |
-| `delete` | (no UI trigger) | Used by the renderer or custom integrations |
+| Spec field | Trigger | Behaviour |
+|------------|---------|-----------|
+| event `link` | Click on an event | Dispatches `navigate` to the link; events without one do nothing |
+| `toolbar` | Click on a toolbar button | Dispatches the button's action, e.g. a `navigate` to a create form |
+| `endpoints.update` | Drag-drop or resize an event | Calls the endpoint with `{ start, end }` in the body, `{id}` filled with the event's id; reverts if the request fails |
+| `endpoints.create`, `endpoints.delete` | (no UI trigger) | Carried in the spec for custom integrations; the built-in view doesn't call them |
 
 `editable()` must be set alongside `update` to enable drag-drop and resize. Without it, events are read-only even if `update` is defined.
 
@@ -195,7 +196,7 @@ CalendarView.events(events)
 <!-- or mount explicitly in JS -->
 <div id="cal" style="height: 600px;"></div>
 <script>
-  const ui = RetrofitUI.init({ rootElement: document.body, apiBase: '/api' });
+  const ui = RetrofitUI.init({ rootElement: document.body });
   ui.mount(
     {
       kind: 'calendar',

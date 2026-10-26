@@ -2,85 +2,93 @@ import type { EventRecord } from './schemas';
 
 let nextId = 11;
 
+// Seed events fall in the current month, so the calendar (which opens on
+// today's month) always shows them.
+const now = new Date();
+const at = (day: number, hour: number, minute = 0): string =>
+  new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), day, hour, minute),
+  ).toISOString();
+
 const events: EventRecord[] = [
   {
     id: 1,
     title: 'Sprint Planning',
-    start: '2026-06-01T09:00:00.000Z',
-    end: '2026-06-01T10:30:00.000Z',
+    start: at(1, 9),
+    end: at(1, 10, 30),
     description: 'Plan the upcoming sprint with the full engineering team.',
     category: 'meeting',
   },
   {
     id: 2,
     title: 'Product Launch Webinar',
-    start: '2026-06-03T14:00:00.000Z',
-    end: '2026-06-03T15:30:00.000Z',
+    start: at(3, 14),
+    end: at(3, 15, 30),
     description: 'Live demo and Q&A for the v2.0 release.',
     category: 'webinar',
   },
   {
     id: 3,
     title: 'Design Workshop',
-    start: '2026-06-06T10:00:00.000Z',
-    end: '2026-06-06T13:00:00.000Z',
+    start: at(6, 10),
+    end: at(6, 13),
     description: 'Collaborative session on the new onboarding flow.',
     category: 'workshop',
   },
   {
     id: 4,
     title: 'Weekly Team Sync',
-    start: '2026-06-09T09:30:00.000Z',
-    end: '2026-06-09T10:00:00.000Z',
+    start: at(9, 9, 30),
+    end: at(9, 10),
     description: 'Standing weekly check-in.',
     category: 'meeting',
   },
   {
     id: 5,
     title: 'Team Lunch',
-    start: '2026-06-12T12:00:00.000Z',
-    end: '2026-06-12T13:30:00.000Z',
+    start: at(12, 12),
+    end: at(12, 13, 30),
     description: 'Celebration lunch for the v2.0 launch.',
     category: 'social',
   },
   {
     id: 6,
     title: 'Tech Talk: AI in the Workplace',
-    start: '2026-06-16T15:00:00.000Z',
-    end: '2026-06-16T16:00:00.000Z',
+    start: at(16, 15),
+    end: at(16, 16),
     description: 'Guest speaker from industry on AI tooling.',
     category: 'webinar',
   },
   {
     id: 7,
     title: 'Quarterly Review',
-    start: '2026-06-18T09:00:00.000Z',
-    end: '2026-06-18T12:00:00.000Z',
+    start: at(18, 9),
+    end: at(18, 12),
     description: 'Q2 business review with leadership.',
     category: 'meeting',
   },
   {
     id: 8,
     title: 'UX Research Workshop',
-    start: '2026-06-23T10:00:00.000Z',
-    end: '2026-06-23T16:00:00.000Z',
+    start: at(23, 10),
+    end: at(23, 16),
     description: 'Full-day user research session with external facilitator.',
     category: 'workshop',
   },
   {
     id: 9,
     title: 'Summer Team Outing',
-    start: '2026-06-26T16:00:00.000Z',
-    end: '2026-06-26T19:00:00.000Z',
+    start: at(26, 16),
+    end: at(26, 19),
     description: 'Annual team social — location TBD.',
     category: 'social',
   },
   {
     id: 10,
     title: 'Sprint Retrospective',
-    start: '2026-06-30T15:00:00.000Z',
-    end: '2026-06-30T16:00:00.000Z',
-    description: 'Wrap-up retrospective for the June sprint.',
+    start: at(30, 15),
+    end: at(30, 16),
+    description: "Wrap-up retrospective for this month's sprint.",
     category: 'meeting',
   },
 ];

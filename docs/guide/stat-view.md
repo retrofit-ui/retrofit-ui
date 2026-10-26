@@ -45,7 +45,7 @@ const spec = new StatView()
 
 ## How it works
 
-The SPA navigates to `#/{resource}/stats` and fetches a `StatSpec` from `GET /api/ui/{resource}/stats`. Each `Stat` object carries a pre-computed value — there is no client-side data fetching for individual metrics.
+In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/dashboard/stats')` — points at the endpoint serving the `StatSpec`. Each `Stat` object carries a pre-computed value — there is no client-side data fetching for individual metrics.
 
 ## Basic setup (JS)
 
@@ -60,6 +60,7 @@ const spec = new StatView()
   .title('Dashboard Overview')
   .build();
 
+// Route in /retrofit.json: route('/dashboard/stats'), here with apiBase '/'.
 // URL prefix below is arbitrary — pick anything and match `apiBase` to it.
 app.get('/dashboard/stats', (_req, res) => {
   res.json(spec);
@@ -207,7 +208,7 @@ The stat view can be embedded outside the SPA using the [renderer bundle](/guide
 <!-- or mount explicitly in JS -->
 <div id="dashboard"></div>
 <script>
-  const ui = RetrofitUI.init({ rootElement: document.body, apiBase: '/api' });
+  const ui = RetrofitUI.init({ rootElement: document.body });
   ui.mount(
     {
       kind: 'stat',

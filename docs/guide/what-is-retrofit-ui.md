@@ -77,7 +77,7 @@ Column and field types are inferred from your schema automatically — `z.string
 
 There are two primary rendering modes and one advanced option:
 
-**Server-driven** — serve the pre-built SPA bundle at `/retrofit-ui`. The browser loads it once, then fetches specs from a base URL you choose (the default is `/api/ui`, but any prefix works) and renders the right component. The bundle never changes; your spec endpoints do. Best for dedicated admin tools where retrofit-ui owns the entire page.
+**Server-driven** — serve the pre-built SPA bundle at `/retrofit-ui`. The browser loads it once, reads the route table your server publishes at `/retrofit.json`, then fetches each screen's spec from a base URL you choose (the default is `/api/ui`, but any prefix works) and renders the right component. The bundle never changes; your spec endpoints do. Best for dedicated admin tools where retrofit-ui owns the entire page.
 
 **Spec-driven** — load the renderer script and embed views using `data-retrofit-src` (fetch a spec from a URL) or `data-retrofit` (inline the spec JSON directly). Your page owns routing and layout; retrofit-ui fills specific containers. Best for dropping isolated blocks into pages you already own.
 

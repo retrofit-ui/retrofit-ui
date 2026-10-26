@@ -1,8 +1,14 @@
+import {
+  crudRoutes,
+  type RetrofitConfig,
+  route,
+} from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import type { Todo } from './schemas';
 import {
-  buildTodoFormSpec,
+  buildTodoCreateFormSpec,
+  buildTodoEditFormSpec,
   buildTodosByPrioritySpec,
   buildTodosTableSpec,
   todosTheme,
@@ -26,20 +32,29 @@ app.delete('/todos/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme: todosTheme }),
-);
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  theme: todosTheme,
+  routes: [...crudRoutes('todos'), route('/todos-by-priority')],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
 app.use(express.static(distPath));
 
 app.get('/api/ui/todos', (_req, res) => {
-  res.json(buildTodosTableSpec(store.all() as Todo[]));
+  res.json(buildTodosTableSpec(store.all() as Todo[], 'Todos'));
+});
+
+app.get('/api/ui/todos/new', (_req, res) => {
+  res.json(buildTodoCreateFormSpec());
 });
 
 app.get('/api/ui/todos/:id', (req, res) => {
-  const id = req.params.id;
-  const isNew = id === 'new';
-  const entity = isNew ? undefined : (store.find(id) as Todo | undefined);
-  res.json(buildTodoFormSpec(id, entity, isNew));
+  const todo = store.find(req.params.id) as Todo | undefined;
+  if (!todo) {
+    res.status(404).json({ error: `No todo ${req.params.id}` });
+    return;
+  }
+  res.json(buildTodoEditFormSpec(todo));
 });
 
 app.get('/api/ui/todos-by-priority', (_req, res) => {

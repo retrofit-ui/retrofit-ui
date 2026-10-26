@@ -39,20 +39,20 @@ function Dashboard() {
   return (
     <section>
       <h1>Dashboard</h1>
-      <SpecRenderer spec={dashboardStats} apiBase="/api/ui" />
+      <SpecRenderer spec={dashboardStats} />
     </section>
   );
 }
 ```
 
-`SpecRenderer` inspects `spec.kind` and renders the appropriate view component. The `apiBase` prop tells it where to make any data-fetching requests.
+`SpecRenderer` inspects `spec.kind` and renders the appropriate view component. It takes `spec` and, optionally, `actions` (handlers for this subtree). There is no `apiBase`: endpoint urls in the spec are fetched exactly as written.
 
 ## Reactive specs with signals
 
 Because `SpecRenderer` accepts a plain prop, you can drive it from a `createSignal` or a store:
 
 ```tsx
-import { createResource, createSignal } from 'solid-js';
+import { createResource, Show } from 'solid-js';
 import { SpecRenderer } from '@retrofit-ui/spa-solid-shoelace/components';
 import type { Spec } from '@retrofit-ui/core';
 
@@ -67,7 +67,7 @@ function LiveView(props: { resource: string }) {
 
   return (
     <Show when={spec()} fallback={<p>Loading…</p>}>
-      {(s) => <SpecRenderer spec={s()} apiBase="/api/ui" />}
+      {(s) => <SpecRenderer spec={s()} />}
     </Show>
   );
 }
@@ -77,10 +77,10 @@ When `props.resource` changes, `createResource` refetches and the view re-render
 
 ## Table and form views with navigation
 
-`TableViewComponent` calls `useNavigate()` to handle row clicks (navigating from a table row to a form). If you render a table spec that has `find` wired up, you need a router context:
+Views never navigate on their own: a row link, a toolbar button or a form's `onDone` is a `navigate` action in the spec (e.g. `{ type: 'navigate', to: '#/items/42' }`), resolved by the server. The built-in `navigate` handler sets `location.hash` for a `#` link and `location` otherwise, so **no router context is required**. To route with your own router, handle `navigate` yourself:
 
 ```tsx
-import { HashRouter, Route } from '@solidjs/router';
+import { useNavigate } from '@solidjs/router';
 import { SpecRenderer } from '@retrofit-ui/spa-solid-shoelace/components';
 import type { TableSpec } from '@retrofit-ui/core';
 
@@ -90,25 +90,26 @@ const itemsSpec: TableSpec = {
     { key: 'id',   label: 'ID',   type: 'number' },
     { key: 'name', label: 'Name', type: 'string' },
   ],
+  rowLinkField: 'link', // each row from GET /items carries its own `link`
+  toolbar: [{ label: 'New', action: { type: 'navigate', to: '/items/new' } }],
   endpoints: {
     list:   { method: 'GET',    url: '/items' },
-    find:   { method: 'GET',    url: '/items/{id}' },  // enables row click → navigation
-    create: { method: 'POST',   url: '/items' },
     delete: { method: 'DELETE', url: '/items/{id}' },
   },
 };
 
-function ItemsApp() {
+function ItemsTable() {
+  const navigate = useNavigate(); // inside your app's <Router>
   return (
-    // Router context is required when find is set — rows navigate on click
-    <HashRouter>
-      <Route path="/" component={() => <SpecRenderer spec={itemsSpec} apiBase="/api/ui" />} />
-    </HashRouter>
+    <SpecRenderer
+      spec={itemsSpec}
+      actions={{ navigate: (action) => navigate(action.to) }}
+    />
   );
 }
 ```
 
-For read-only views — stats, timelines, calendars, markdown — no router is needed.
+Whatever owns a spec can also handle `refresh`, which tables and forms dispatch after a write — e.g. to refetch the spec you fetched with `createResource`.
 
 ## Rendering individual view components
 
@@ -122,8 +123,8 @@ import type { TableSpec } from '@retrofit-ui/core';
 <TableViewComponent spec={myTableSpec} />
 ```
 
-:::warning Note
-`TableViewComponent` still calls `useNavigate()` internally and requires a router context when `spec.endpoints.find` is set.
+:::tip Note
+Rendered on its own, `TableViewComponent` uses the built-in action handlers (and kinds); wrap it in `<Scope actions={...}>` or a renderer's `<Root>` to override them.
 :::
 
 ## When to choose this style
@@ -132,7 +133,7 @@ import type { TableSpec } from '@retrofit-ui/core';
 |-----------|-------------------|
 | Frontend code required | Yes — you own the SolidJS app |
 | Reactive to SolidJS signals | Yes |
-| Navigation between views | Your router (wrap with `<HashRouter>` if needed) |
+| Navigation between views | Hash links work as-is; pass a `navigate` handler to use your router |
 | Layout and composition | Fully under your control |
 | Works in non-SolidJS apps | No |
 

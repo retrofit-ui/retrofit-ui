@@ -11,11 +11,7 @@ const defaultRenderer = createRenderer();
  * `createRenderer`, it uses that renderer's kinds; anywhere else, the
  * built-in ones.
  */
-export function SpecRenderer(props: {
-  spec: Spec;
-  apiBase?: string;
-  actions?: ActionHandlers;
-}) {
+export function SpecRenderer(props: { spec: Spec; actions?: ActionHandlers }) {
   const inRenderer = useContext(RegistryContext) !== undefined;
   return (
     <Show
@@ -23,12 +19,11 @@ export function SpecRenderer(props: {
       fallback={
         <defaultRenderer.SpecRenderer
           spec={props.spec}
-          apiBase={props.apiBase}
           actions={props.actions}
         />
       }
     >
-      <Scope apiBase={props.apiBase} actions={props.actions}>
+      <Scope actions={props.actions}>
         <RenderSpec spec={props.spec} />
       </Scope>
     </Show>

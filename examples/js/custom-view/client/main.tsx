@@ -22,13 +22,12 @@ interface RetrofitTheme {
 }
 
 interface RetrofitConfig {
-  apiBase?: string;
   theme?: RetrofitTheme;
 }
 
-// Mirrors what @retrofit-ui/spa-solid-shoelace's prebuilt SPA does in its
-// init(). We reimplement it here because the /components subpath deliberately
-// omits the DOM-mutating side effects — you own the app, you own the boot.
+// Applies the theme the way the hosted app (createShell) does. This example
+// has its own client rather than the shell, so it does its own boot; an app
+// that only adds kinds to the hosted app would use createShell({ kits }).
 function applyTheme(theme: RetrofitTheme | undefined) {
   if (!theme) return;
   if (theme.cssVariables) {
@@ -53,7 +52,7 @@ const ENDPOINTS = [
   { path: '/api/rated-card', label: 'Custom kind inside a card' },
 ] as const;
 
-function Home(props: { apiBase: string }) {
+function Home() {
   const nav = useNavigate();
   const [path, setPath] = createSignal<string>(ENDPOINTS[0].path);
   const [spec] = createResource(path, async (p) => {
@@ -92,20 +91,16 @@ function Home(props: { apiBase: string }) {
       <Show when={spec.error}>
         <p class="retrofit-error-message">Error: {String(spec.error)}</p>
       </Show>
-      <Show when={spec()}>
-        {(s) => <ExtendedRenderer spec={s()} apiBase={props.apiBase} />}
-      </Show>
+      <Show when={spec()}>{(s) => <ExtendedRenderer spec={s()} />}</Show>
     </main>
   );
 }
 
 async function boot() {
-  let apiBase = '/api';
   try {
     const cfg = (await fetch('/retrofit.json').then((r) =>
       r.json(),
     )) as RetrofitConfig;
-    apiBase = cfg.apiBase ?? apiBase;
     applyTheme(cfg.theme);
   } catch {
     // fall back to defaults
@@ -116,7 +111,7 @@ async function boot() {
   render(
     () => (
       <HashRouter>
-        <Route path="/*all" component={() => <Home apiBase={apiBase} />} />
+        <Route path="/*all" component={Home} />
       </HashRouter>
     ),
     root,

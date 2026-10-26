@@ -1,12 +1,19 @@
 # Event Handling
 
-In all three adoption styles, retrofit-ui events are **declarative HTTP calls** defined in the spec. When a user clicks "Save", "Delete", or a row, the renderer reads an `EndpointDirective` from the spec — a `{ method, url }` pair — and fires that HTTP request. Your server handles the mutation; the renderer handles success/error feedback (toast, form reset, row removal).
+In all three adoption styles, retrofit-ui events are **declarative actions** defined in the spec. When a user clicks "Save", "Delete", or a row, the renderer reads an action from the spec and dispatches it. Most are HTTP calls — an `EndpointDirective`, a `{ method, url }` pair — which your server handles; the renderer handles success/error feedback (toast, form reset, row removal). Moving between screens is a `navigate` action whose target the server has already resolved.
 
 ```typescript
-// The only supported event contract today
+// An http action: every endpoint in a spec is one
 interface EndpointDirective {
+  type?: 'http';
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  url: string; // {id} is substituted from the row or route param
+  url: string; // arrives finished, except {id} in a table's inline update/delete url
+}
+
+// Moving to another screen, e.g. { type: 'navigate', to: '#/items/42' }
+interface NavigateAction {
+  type: 'navigate';
+  to: string;
 }
 ```
 
@@ -16,22 +23,23 @@ The sections below show the same four event scenarios — **form submit (create)
 
 ### 1. Form submit — creating a new item
 
-The spec's `endpoints.create` fires when the user submits the "New" form.
+The spec's `endpoints.create` fires when the user submits a create form.
 
 ::: code-group
 
 ```typescript [Hosted SPA (JS server)]
-// Server-side — spec endpoint
+// Server-side — the spec endpoint for the route #/items/new
 app.get('/api/ui/items/new', (_req, res) => {
   res.json(
-    FormView.schema(ItemSchema)
+    formSpec(ItemSchema)
       .create({ method: 'POST', url: '/items' })
+      .onDone({ type: 'navigate', to: '#/items' })
       .build(),
   );
 });
 
 // The SPA reads endpoints.create from the FormSpec and POSTs /items on submit.
-// On success: shows a toast and navigates back to #/items.
+// On success: shows a toast, then dispatches onDone — back to #/items.
 // No frontend code needed.
 ```
 
@@ -44,7 +52,7 @@ app.get('/api/ui/items/new', (_req, res) => {
 ```
 
 ```tsx [SolidJS Components]
-import { createResource } from 'solid-js';
+import { createResource, Show } from 'solid-js';
 import { SpecRenderer } from '@retrofit-ui/spa-solid-shoelace/components';
 import type { Spec } from '@retrofit-ui/core';
 
@@ -57,7 +65,7 @@ function NewItemForm() {
 
   return (
     <Show when={spec()}>
-      {(s) => <SpecRenderer spec={s()} apiBase="/api/ui" />}
+      {(s) => <SpecRenderer spec={s()} />}
     </Show>
   );
 }
@@ -71,7 +79,7 @@ function NewItemForm() {
 
 ### 2. Row delete — removing an item
 
-The spec's `endpoints.delete` wires a per-row delete button. The URL pattern `{id}` is substituted at click time.
+The spec's `endpoints.delete` wires a per-row delete button. `{id}` in its url is filled from the row's id field at click time — the one url the client completes from a row.
 
 ::: code-group
 
@@ -86,7 +94,7 @@ app.get('/api/ui/items', (_req, res) => {
 });
 
 // The SPA shows a delete button per row.
-// On confirm: fires DELETE /items/42, removes the row from the UI.
+// On confirm: fires DELETE /items/42, then refreshes the table.
 ```
 
 ```html [Script Islands (HTML)]
@@ -109,10 +117,9 @@ const spec = {
   },
 };
 
-<SpecRenderer spec={spec} apiBase="/api/ui" />
-// SpecRenderer fires DELETE /items/{id} on confirm.
-// Callback hooks (onDelete, onSuccess) are not available today —
-// see the note at the bottom of this page.
+<SpecRenderer spec={spec} />
+// SpecRenderer fires DELETE /items/{id} on confirm, through the `http`
+// action — pass `actions` to wrap it (see the bottom of this page).
 ```
 
 :::
@@ -121,59 +128,57 @@ const spec = {
 
 ### 3. Row click — navigating to a form
 
-Setting `endpoints.find` on a `TableSpec` makes rows clickable. The renderer navigates to the item's form on click.
+A row is clickable when it carries a link: the server resolves each row's link and names the field holding it in `rowLinkField`. On click the renderer dispatches `{ type: 'navigate', to: <that link> }` — it never builds the link itself.
 
 ::: code-group
 
 ```typescript [Hosted SPA (JS server)]
 app.get('/api/ui/items', (_req, res) => {
   res.json(
-    TableView.schema(ItemSchema)
-      .list({ method: 'GET', url: '/items' })
-      .find({ method: 'GET', url: '/items/{id}' })  // enables row click
+    TableView.forRows(ItemSchema, items)
+      .rowLink((row) => `#/items/${String(row.id)}`) // enables row click
       .build(),
   );
 });
 
-// Clicking a row navigates to #/items/42.
-// The SPA fetches /api/ui/items/42 (a FormSpec) and renders the edit form.
+// Clicking a row navigates to #/items/42. With a route
+// { path: '/items/:id', spec: '/items/{id}' } in /retrofit.json, the SPA
+// fetches /api/ui/items/42 (a FormSpec) and renders the edit form.
 // No frontend code needed.
 ```
 
 ```html [Script Islands (HTML)]
-<!-- Table with find enabled -->
+<!-- Table whose rows carry links -->
 <div data-retrofit-src="/api/ui/items"></div>
 
-<!-- Row click navigates to #/items/{id} within the island.
-     The island manages its own navigation internally — the host page URL
-     does not change. -->
+<!-- Row click dispatches navigate. The built-in handler sets the host page's
+     location.hash (or location for a non-hash link); islands have no route
+     table, so handling the new hash is the host page's job — or pass
+     init({ actions: { navigate } }) to do something else. -->
 ```
 
 ```tsx [SolidJS Components]
-import { HashRouter, Route, useNavigate } from '@solidjs/router';
+import { useNavigate } from '@solidjs/router';
 import { SpecRenderer } from '@retrofit-ui/spa-solid-shoelace/components';
+import type { TableSpec } from '@retrofit-ui/core';
 
-const tableSpec = {
-  kind: 'table' as const,
-  columns: [{ key: 'id', label: 'ID', type: 'number' as const }],
-  endpoints: {
-    list: { method: 'GET' as const, url: '/items' },
-    find: { method: 'GET' as const, url: '/items/{id}' }, // enables row click
-  },
+const tableSpec: TableSpec = {
+  kind: 'table',
+  columns: [{ key: 'id', label: 'ID', type: 'number' }],
+  rows: [{ id: { value: 42 }, link: { value: '/items/42' } }],
+  rowLinkField: 'link', // enables row click
+  endpoints: {},
 };
 
-// find is set → router context required; rows navigate on click
-function ItemsApp() {
+// No router is required: the built-in navigate handler sets location.hash.
+// To use your own router instead, handle `navigate` yourself.
+function ItemsTable() {
+  const navigate = useNavigate();
   return (
-    <HashRouter>
-      <Route path="/" component={() =>
-        <SpecRenderer spec={tableSpec} apiBase="/api/ui" />
-      } />
-      <Route path="/:id" component={() => {
-        // Your own form, or another SpecRenderer pointing at the FormSpec
-        return <SpecRenderer spec={/* fetch formSpec */} apiBase="/api/ui" />;
-      }} />
-    </HashRouter>
+    <SpecRenderer
+      spec={tableSpec}
+      actions={{ navigate: (action) => navigate(action.to) }}
+    />
   );
 }
 ```
@@ -227,7 +232,7 @@ const spec: TableSpec = {
   },
 };
 
-<SpecRenderer spec={spec} apiBase="/api/ui" />
+<SpecRenderer spec={spec} />
 // PUT /items/{id} fires on row save — same HTTP contract as the other styles.
 ```
 
@@ -235,26 +240,33 @@ const spec: TableSpec = {
 
 ---
 
-## What's declarative-only means in practice
+## What declarative-only means in practice
 
-Every event above reduces to a single rule: **the spec says which HTTP endpoint to call; the renderer calls it**. Your server handles the mutation. The renderer handles feedback — toasts, row removal, form reset — based on the HTTP response.
+Every event above reduces to a single rule: **the spec says what should happen; a handler on the client decides how**. The spec carries finished data — urls, links, `onDone` targets — so the client does no templating beyond filling `{id}` from a row for inline save and delete. Your server handles the mutation. The renderer handles feedback — toasts, row removal, form reset — based on the HTTP response, and tables and forms dispatch `refresh` after a write, which in the hosted SPA refetches the current screen's spec.
 
-There is no callback prop, no `onSave`, no `onDelete`. You cannot intercept the HTTP call or run custom logic in the browser when an event fires. If you need that, you need your server to handle it and reflect the result back in the next spec response.
+There is no `onSave` or `onDelete` prop. What you can do is replace or wrap the handler for an action type: `http` (every write a built-in view makes), `navigate` and `refresh`. If you need custom logic beyond that, have your server handle it and reflect the result back in the next spec response.
 
-## The SolidJS Components path toward callbacks
+## Overriding handlers
 
-The SolidJS Components style is the only one where callback props are architecturally natural. Because `SpecRenderer` is a real SolidJS component receiving props, a future `onAction` prop would fit cleanly:
+Each style takes action handlers. A handler receives the action, its input, and `next()` — the handler further out — so it can wrap the default rather than replace it:
 
 ```tsx
-// Hypothetical future API — not implemented today
 <SpecRenderer
   spec={spec}
-  apiBase="/api/ui"
-  onAction={(event) => {
-    // event: { type: 'create' | 'update' | 'delete', id?: string, payload?: unknown }
-    myAnalytics.track(event.type, { resource: 'items', id: event.id });
+  actions={{
+    http: async (action, input, next) => {
+      const response = await next();
+      if (response.ok) myAnalytics.track(action.method, { url: action.url });
+      return response;
+    },
   }}
 />
 ```
 
-In the Hosted SPA and Script Islands styles, there is no JSX boundary where such a prop could be passed — the renderer is fully self-contained. If event interception matters for your use case today, the SolidJS Components style is the right adoption path.
+| Style | Where handlers go |
+|-------|-------------------|
+| Hosted SPA | `createShell({ actions })` in your own client entry — see [Hosted SPA](/guide/hosted-spa#keeping-the-hosted-app-with-custom-kinds) |
+| Script Islands | `init({ rootElement, actions })` |
+| SolidJS Components | `<SpecRenderer actions={...}>`, `createRenderer({ actions })` or `<renderer.Root actions={...}>` |
+
+The prebuilt hosted bundle (`distPath`) has no hook for handlers: it is `createShell()` with none. See [Extending](/guide/extending#_4-actions) for custom action types.

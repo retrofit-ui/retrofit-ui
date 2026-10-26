@@ -29,7 +29,7 @@ describe('CalendarViewBuilder', () => {
       .defaultView('week')
       .editable()
       .title('My Agenda')
-      .find({ method: 'GET', url: '/events/{id}' })
+      .toolbar('New', { type: 'navigate', to: '#/events/new' })
       .create({ method: 'POST', url: '/events' })
       .update({ method: 'PUT', url: '/events/{id}' })
       .delete({ method: 'DELETE', url: '/events/{id}' })
@@ -37,10 +37,9 @@ describe('CalendarViewBuilder', () => {
     expect(spec.defaultView).toBe('week');
     expect(spec.editable).toBe(true);
     expect(spec.metadata?.title).toBe('My Agenda');
-    expect(spec.endpoints?.find).toEqual({
-      method: 'GET',
-      url: '/events/{id}',
-    });
+    expect(spec.toolbar).toEqual([
+      { label: 'New', action: { type: 'navigate', to: '#/events/new' } },
+    ]);
     expect(spec.endpoints?.create).toEqual({ method: 'POST', url: '/events' });
     expect(spec.endpoints?.update).toEqual({
       method: 'PUT',

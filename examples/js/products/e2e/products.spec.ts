@@ -42,6 +42,23 @@ test.describe('Category tree view', () => {
     await expect(editButton).toHaveAttribute('disabled', '');
   });
 
+  test('selecting a node enables Edit, which opens that node', async ({
+    page,
+  }) => {
+    await page.goto(TREE_URL);
+    await page.waitForSelector('sl-tree');
+    await page
+      .locator('sl-tree-item')
+      .filter({ hasText: 'Clothing' })
+      .first()
+      .click();
+    const editButton = page.locator('sl-button').filter({ hasText: 'Edit' });
+    await expect(editButton).not.toHaveAttribute('disabled', '');
+    await editButton.click();
+    await page.waitForURL(/\/categories\/\d+$/);
+    await expect(page.getByText('Edit Category')).toBeVisible();
+  });
+
   test('New button navigates to categories/new', async ({ page }) => {
     await page.goto(TREE_URL);
     await page.waitForSelector('sl-tree');

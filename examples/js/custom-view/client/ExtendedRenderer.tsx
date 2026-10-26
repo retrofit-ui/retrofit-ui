@@ -18,6 +18,6 @@ export const ratingKit = defineKit({
 const renderer = createRenderer({ kits: [ratingKit] });
 
 /** Renders any built-in kind plus `rating`. */
-export function ExtendedRenderer(props: { spec: AppSpec; apiBase: string }) {
-  return <renderer.SpecRenderer spec={props.spec} apiBase={props.apiBase} />;
+export function ExtendedRenderer(props: { spec: AppSpec }) {
+  return <renderer.SpecRenderer spec={props.spec} />;
 }

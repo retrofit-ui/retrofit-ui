@@ -359,7 +359,15 @@ export function PageView(props: { spec: PageSpec; onRefresh?: () => void }) {
 
   return (
     <PageContext.Provider value={page}>
-      <ActionHandlers handlers={{ refresh: () => page.refresh() }}>
+      <ActionHandlers
+        handlers={{
+          // Reload this page's tables, then whatever owns the page's spec.
+          refresh: (_action, _input, next) => {
+            page.refresh();
+            return next();
+          },
+        }}
+      >
         <div class="retrofit-view">
           <Show when={props.spec.title}>
             <h1 class="retrofit-page-title">{props.spec.title}</h1>

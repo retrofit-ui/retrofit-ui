@@ -4,10 +4,13 @@ retrofit-ui is built on [Shoelace](https://shoelace.style/) web components. All 
 
 ## How to apply a theme
 
-Pass a `theme` object to `retrofitUi`:
+Put a `theme` object in the config your server serves at `/retrofit.json`:
 
 ```typescript
-const retrofit = retrofitUi(app, {
+import type { RetrofitConfig } from '@retrofit-ui/builder-zod';
+
+const config: RetrofitConfig = {
+  routes: [/* ... */],
   theme: {
     cssVariables: {
       '--sl-color-primary-600': '#7c3aed',
@@ -15,10 +18,11 @@ const retrofit = retrofitUi(app, {
     },
     extraCss: `.retrofit-thead { background-color: #4c1d95; }`,
   },
-});
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
 ```
 
-The CSS variables are injected into `:root` and `.sl-theme-light`. `extraCss` is appended as a raw `<style>` block, letting you target retrofit-ui's own CSS classes.
+The hosted SPA (and `createShell`) applies it at boot: the CSS variables are set on `:root` (the `<html>` element's inline style). `extraCss` is appended as a raw `<style>` block, letting you target retrofit-ui's own CSS classes. Script islands take the same object as `init({ rootElement, theme })`.
 
 ## The primary colour scale
 
@@ -50,7 +54,8 @@ These classes are applied to the rendered HTML and can be targeted with `extraCs
 |-------|---------|
 | `.retrofit-view` | Top-level wrapper (padding, font) |
 | `.retrofit-page-title` | `<h1>` on table and form pages |
-| `.retrofit-page-header` | Flex row containing title + "New" button |
+| `.retrofit-page-header` | Flex row containing title + toolbar buttons |
+| `.retrofit-toolbar` | The toolbar buttons above a table, tree or calendar |
 | `.retrofit-table` | The `<table>` element |
 | `.retrofit-thead` | `<thead>` — background colour |
 | `.retrofit-th` | `<th>` — header cell |
@@ -58,7 +63,7 @@ These classes are applied to the rendered HTML and can be targeted with `extraCs
 | `.retrofit-tr--clickable` | Row that navigates on click |
 | `.retrofit-td` | `<td>` — data cell |
 | `.retrofit-empty` | "No data." placeholder |
-| `.retrofit-back-btn` | "← Back" link on form and markdown pages |
+| `.retrofit-back-btn` | "← Back" button on form, markdown and timeline views whose spec asks for one |
 | `.retrofit-form-actions` | Flex row containing Save/Delete buttons |
 | `.retrofit-error-message` | Validation/submit error text |
 | `.retrofit-markdown` | Markdown render container — reads `--retrofit-markdown-{max-width,line-height,font-size}` |
@@ -86,24 +91,26 @@ Because the override is decided by the cascade of the custom property (not selec
 }
 ```
 
-Prefer the config seam over a raw global stylesheet. `theme.cssVariables` is injected into `:root` and `.sl-theme-light`, so it resolves identically to a hand-written `:root` rule:
+Prefer the config seam over a raw global stylesheet. `theme.cssVariables` is set on `:root`, so it resolves like a hand-written `:root` rule:
 
 ```typescript
-const retrofit = retrofitUi(app, {
+const config: RetrofitConfig = {
+  routes: [/* ... */],
   theme: {
     cssVariables: { '--retrofit-markdown-max-width': 'none' },
   },
-});
+};
 ```
 
 For a scoped override, use `extraCss` (appended as a raw `<style>` block):
 
 ```typescript
-const retrofit = retrofitUi(app, {
+const config: RetrofitConfig = {
+  routes: [/* ... */],
   theme: {
     extraCss: `.retrofit-flex .retrofit-markdown { --retrofit-markdown-max-width: 1200px; }`,
   },
-});
+};
 ```
 
 Any valid `max-width` value works (`1200px`, `90ch`, `none`, …) — the property is opaque to retrofit-ui. Note that a *set-but-invalid* value (e.g. `banana`) is **not** the same as unset: CSS discards the declaration and the value falls back to `initial` (`none`) rather than re-triggering the `var()` fallback. This is standard CSS custom-property behaviour.

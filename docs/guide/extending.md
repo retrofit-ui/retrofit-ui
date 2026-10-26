@@ -5,7 +5,7 @@
 retrofit-ui specs are transport-only JSON, so a "custom kind" is a shape you and the client agree on. You **register** it in two places: its type in `SpecKinds` (so specs that use it type-check everywhere, including inside built-in containers), and its component in a **kit** (so the renderer can draw it). Built-in containers — `page`, `card`, `flex`, `grid`, `tabs` — render their children through the same registry, so your kind nests anywhere a built-in can, and built-ins nest inside yours.
 
 ::: tip
-This path assumes the [SolidJS Components](/guide/solidjs-components) adoption style: you build the client. The prebuilt bundles — the hosted SPA (`distPath`) and script islands (`./renderer`) — carry their own copy of Solid, which a component built elsewhere can't share, so they render the built-in kinds only.
+This path assumes you build the client: either the [SolidJS Components](/guide/solidjs-components) style, or the hosted app rebuilt with your kit via [`createShell`](#keeping-the-hosted-app). The prebuilt bundles — the hosted SPA (`distPath`) and script islands (`./renderer`) — carry their own copy of Solid, which a component built elsewhere can't share, so they render the built-in kinds only.
 :::
 
 ## The four pieces
@@ -99,7 +99,7 @@ export function RatingView(props: { spec: RatingSpec }) {
 }
 ```
 
-If your view needs data at render time, use `createResource` and read `apiBase` from `ApiBaseContext` — the same context the built-in views use. A container renders each child with `<RenderSpec spec={child} />`, which draws it with whatever the surrounding renderer has registered for its kind.
+If your view needs data at render time, put the endpoint in the spec and fetch it with `createResource` — there is no `apiBase` to read; built-in views fetch spec urls exactly as written. For requests that should go through the app's `http` handlers (auth headers and the like), use `useHttp()`, the `fetch` the built-in views use for writes. A container renders each child with `<RenderSpec spec={child} />`, which draws it with whatever the surrounding renderer has registered for its kind.
 
 ## 3. Put it in a kit and build a renderer
 
@@ -122,12 +122,12 @@ export const ratingKit = defineKit({
 
 const renderer = createRenderer({ kits: [ratingKit] });
 
-export function ExtendedRenderer(props: { spec: AppSpec; apiBase: string }) {
-  return <renderer.SpecRenderer spec={props.spec} apiBase={props.apiBase} />;
+export function ExtendedRenderer(props: { spec: AppSpec }) {
+  return <renderer.SpecRenderer spec={props.spec} />;
 }
 ```
 
-`createRenderer` returns `SpecRenderer` (one spec) and `Root` (a scope to render several `<RenderSpec>`s in). Kits apply in order; a kit kind registered under a built-in name replaces the built-in — and `builtinKinds` exports the built-in components, so an override can wrap one instead of rewriting it. A node whose kind isn't registered draws `fallback` ("Unsupported spec kind" by default).
+`createRenderer` returns `SpecRenderer` (one spec) and `Root` (a scope to render several `<RenderSpec>`s in); both take an optional `actions` prop. Kits apply in order; a kit kind registered under a built-in name replaces the built-in — and `builtinKinds` exports the built-in components, so an override can wrap one instead of rewriting it. A node whose kind isn't registered draws `fallback` ("Unsupported spec kind" by default).
 
 ## 4. Actions
 
@@ -169,7 +169,22 @@ createRenderer({
 });
 ```
 
-Built-in types are `http`, `navigate` (`{ type: 'navigate', to }`) and `refresh` (refetches the surrounding page). Dispatching an unregistered type, a descriptor missing a field, or the wrong input is a compile error; dispatching a type nothing handles rejects at runtime.
+Built-in types are `http`, `navigate` (`{ type: 'navigate', to }`) and `refresh` (refetches whatever owns the spec: the surrounding page, or the current screen in the hosted app). Dispatching an unregistered type, a descriptor missing a field, or the wrong input is a compile error; dispatching a type nothing handles rejects at runtime.
+
+## Keeping the hosted app
+
+A kit doesn't mean giving up the [hosted app](/guide/hosted-spa). The prebuilt SPA is exactly `createShell()`; build the same thing with your kit in a tiny client entry, and serve its output instead of `distPath`:
+
+```tsx
+// client/main.tsx
+import '@retrofit-ui/spa-solid-shoelace/renderer.css';
+import { createShell } from '@retrofit-ui/spa-solid-shoelace/components';
+import { ratingKit } from './ExtendedRenderer';
+
+void createShell({ kits: [ratingKit] }).mount(document.getElementById('root')!);
+```
+
+`.mount(root)` loads `/retrofit.json` and renders the app — its `routes`, `nav`, `title` and `theme` — with your kinds registered alongside the built-ins, so a route whose spec is `kind: 'rating'` (or a page containing one) renders your component. `createShell` also takes `actions`, `configUrl` and `shoelacePath`. You still serve a `/retrofit.json` with `routes`, exactly as for the prebuilt SPA.
 
 ## Server side
 
@@ -205,7 +220,7 @@ import '@retrofit-ui/spa-solid-shoelace/renderer.css';
 
 That gives you Shoelace's design tokens (`--sl-color-*`, `--sl-spacing-*`, `--sl-font-*`) plus retrofit-ui's layout classes (`.retrofit-view`, `.retrofit-page-title`, `.retrofit-stat-card`, ...). Skip this import and the built-in views render unstyled.
 
-**Apply the theme at `:root`.** The prebuilt SPA reads `/retrofit.json` at boot and writes `cssVariables` to `document.documentElement` + appends `extraCss` as a `<style>`. When you own the client, reimplement the same helper:
+**Apply the theme at `:root`.** The prebuilt SPA (and `createShell`) reads `/retrofit.json` at boot and writes `cssVariables` to `document.documentElement` + appends `extraCss` as a `<style>`. When you own the client without `createShell`, reimplement the same helper:
 
 ```ts
 function applyTheme(theme?: { cssVariables?: Record<string, string>; extraCss?: string }) {
@@ -266,7 +281,7 @@ Some things live inside the built-in components and aren't seams:
 | Frontend build required                | Yes — you own the SolidJS app |
 | Changes to `@retrofit-ui/core`         | None (you augment its registries) |
 | Changes to `spa-solid-shoelace`        | None                          |
-| Works with the prebuilt SPA or islands | No — they render built-in kinds only |
+| Works with the prebuilt SPA or islands | No — they render built-in kinds only; use `createShell({ kits })` for the hosted app |
 | Mixes built-in and custom kinds        | Yes — at any depth            |
 
 If you don't need a new kind and just want to embed views, prefer [Script Islands](/guide/script-islands) or the [Hosted SPA](/guide/hosted-spa). Reach for extension only when the spec you need genuinely isn't in the catalog.

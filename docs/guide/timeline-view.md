@@ -47,7 +47,7 @@ TimelineView.events(events).title('Deployment History').build()
 
 ## How it works
 
-The SPA navigates to `#/{resource}/timeline` (or `#/{resource}/{id}/timeline` for entity-specific histories) and fetches a `TimelineSpec` from the server. Events are embedded in the spec in display order — sort them on the server before building.
+In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/deployments/timeline')`, or `route('/orders/:id/timeline')` for entity-specific histories — points at the endpoint serving the `TimelineSpec`. Events are embedded in the spec in display order — sort them on the server before building.
 
 ## Basic setup (JS)
 
@@ -138,22 +138,30 @@ TimelineView.events([
 
 ## Entity timeline vs. resource timeline
 
-The route the SPA uses to fetch depends on whether you include an entity ID:
+Both are just routes you declare; whether one includes an entity ID is up to you:
 
-| URL hash | Server endpoint | Use for |
-|----------|----------------|---------|
-| `#/{resource}/timeline` | `GET /api/ui/{resource}/timeline` | Global activity log for a resource |
-| `#/{resource}/{id}/timeline` | `GET /api/ui/{resource}/{id}/timeline` | History of a single record |
+| Route in `/retrofit.json` | URL hash | Server endpoint (`apiBase` `/api/ui`) | Use for |
+|---------------------------|----------|----------------------------------------|---------|
+| `route('/orders/timeline')` | `#/orders/timeline` | `GET /api/ui/orders/timeline` | Global activity log for a resource |
+| `route('/orders/:id/timeline')` | `#/orders/42/timeline` | `GET /api/ui/orders/42/timeline` | History of a single record |
 
-Link from a table's row actions to the entity timeline:
+(Declare `/orders/timeline` before an `/orders/:id` route, so `timeline` isn't read as an id.)
+
+Link from a table's row actions to the entity timeline — the server resolves each row's link:
 
 ```typescript
-TableView.schema(OrderSchema)
-  .rowAction({ label: 'History', routePattern: '/{id}/timeline' })
-  .list({ method: 'GET', url: '/orders' })
+TableView.forRows(OrderSchema, orders)
+  .rowAction('History', (row) => `#/orders/${String(row.id)}/timeline`)
   .build();
 ```
 
 ## Back button
 
-The SPA renders a "← Back" button automatically. It navigates to `#/{resource}/{id}` for entity timelines, or `#/{resource}` for resource timelines.
+A "← Back" button is shown only when the spec asks for one: `.back(action)` sets `metadata.back`, which the button dispatches — typically a `navigate` to the record or list:
+
+```typescript
+TimelineView.events(events)
+  .title('Order history')
+  .back({ type: 'navigate', to: `#/orders/${order.id}` })
+  .build();
+```

@@ -53,7 +53,7 @@ new TreeView()
 
 ## How it works
 
-The SPA navigates to `#/{resource}/tree` and fetches a `TreeSpec` from `GET /api/ui/{resource}/tree`. The spec describes how to fetch the flat node list and which fields to use for assembling the hierarchy.
+In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/departments/tree')` — points at the endpoint serving the `TreeSpec`. The spec describes how to fetch the flat node list and which fields to use for assembling the hierarchy.
 
 Then the SPA fetches all nodes from `spec.endpoint` and builds the tree by matching each node's `parentField` value to another node's `idField` value. Root nodes are those with a `null` or missing parent.
 
@@ -99,7 +99,9 @@ Your `/departments` endpoint returns a flat array:
 | `parentField` | `string` | ✓ | Field referencing the parent's ID; `null`/missing = root (default: `'parentId'`) |
 | `labelField` | `string` | ✓ | Field to display as the node label (default: `'name'`) |
 | `selection` | `'single' \| 'multiple' \| 'leaf'` | — | Selection mode (default: `'single'`) |
-| `actions` | `{ create?, update?, delete? }` | — | CRUD buttons |
+| `linkField` | `string` | — | Field on each node holding its finished link; adds an **Edit** button opening the selected node's |
+| `toolbar` | `ToolbarButton[]` | — | Buttons above the tree, e.g. "New" |
+| `actions` | `{ create?, update?, delete? }` | — | `delete` adds a **Delete** button; `create` and `update` are carried in the spec but no built-in button uses them |
 | `metadata.title` | `string` | — | Heading above the tree |
 
 ## Selection modes
@@ -139,36 +141,37 @@ new TreeView()
 
 ## CRUD actions
 
-Add `.create()`, `.update()`, and `.delete()` to enable action buttons:
+Navigation is data in the spec: a `toolbar` button for "New", and a `linkField` naming the field in each node that holds its finished link. Add `.delete()` for deletion:
 
 ```typescript
 new TreeView()
-  .endpoint({ method: 'GET', url: '/departments' })
+  .endpoint({ method: 'GET', url: '/departments' }) // nodes carry `link: '#/departments/3'`
   .idField('id')
   .parentField('parentId')
   .labelField('name')
-  .create({ method: 'POST', url: '/departments' })
-  .update({ method: 'PUT', url: '/departments/{id}' })
+  .linkField('link')
+  .toolbar('New', { type: 'navigate', to: '#/departments/new' })
   .delete({ method: 'DELETE', url: '/departments/{id}' })
   .build();
 ```
 
-| Action | Button | Behaviour |
-|--------|--------|-----------|
-| `create` | **New** (top-right) | Navigates to `#/{resource}/new` |
-| `update` | **Edit** | Navigates to `#/{resource}/{selectedId}`; disabled when ≠ 1 item selected |
-| `delete` | **Delete** | Opens a confirmation dialog, then calls the endpoint for each selected ID |
+| Builder method | Button | Behaviour |
+|----------------|--------|-----------|
+| `toolbar(label, action)` | Above the tree (top-right) | Dispatches `action`, e.g. a `navigate` to a create form |
+| `linkField(field)` | **Edit** | Opens the selected node's link; disabled unless exactly one node with a link is selected |
+| `delete(directive)` | **Delete** | Opens a confirmation dialog, then calls the endpoint for each selected ID |
 
-The delete action is the only one handled inline — it prompts with a confirmation dialog before calling the endpoint, then shows a success or error toast.
+The nodes come from `endpoint`, which the builder never sees, so your node endpoint returns each node's link itself. Delete is the only action handled inline — it prompts with a confirmation dialog, fills `{id}` in the url with each selected node's id, calls the endpoint, then shows a success or error toast.
 
 ## Linking from a table
 
-Use a table row action to navigate users to the tree view:
+Use a table toolbar button to send users to the tree view's route:
 
 ```typescript
 TableView.schema(ProjectSchema)
-  .rowAction({ label: 'Structure', routePattern: '/tree' })
-  // note: routes to #/{resource}/tree, not per-entity
+  .toolbar('Structure', { type: 'navigate', to: '#/departments/tree' })
   .list({ method: 'GET', url: '/projects' })
   .build();
 ```
+
+For a per-row link — e.g. one tree per project — use `rowAction('Structure', (row) => …)` with a route such as `/projects/:id/tree`; see [Row actions](/guide/table-view#row-actions).

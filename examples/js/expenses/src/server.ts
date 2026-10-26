@@ -6,7 +6,15 @@
  * new rules automatically — no frontend deploy needed.
  */
 
-import { formSpec, pageSpec, row, TableView } from '@retrofit-ui/builder-zod';
+import {
+  crudRoutes,
+  formSpec,
+  pageSpec,
+  type RetrofitConfig,
+  route,
+  row,
+  TableView,
+} from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import {
@@ -54,19 +62,45 @@ const theme = {
   extraCss: `.retrofit-thead { background-color: #7c2d12; }
 .retrofit-th { color: #fff7ed; border-bottom-color: #9a3412; }`,
 };
-app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme }),
-);
+// Every screen the SPA can show: a hash route and the spec (under apiBase) it
+// renders. More specific paths first — `/expenses/new` before `/expenses/:id`.
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  theme,
+  routes: [
+    ...crudRoutes('expenses'),
+    route('/expenses-formatted'),
+    route('/expenses-stacked'),
+    route('/expenses-filtered'),
+    route('/expenses-dashboard'),
+  ],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
+
+// The expense form with its server-controlled validation rules, shared by the
+// standalone create/edit screens and the in-page create forms.
+function expenseForm() {
+  return formSpec(ExpenseSchema, CreateExpenseSchema)
+    .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
+    .fieldOverride('date', {
+      placeholder: 'YYYY-MM-DD',
+      helpText: 'YYYY-MM-DD',
+      validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+    })
+    .fieldOverride('notes', { type: 'textarea' })
+    .fieldOverride('description', { validation: { min: 3 } });
+}
 app.use(express.static(distPath));
 
-// Narrow table — only the 3 most actionable columns; rows embedded in response
+// Narrow table — only the 3 most actionable columns; rows embedded in response.
+// Each row links to its edit form; "New" opens the create form.
 app.get('/api/ui/expenses', (_req, res) => {
   res.json(
     TableView.forRows(ExpenseSchema, store.all())
       .visibleColumns(['description', 'amount', 'date'])
       .columnOverride('amount', { format: 'currency', currency: 'USD' })
-      .find({ method: 'GET', url: '/expenses/{id}' })
-      .create({ method: 'POST', url: '/expenses' })
+      .rowLink((r) => `#/expenses/${r.id}`)
+      .toolbar('New', { type: 'navigate', to: '#/expenses/new' })
       .build(),
   );
 });
@@ -90,24 +124,35 @@ app.get('/api/ui/expenses-formatted', (_req, res) => {
   );
 });
 
-// Form with server-controlled validation rules; entity values embedded on fields
+// Create form, and per record an edit form: values embedded on fields and
+// update/delete urls resolved to the record's id. Both return to the table.
+app.get('/api/ui/expenses/new', (_req, res) => {
+  res.json(
+    expenseForm()
+      .title('Expense')
+      .create({ method: 'POST', url: '/expenses' })
+      .onDone({ type: 'navigate', to: '#/expenses' })
+      .build(),
+  );
+});
+
 app.get('/api/ui/expenses/:id', (req, res) => {
-  const { id } = req.params;
-  const entity = id !== 'new' ? store.find(id) : null;
-  const builder = formSpec(ExpenseSchema, CreateExpenseSchema)
-    .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
-    .fieldOverride('date', {
-      placeholder: 'YYYY-MM-DD',
-      helpText: 'YYYY-MM-DD',
-      validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-    })
-    .fieldOverride('notes', { type: 'textarea' })
-    .fieldOverride('description', { validation: { min: 3 } })
-    .create({ method: 'POST', url: '/expenses' })
-    .update({ method: 'PUT', url: '/expenses/{id}' })
-    .delete({ method: 'DELETE', url: '/expenses/{id}' });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(builder.build());
+  const entity = store.find(req.params.id);
+  if (!entity) {
+    res.status(404).json({ error: `No expense ${req.params.id}` });
+    return;
+  }
+  res.json(
+    expenseForm()
+      .title('Expense')
+      .edit()
+      .values(entity)
+      .params({ id: entity.id })
+      .update({ method: 'PUT', url: '/expenses/{id}' })
+      .delete({ method: 'DELETE', url: '/expenses/{id}' })
+      .onDone({ type: 'navigate', to: '#/expenses' })
+      .build(),
+  );
 });
 
 // Stacked layout: auto-submit filter form + table — navigate to /#/expenses-filtered
@@ -148,17 +193,7 @@ app.get('/api/ui/expenses-stacked', (_req, res) => {
     pageSpec()
       .title('Expenses')
       .form(
-        formSpec(ExpenseSchema, CreateExpenseSchema)
-          .fieldOverride('amount', { validation: { min: 0.01, max: 10000 } })
-          .fieldOverride('date', {
-            placeholder: 'YYYY-MM-DD',
-            helpText: 'YYYY-MM-DD',
-            validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-          })
-          .fieldOverride('notes', { type: 'textarea' })
-          .fieldOverride('description', { validation: { min: 3 } })
-          .create({ method: 'POST', url: '/expenses' })
-          .build(),
+        expenseForm().create({ method: 'POST', url: '/expenses' }).build(),
         'New Expense',
       )
       .table(
@@ -184,19 +219,7 @@ app.get('/api/ui/expenses-dashboard', (_req, res) => {
       .add(
         row()
           .form(
-            formSpec(ExpenseSchema, CreateExpenseSchema)
-              .fieldOverride('amount', {
-                validation: { min: 0.01, max: 10000 },
-              })
-              .fieldOverride('date', {
-                placeholder: 'YYYY-MM-DD',
-                helpText: 'YYYY-MM-DD',
-                validation: { pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
-              })
-              .fieldOverride('notes', { type: 'textarea' })
-              .fieldOverride('description', { validation: { min: 3 } })
-              .create({ method: 'POST', url: '/expenses' })
-              .build(),
+            expenseForm().create({ method: 'POST', url: '/expenses' }).build(),
             'New Expense',
           )
           .table(

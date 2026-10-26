@@ -65,7 +65,8 @@
     "@retrofit-ui/core": "workspace:^"
   },
   "peerDependencies": {
-    "solid-js": ">=1.9.0"
+    "solid-js": ">=1.9.0",
+    "@solidjs/router": ">=0.15.0"
   },
   "peerDependenciesMeta": {
     "solid-js": {

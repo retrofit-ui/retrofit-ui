@@ -5,13 +5,16 @@ import type {
   ActionDescriptor,
   ActionEntry,
   CardSpec,
+  RetrofitConfig,
   Spec,
   SpecNode,
+  TableSpec,
 } from '@retrofit-ui/core';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import {
   type ActionHandlers,
   createRenderer,
+  createShell,
   defineKind,
   defineKit,
   useActions,
@@ -68,7 +71,24 @@ const card: CardSpec = {
 
 export const App = () => <SpecRenderer spec={card} />;
 
-init({ rootElement: document.body, apiBase: '/api', actions });
+init({ rootElement: document.body, actions });
+
+// The hosted app with this kit, and the config a server sends it.
+void createShell({ kits: [kit], actions }).mount(document.body);
+export const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  routes: [{ path: '/ratings/:id', spec: '/ratings/{id}' }],
+  nav: [{ label: 'Ratings', href: '/ratings' }],
+};
+export const table: TableSpec = {
+  kind: 'table',
+  columns: [{ key: 'name', label: 'Name', type: 'string' }],
+  rowLinkField: '_link',
+  toolbar: [
+    { label: 'New', action: { type: 'navigate', to: '#/ratings/new' } },
+  ],
+  endpoints: {},
+};
 
 export const shell: string = distPath;
 
@@ -82,9 +102,12 @@ export const badRating: Spec = { kind: 'acme.rating', score: 'high' };
 createRenderer({ kits: 'acme' });
 
 // @ts-expect-error init needs a root element
-init({ apiBase: '/api' });
+init({ observe: true });
 
-// @ts-expect-error acme.rate's input is { itemId: string }
+// @ts-expect-error a config must declare its routes
+export const noRoutes: RetrofitConfig = { apiBase: '/api/ui' };
+
 export const badHandlers: ActionHandlers = {
+  // @ts-expect-error acme.rate's input is { itemId: string }
   'acme.rate': (_a, input: number) => input > 0,
 };

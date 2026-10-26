@@ -1,8 +1,11 @@
 import {
   CalendarView,
+  crudRoutes,
   filterForm,
   formSpec,
   pageSpec,
+  type RetrofitConfig,
+  route,
   TableView,
 } from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
@@ -28,7 +31,7 @@ app.delete('/events/:id', (req, res) => {
 });
 
 // Serve the SPA bundle + its config. The SPA fetches /retrofit.json for its
-// apiBase and theme, then renders specs from /api/ui/*. Any server in any
+// apiBase, theme and routes, then renders each route's spec from /api/ui/*. Any server in any
 // language can serve the bundle the same way — see @retrofit-ui/spa-solid-shoelace.
 const theme = {
   cssVariables: {
@@ -47,9 +50,23 @@ const theme = {
   extraCss: `.retrofit-thead { background-color: #312e81; }
 .retrofit-th { color: #eef2ff; border-bottom-color: #3730a3; }`,
 };
-app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme }),
-);
+// Route order matters: the static /events/calendar must come before
+// /events/:id (crudRoutes puts /events/new before /events/:id itself).
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  theme,
+  nav: [
+    { label: 'Calendar', href: '/events/calendar', icon: 'calendar' },
+    { label: 'Events', href: '/events', icon: 'list' },
+    { label: 'By Category', href: '/events-by-category', icon: 'funnel' },
+  ],
+  routes: [
+    route('/events/calendar'),
+    ...crudRoutes('events'),
+    route('/events-by-category'),
+  ],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
 app.use(express.static(distPath));
 
 const categoryColors: Record<string, string> = {
@@ -70,12 +87,13 @@ app.get('/api/ui/events/calendar', (_req, res) => {
         end: e.end,
         allDay: e.allDay ?? false,
         color: categoryColors[e.category],
+        link: `#/events/${e.id}`,
       })),
     )
       .title('Events Calendar')
       .defaultView('month')
       .editable(true)
-      .find({ method: 'GET', url: '/events/{id}' })
+      .toolbar('New', { type: 'navigate', to: '#/events/new' })
       .create({ method: 'POST', url: '/events' })
       .update({ method: 'PUT', url: '/events/{id}' })
       .delete({ method: 'DELETE', url: '/events/{id}' })
@@ -89,26 +107,43 @@ app.get('/api/ui/events', (_req, res) => {
   res.json(
     TableView.forRows(EventSchema, store.all())
       .visibleColumns(['title', 'start', 'end', 'category'])
-      .find({ method: 'GET', url: '/events/{id}' })
-      .create({ method: 'POST', url: '/events' })
+      .rowLink((row) => `#/events/${String(row.id)}`)
+      .toolbar('New', { type: 'navigate', to: '#/events/new' })
       .build(),
   );
 });
 
-// Form view: start and end fields use z.string().datetime() which auto-maps to
-// 'datetime' type, rendering as <input type="datetime-local"> with ISO conversion
-app.get('/api/ui/events/:id', (req, res) => {
-  const { id } = req.params;
-  const isNew = id === 'new';
-  const entity = isNew ? undefined : store.find(id);
-  const builder = formSpec(EventSchema, CreateEventSchema)
+// Form views: start and end fields use z.string().datetime() which auto-maps to
+// 'datetime' type, rendering as <input type="datetime-local"> with ISO conversion.
+// Create and edit forms are built per request with their endpoints resolved here.
+function eventForm() {
+  return formSpec(EventSchema, CreateEventSchema)
+    .title('Event')
     .fieldOverride('description', { type: 'textarea' })
     .fieldOverride('allDay', { type: 'switch' })
-    .update({ method: 'PUT', url: `/events/${id}` })
-    .delete({ method: 'DELETE', url: `/events/${id}` });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  if (isNew) builder.create({ method: 'POST', url: '/events' });
-  res.json(builder.build());
+    .onDone({ type: 'navigate', to: '#/events' });
+}
+
+// /new must be registered before /:id so Express doesn't treat 'new' as an id
+app.get('/api/ui/events/new', (_req, res) => {
+  res.json(eventForm().create({ method: 'POST', url: '/events' }).build());
+});
+
+app.get('/api/ui/events/:id', (req, res) => {
+  const entity = store.find(req.params.id);
+  if (!entity) {
+    res.status(404).json({ error: `No event ${req.params.id}` });
+    return;
+  }
+  res.json(
+    eventForm()
+      .edit()
+      .values(entity as Record<string, unknown>)
+      .params({ id: entity.id })
+      .update({ method: 'PUT', url: '/events/{id}' })
+      .delete({ method: 'DELETE', url: '/events/{id}' })
+      .build(),
+  );
 });
 
 // Stacked layout: category filter + events table — navigate to /#/events-by-category

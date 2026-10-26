@@ -10,7 +10,7 @@ Two HOCs ship today:
 | HOC | Output | When to reach for it |
 |-----|--------|----------------------|
 | `pageSpec` | A single `PageSpec` | Multi-component pages: dashboards, filter+table, form+table on one screen |
-| `TableFormWorkflowBundle` | A `tableSpec` + `formSpec` pair | Standard list → edit CRUD flow across two routes |
+| `TableFormWorkflowBundle` | A `tableSpec`, plus `createForm` and `editForm(values, params)` | Standard list → create/edit CRUD flow across three routes |
 
 ---
 
@@ -71,14 +71,15 @@ on them before passing to `.add()`.
 
 ---
 
-## `TableFormWorkflowBundle` — CRUD route pairs
+## `TableFormWorkflowBundle` — CRUD routes
 
-`TableFormWorkflowBundle` produces **two specs at once** for a standard list-then-edit flow: a
-`TableSpec` for the collection route and a `FormSpec` for the item route. Clicking a table row
-navigates to the form automatically.
+`TableFormWorkflowBundle` produces the specs for a standard list-then-edit flow in one call: a
+`TableSpec` for the list route, a create form, and an edit form per record. Given `.route()`, it
+also wires the navigation between them into the specs: a "New" button on the table and an
+`onDone` on each form that returns to the list.
 
 **When to use it:**
-- Standard admin CRUD: list page with a row that opens an edit form.
+- Standard admin CRUD: a list page, a create form and an edit form.
 - You want the table and form to share one schema definition.
 
 ```typescript
@@ -86,22 +87,25 @@ import { TableFormWorkflowBundle } from '@retrofit-ui/builder-zod';
 
 const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .updateSchema(UpdateContactSchema)
+  .form((f) => f.title('Contact'))
+  .route('/contacts') // matches crudRoutes('contacts') in /retrofit.json
   .list({ method: 'GET', url: '/contacts' })
-  .find({ method: 'GET', url: '/contacts/{id}' })
   .create({ method: 'POST', url: '/contacts' })
   .update({ method: 'PUT', url: '/contacts/{id}' })
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
 
-// Two routes, two specs, one builder call
+// Three routes, one builder call
 app.get('/admin-ui/contacts', (_req, res) => res.json(bundle.tableSpec));
+app.get('/admin-ui/contacts/new', (_req, res) => res.json(bundle.createForm));
 app.get('/admin-ui/contacts/:id', (req, res) => {
-  // bake entity values onto form fields for the edit case
-  const entity = store.find(req.params.id);
-  const fields = bundle.formSpec.fields.map((f) =>
-    entity?.[f.name] !== undefined ? { ...f, value: entity[f.name] } : f
-  );
-  res.json({ ...bundle.formSpec, fields });
+  const contact = store.find(req.params.id);
+  if (!contact) {
+    res.status(404).json({ error: `No contact ${req.params.id}` });
+    return;
+  }
+  // prefilled with the contact's values, urls resolved to its id
+  res.json(bundle.editForm(contact, { id: contact.id }));
 });
 ```
 

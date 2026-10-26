@@ -1,7 +1,9 @@
 import type {
+  Action,
   CalendarEvent,
   CalendarSpec,
   EndpointDirective,
+  ToolbarButton,
 } from '@retrofit-ui/core';
 
 export class CalendarViewBuilder {
@@ -10,6 +12,7 @@ export class CalendarViewBuilder {
   private _editable?: boolean;
   private _endpoints: CalendarSpec['endpoints'] = {};
   private _title?: string;
+  private _toolbar: ToolbarButton[] = [];
 
   static events(events: CalendarEvent[]): CalendarViewBuilder {
     const b = new CalendarViewBuilder();
@@ -30,8 +33,13 @@ export class CalendarViewBuilder {
     return this;
   }
 
-  find(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, find: directive };
+  /** A button above the calendar, e.g. "New". Events open their own `link`. */
+  toolbar(
+    label: string,
+    action: Action,
+    variant?: ToolbarButton['variant'],
+  ): this {
+    this._toolbar.push({ label, action, ...(variant && { variant }) });
     return this;
   }
   create(directive: EndpointDirective): this {
@@ -53,6 +61,7 @@ export class CalendarViewBuilder {
       events: this._events,
       ...(this._defaultView && { defaultView: this._defaultView }),
       ...(this._editable !== undefined && { editable: this._editable }),
+      ...(this._toolbar.length > 0 && { toolbar: this._toolbar }),
       ...(Object.keys(this._endpoints ?? {}).length > 0 && {
         endpoints: this._endpoints,
       }),

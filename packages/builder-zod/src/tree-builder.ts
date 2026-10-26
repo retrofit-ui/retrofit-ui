@@ -1,4 +1,9 @@
-import type { EndpointDirective, TreeSpec } from '@retrofit-ui/core';
+import type {
+  Action,
+  EndpointDirective,
+  ToolbarButton,
+  TreeSpec,
+} from '@retrofit-ui/core';
 
 export class TreeViewBuilder {
   private _endpoint?: EndpointDirective;
@@ -8,6 +13,8 @@ export class TreeViewBuilder {
   private _selection?: TreeSpec['selection'];
   private _actions: NonNullable<TreeSpec['actions']> = {};
   private _metadata?: TreeSpec['metadata'];
+  private _linkField?: string;
+  private _toolbar: ToolbarButton[] = [];
 
   endpoint(directive: EndpointDirective): this {
     this._endpoint = directive;
@@ -49,6 +56,22 @@ export class TreeViewBuilder {
     return this;
   }
 
+  /** The field in each node holding its link; "Edit" opens the selected one's. */
+  linkField(field: string): this {
+    this._linkField = field;
+    return this;
+  }
+
+  /** A button above the tree, e.g. "New". */
+  toolbar(
+    label: string,
+    action: Action,
+    variant?: ToolbarButton['variant'],
+  ): this {
+    this._toolbar.push({ label, action, ...(variant && { variant }) });
+    return this;
+  }
+
   metadata(meta: TreeSpec['metadata']): this {
     this._metadata = meta;
     return this;
@@ -65,6 +88,8 @@ export class TreeViewBuilder {
       parentField: this._parentField,
       labelField: this._labelField,
       ...(this._selection && { selection: this._selection }),
+      ...(this._linkField && { linkField: this._linkField }),
+      ...(this._toolbar.length > 0 && { toolbar: this._toolbar }),
       ...(Object.keys(this._actions).length > 0 && { actions: this._actions }),
       ...(this._metadata && { metadata: this._metadata }),
     };

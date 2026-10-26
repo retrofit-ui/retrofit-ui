@@ -29,32 +29,43 @@ export const todosTheme = {
 };
 
 // Inline editing spec with rows embedded. Returned from GET /api/ui/todos
-// and mounted directly by the docs demo.
-export function buildTodosTableSpec(rows: Todo[]) {
-  return TableView.forRows(TodoSchema, rows)
+// and mounted directly by the docs demo. The hosted app passes a `title` for
+// the page heading.
+export function buildTodosTableSpec(rows: Todo[], title?: string) {
+  const builder = TableView.forRows(TodoSchema, rows)
     .updateSchema(CreateTodoSchema)
     .create({ method: 'POST', url: '/todos' })
     .update({ method: 'PUT', url: '/todos/{id}' })
-    .delete({ method: 'DELETE', url: '/todos/{id}' })
-    .build();
+    .delete({ method: 'DELETE', url: '/todos/{id}' });
+  if (title) builder.metadata({ title });
+  return builder.build();
 }
 
-export function buildTodoFormSpec(
-  id: string,
-  entity: Todo | undefined,
-  isNew: boolean,
-) {
-  const builder = formSpec(TodoSchema, CreateTodoSchema)
+function todoForm() {
+  return formSpec(TodoSchema, CreateTodoSchema)
+    .title('Todo')
     .fieldOverride('done', { type: 'switch' })
     .fieldOverride('title', {
       tooltip: 'Enter a short description of the task',
       helpText: 'Keep it brief',
     })
-    .update({ method: 'PUT', url: `/todos/${id}` })
-    .delete({ method: 'DELETE', url: `/todos/${id}` });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  if (isNew) builder.create({ method: 'POST', url: '/todos' });
-  return builder.build();
+    .onDone({ type: 'navigate', to: '#/todos' });
+}
+
+/** The create form served at #/todos/new. */
+export function buildTodoCreateFormSpec() {
+  return todoForm().create({ method: 'POST', url: '/todos' }).build();
+}
+
+/** The edit form for one todo, served at #/todos/:id. */
+export function buildTodoEditFormSpec(todo: Todo) {
+  return todoForm()
+    .edit()
+    .values(todo as Record<string, unknown>)
+    .params({ id: todo.id })
+    .update({ method: 'PUT', url: '/todos/{id}' })
+    .delete({ method: 'DELETE', url: '/todos/{id}' })
+    .build();
 }
 
 export function buildTodosByPrioritySpec() {

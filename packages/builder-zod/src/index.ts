@@ -1,4 +1,5 @@
 export type {
+  Action,
   CalendarEvent,
   CalendarSpec,
   CardSpec,
@@ -11,7 +12,10 @@ export type {
   GridSpec,
   LayoutConfig,
   MarkdownViewSpec,
+  NavItem,
   PageSpec,
+  RetrofitConfig,
+  RouteSpec,
   RowAction,
   Spec,
   Stat,
@@ -19,6 +23,7 @@ export type {
   TableSpec,
   TimelineEvent,
   TimelineSpec,
+  ToolbarButton,
   TreeSpec,
 } from '@retrofit-ui/core';
 export { CalendarView, CalendarViewBuilder } from './calendar-builder';
@@ -34,6 +39,7 @@ export {
   pageSpec,
   row,
 } from './page-builder';
+export { crudRoutes, route } from './routes';
 export { StatView, StatViewBuilder } from './stat-view-builder';
 export type { RetrofitTheme } from './theme';
 export { TimelineView, TimelineViewBuilder } from './timeline-builder';

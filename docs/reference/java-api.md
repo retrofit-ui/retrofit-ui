@@ -2,6 +2,10 @@
 
 All types live in `io.retrofitui.autoconfigure` and `io.retrofitui.autoconfigure.spec`.
 
+::: warning Not yet compatible with the hosted SPA
+This page documents the Spring Boot starter as it is. It predates the hosted SPA's route table: its `/retrofit.json` has no `routes`, so the SPA shows a "has no routes" error and renders none of your screens. Its specs also lack `kind`, row links, toolbars and form `mode`/`onDone`, and the SPA no longer reads `find` endpoints. An update to the starter is pending; see the [JS API Reference](/reference/js-api) for the current spec contract.
+:::
+
 ---
 
 ## `RetrofitUiProperties`

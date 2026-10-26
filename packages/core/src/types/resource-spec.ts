@@ -1,4 +1,4 @@
-import type { HttpAction } from './action';
+import type { Action, HttpAction } from './action';
 import type { Field } from './form';
 import type { SpecNode } from './spec';
 import type { Cell, Column } from './table';
@@ -6,31 +6,47 @@ import type { Cell, Column } from './table';
 /** A `{ method, url }` pair. Every endpoint directive is also an http action. */
 export type EndpointDirective = HttpAction;
 
-/** Per-row action button shown in the table's actions column. */
-export interface RowAction {
+/** A button above a view, e.g. "New" navigating to a create form. */
+export interface ToolbarButton {
   label: string;
-  /** Route pattern appended to /#/{resource}/; {id} is substituted from the row. */
-  routePattern: string;
+  action: Action;
+  variant?: 'primary' | 'default';
 }
 
-/** Returned by GET /api/ui/{resource} — drives the table view. */
+/**
+ * Per-row link button shown in the table's actions column. Each row carries
+ * its own finished link in `linkField`; a row without one shows no button.
+ */
+export interface RowAction {
+  label: string;
+  linkField: string;
+}
+
+/** Drives the table view. */
 export interface TableSpec extends SpecNode<'table'> {
   columns: Column[];
   rows?: Record<string, Cell>[];
   /**
-   * Field used to build row links and update/delete URLs. When omitted the
-   * client falls back to the `{param}` of the find/update/delete url, then to
-   * "id". Set it (and carry the field in `rows`) only for tables that actually
-   * navigate or mutate; read-only tables can leave it undefined.
+   * Field holding each row's id, used to fill `{id}` in the update/delete
+   * endpoints for inline edits. Defaults to "id".
    */
   idField?: string;
+  /**
+   * Field holding each row's finished link (e.g. `#/contacts/7`). When set,
+   * clicking a row opens it. The field needn't be a column.
+   */
+  rowLinkField?: string;
+  /** Buttons above the table, e.g. "New". */
+  toolbar?: ToolbarButton[];
   endpoints: {
     /** Fetches rows. Inside a page, `{param}`s are filled from the page's filters. */
     list?: EndpointDirective;
-    find?: EndpointDirective; // enables row clicks + ID extraction
-    create?: EndpointDirective; // shows "New" button when present
-    update?: EndpointDirective; // enables inline row save
-    delete?: EndpointDirective; // enables row delete button
+    /** With editable columns, adds an inline "new row". */
+    create?: EndpointDirective;
+    /** Enables inline row save. */
+    update?: EndpointDirective;
+    /** Enables the row delete button. */
+    delete?: EndpointDirective;
   };
   rowActions?: RowAction[];
   metadata?: {
@@ -50,7 +66,7 @@ export interface FormLayoutConfig {
   labelPosition?: 'above' | 'hidden';
 }
 
-/** Returned by GET /api/ui/{resource}/:id — drives new and edit form views. */
+/** Drives create and edit forms. */
 export interface FormSpec extends SpecNode<'form'> {
   fields: Field[];
   endpoints: {
@@ -60,6 +76,17 @@ export interface FormSpec extends SpecNode<'form'> {
   };
   metadata?: {
     title?: string;
+    /**
+     * `edit` submits to `endpoints.update` and offers delete; `create` (the
+     * default) submits to `endpoints.create`. Endpoints arrive resolved,
+     * e.g. `/contacts/7`.
+     */
+    mode?: 'create' | 'edit';
+    /**
+     * Dispatched after a successful submit or delete, and by the Back button
+     * (shown outside a page), e.g. a `navigate` back to the list.
+     */
+    onDone?: Action;
     /** Submit button text. Defaults to "Create", or "Save" when editing. */
     submitLabel?: string;
     /** Inside a page: write each change to the page's filters instead of submitting. */
@@ -68,18 +95,23 @@ export interface FormSpec extends SpecNode<'form'> {
   };
 }
 
-/** Returned by GET /api/ui/{resource}/:id/render — drives the markdown render view. */
+/** Drives the markdown view. */
 export interface MarkdownViewSpec extends SpecNode<'markdown'> {
   content: string;
-  metadata?: { title?: string };
+  /** `back` adds a Back button dispatching it. */
+  metadata?: { title?: string; back?: Action };
 }
 
-/** Returned by GET /api/ui/{resource}/tree — drives the tree view. */
+/** Drives the tree view. */
 export interface TreeSpec extends SpecNode<'tree'> {
   endpoint: EndpointDirective;
   idField: string;
   parentField: string;
   labelField: string;
+  /** Field holding each node's finished link; "Edit" opens the selected node's. */
+  linkField?: string;
+  /** Buttons above the tree, e.g. "New". */
+  toolbar?: ToolbarButton[];
   selection?: 'single' | 'multiple' | 'leaf';
   actions?: {
     create?: EndpointDirective;
@@ -97,10 +129,11 @@ export interface TimelineEvent {
   icon?: string;
 }
 
-/** Returned by GET /api/ui/{resource}/timeline or GET /api/ui/{resource}/:id/timeline */
+/** Drives the timeline view. */
 export interface TimelineSpec extends SpecNode<'timeline'> {
   events: TimelineEvent[];
-  metadata?: { title?: string };
+  /** `back` adds a Back button dispatching it. */
+  metadata?: { title?: string; back?: Action };
 }
 
 /** A single KPI/statistic card. Value is computed server-side and embedded in the spec. */
@@ -112,7 +145,7 @@ export interface Stat {
   description?: string;
 }
 
-/** Returned by GET /api/ui/{resource}/stats — drives the stat/KPI grid view. */
+/** Drives the stat/KPI grid view. */
 export interface StatSpec extends SpecNode<'stat'> {
   stats: Stat[];
   metadata?: { title?: string };
@@ -126,15 +159,18 @@ export interface CalendarEvent {
   end?: string;
   color?: string;
   allDay?: boolean;
+  /** Finished link opened when the event is clicked, e.g. `#/events/3`. */
+  link?: string;
 }
 
-/** Returned by GET /api/ui/{resource}/calendar — drives the calendar view. */
+/** Drives the calendar view. */
 export interface CalendarSpec extends SpecNode<'calendar'> {
   events: CalendarEvent[];
   defaultView?: 'month' | 'week' | 'day' | 'list';
   editable?: boolean;
+  /** Buttons above the calendar, e.g. "New". */
+  toolbar?: ToolbarButton[];
   endpoints?: {
-    find?: EndpointDirective;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;

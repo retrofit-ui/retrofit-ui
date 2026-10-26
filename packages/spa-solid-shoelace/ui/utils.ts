@@ -28,3 +28,11 @@ export function rawRow(row: Record<string, unknown>): Record<string, unknown> {
     Object.entries(row).map(([k, v]) => [k, cellValue(v)]),
   );
 }
+
+/**
+ * A row's update/delete url: its `{param}` (whatever it is named) filled
+ * with the row's id, encoded.
+ */
+export function fillIdParam(url: string, id: unknown): string {
+  return url.replace(/\{\w+\}/g, encodeURIComponent(String(id)));
+}

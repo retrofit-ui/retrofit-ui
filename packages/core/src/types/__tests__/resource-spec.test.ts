@@ -137,11 +137,23 @@ describe('CalendarSpec', () => {
   it('CalendarSpec accepts all optional fields', () => {
     const spec: CalendarSpec = {
       kind: 'calendar',
-      events: [{ id: '1', title: 'Meeting', start: '2026-06-15T09:00:00' }],
+      events: [
+        {
+          id: '1',
+          title: 'Meeting',
+          start: '2026-06-15T09:00:00',
+          link: '#/events/1',
+        },
+      ],
       defaultView: 'month',
       editable: true,
+      toolbar: [
+        {
+          label: 'New',
+          action: { type: 'navigate', to: '#/events/new' },
+        },
+      ],
       endpoints: {
-        find: { method: 'GET', url: '/events/{id}' },
         create: { method: 'POST', url: '/events' },
         update: { method: 'PUT', url: '/events/{id}' },
         delete: { method: 'DELETE', url: '/events/{id}' },
@@ -150,6 +162,6 @@ describe('CalendarSpec', () => {
     };
     expect(spec.defaultView).toBe('month');
     expect(spec.metadata?.title).toBe('Events');
-    expect(spec.endpoints?.find?.url).toBe('/events/{id}');
+    expect(spec.events[0]?.link).toBe('#/events/1');
   });
 });

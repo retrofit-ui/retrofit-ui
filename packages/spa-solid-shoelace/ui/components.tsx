@@ -34,4 +34,5 @@ export {
   Scope,
 } from './renderer';
 export { SpecRenderer } from './SpecRenderer';
-export { TableViewComponent } from './TableView';
+export { createShell, type Shell, type ShellOptions } from './shell';
+export { TableViewComponent, Toolbar } from './TableView';

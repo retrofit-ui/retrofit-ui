@@ -10,9 +10,9 @@ app.use(express.json());
 const __dir = dirname(fileURLToPath(import.meta.url));
 const clientDist = resolve(__dir, '../dist/client');
 
-// Config the client SPA reads on boot. `apiBase` tells retrofit-ui where to
-// resolve endpoint URLs referenced inside specs. `theme` is applied client-
-// side and flows through both built-in views and our custom RatingView.
+// Config the client reads on boot: just the theme, applied client-side, which
+// flows through both built-in views and our custom RatingView. (This example
+// has its own client, so it serves no route table.)
 const theme = {
   cssVariables: {
     // Violet primary scale — same tokens the built-in views consume, so our
@@ -40,7 +40,7 @@ const theme = {
     .custom-rating-star--filled { color: var(--sl-color-primary-600); }
   `,
 };
-app.get('/retrofit.json', (_req, res) => res.json({ apiBase: '/api', theme }));
+app.get('/retrofit.json', (_req, res) => res.json({ theme }));
 
 // A "regular" retrofit-ui spec (built-in kind). Nothing custom required.
 app.get('/api/hello-stat', (_req, res) => {

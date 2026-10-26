@@ -3,7 +3,13 @@
 // 'review', change the enum here — the client form regenerates automatically
 // with no frontend changes required. This is the server-driven UI principle.
 
-import { formSpec, TableView } from '@retrofit-ui/builder-zod';
+import {
+  crudRoutes,
+  formSpec,
+  type RetrofitConfig,
+  route,
+  TableView,
+} from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import type { Post, Review } from './schemas';
@@ -51,28 +57,42 @@ app.post('/test/reset', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/retrofit.json', (_req, res) =>
-  res.json({
-    apiBase: '/api/ui',
-    title: 'Blog Admin',
-    theme: blogTheme,
-    nav: [
-      { label: 'Posts', href: '/posts', icon: 'file-text' },
-      { label: 'By status', href: '/posts-by-status', icon: 'bar-chart' },
-      { label: 'Reviews', href: '/reviews', icon: 'star' },
-    ],
-  }),
-);
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  title: 'Blog Admin',
+  theme: blogTheme,
+  nav: [
+    { label: 'Posts', href: '/posts', icon: 'file-text' },
+    { label: 'By status', href: '/posts-by-status', icon: 'bar-chart' },
+    { label: 'Reviews', href: '/reviews', icon: 'star' },
+  ],
+  // Static segments before `/:id`, so "new" is never read as an id.
+  routes: [
+    ...crudRoutes('posts'),
+    route('/posts/:id/render'),
+    route('/posts/:id/timeline'),
+    route('/posts-by-status'),
+    ...crudRoutes('reviews'),
+  ],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
 app.use(express.static(distPath));
 
 app.get('/api/ui/posts', (_req, res) => {
   res.json(buildPostsTableSpec(store.all() as Post[]));
 });
 
+app.get('/api/ui/posts/new', (_req, res) => {
+  res.json(buildPostFormSpec(null));
+});
+
 app.get('/api/ui/posts/:id', (req, res) => {
-  const { id } = req.params;
-  const entity = id !== 'new' ? (store.find(id) as Post | null) : null;
-  res.json(buildPostFormSpec(entity));
+  const post = store.find(req.params.id) as Post | undefined;
+  if (!post) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  res.json(buildPostFormSpec(post));
 });
 
 app.get('/api/ui/posts/:id/render', (req, res) => {
@@ -142,23 +162,40 @@ app.post('/test/reset-reviews', (_req, res) => {
 app.get('/api/ui/reviews', (_req, res) => {
   res.json(
     TableView.forRows(ReviewSchema, reviews)
-      .find({ method: 'GET', url: '/reviews/{id}' })
-      .create({ method: 'POST', url: '/reviews' })
+      .rowLink((row) => `#/reviews/${String(row.id)}`)
+      .toolbar('New', { type: 'navigate', to: '#/reviews/new' })
+      .metadata({ title: 'Reviews' })
       .build(),
   );
 });
 
-app.get('/api/ui/reviews/:id', (req, res) => {
-  const { id } = req.params;
-  const entity = id !== 'new' ? reviews.find((r) => r.id === Number(id)) : null;
-  const builder = formSpec(ReviewSchema, UpdateReviewSchema)
+function reviewForm() {
+  return formSpec(ReviewSchema, UpdateReviewSchema)
+    .title('Review')
     .fieldOverride('body', { type: 'textarea' })
     .fieldOverride('rating', { type: 'rating', ratingMax: 5 })
-    .create({ method: 'POST', url: '/reviews' })
-    .update({ method: 'PUT', url: '/reviews/{id}' })
-    .delete({ method: 'DELETE', url: '/reviews/{id}' });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(builder.build());
+    .onDone({ type: 'navigate', to: '#/reviews' });
+}
+
+app.get('/api/ui/reviews/new', (_req, res) => {
+  res.json(reviewForm().create({ method: 'POST', url: '/reviews' }).build());
+});
+
+app.get('/api/ui/reviews/:id', (req, res) => {
+  const review = reviews.find((r) => r.id === Number(req.params.id));
+  if (!review) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  res.json(
+    reviewForm()
+      .edit()
+      .values(review as Record<string, unknown>)
+      .params({ id: review.id })
+      .update({ method: 'PUT', url: '/reviews/{id}' })
+      .delete({ method: 'DELETE', url: '/reviews/{id}' })
+      .build(),
+  );
 });
 
 const PORT = process.env.PORT ?? 3000;

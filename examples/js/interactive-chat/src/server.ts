@@ -1,3 +1,4 @@
+import { type RetrofitConfig, route } from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import { buildChatSpec, chatTheme } from './spec';
@@ -5,9 +6,12 @@ import { buildChatSpec, chatTheme } from './spec';
 const app = express();
 app.use(express.json());
 
-app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme: chatTheme }),
-);
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  theme: chatTheme,
+  routes: [route('/chat')],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
 app.use(express.static(distPath));
 
 app.get('/api/ui/chat', (_req, res) => {

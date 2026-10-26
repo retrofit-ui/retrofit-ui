@@ -1,4 +1,5 @@
 import type {
+  Action,
   EndpointDirective,
   Field,
   FormLayoutConfig,
@@ -7,12 +8,33 @@ import type {
 import type { ZodObject, ZodRawShape } from 'zod';
 import { getShape, zodFieldToField } from './mappers';
 
+function resolveEndpoints(
+  endpoints: FormSpec['endpoints'],
+  params: Record<string, string | number>,
+): FormSpec['endpoints'] {
+  const fill = (ep: EndpointDirective | undefined) =>
+    ep && {
+      ...ep,
+      url: ep.url.replace(/\{(\w+)\}/g, (match, name: string) =>
+        name in params ? encodeURIComponent(String(params[name])) : match,
+      ),
+    };
+  return Object.fromEntries(
+    Object.entries(endpoints).map(([key, ep]) => [key, fill(ep)]),
+  ) as FormSpec['endpoints'];
+}
+
 export class FormSpecBuilder<S extends ZodRawShape> {
   private _fieldOverrides: Record<string, Partial<Field>> = {};
   private _endpoints: FormSpec['endpoints'] = {};
   private _entity?: Record<string, unknown>;
   private _autoSubmit = false;
   private _layout?: FormLayoutConfig;
+  private _title?: string;
+  private _submitLabel?: string;
+  private _edit = false;
+  private _onDone?: Action;
+  private _params: Record<string, string | number> = {};
 
   constructor(
     private readonly _schema: ZodObject<S>,
@@ -44,6 +66,37 @@ export class FormSpecBuilder<S extends ZodRawShape> {
     return this;
   }
 
+  title(title: string): this {
+    this._title = title;
+    return this;
+  }
+
+  submitLabel(label: string): this {
+    this._submitLabel = label;
+    return this;
+  }
+
+  /** An edit form: submits to `update()` and offers `delete()`. */
+  edit(): this {
+    this._edit = true;
+    return this;
+  }
+
+  /** Dispatched after a save or delete, and by the Back button. */
+  onDone(action: Action): this {
+    this._onDone = action;
+    return this;
+  }
+
+  /**
+   * Fills `{name}` in every endpoint url with `params[name]`, here on the
+   * server, e.g. `.params({ id: 7 })` turns `/posts/{id}` into `/posts/7`.
+   */
+  params(params: Record<string, string | number>): this {
+    this._params = { ...this._params, ...params };
+    return this;
+  }
+
   autoSubmit(): this {
     this._autoSubmit = true;
     return this;
@@ -72,16 +125,19 @@ export class FormSpecBuilder<S extends ZodRawShape> {
       }
       return withOverride;
     });
+    const metadata: NonNullable<FormSpec['metadata']> = {
+      ...(this._title && { title: this._title }),
+      ...(this._edit && { mode: 'edit' as const }),
+      ...(this._onDone && { onDone: this._onDone }),
+      ...(this._submitLabel && { submitLabel: this._submitLabel }),
+      ...(this._autoSubmit && { autoSubmit: true }),
+      ...(this._layout && { layout: this._layout }),
+    };
     return {
       kind: 'form' as const,
       fields,
-      endpoints: this._endpoints,
-      ...((this._autoSubmit || this._layout) && {
-        metadata: {
-          ...(this._autoSubmit && { autoSubmit: true }),
-          ...(this._layout && { layout: this._layout }),
-        },
-      }),
+      endpoints: resolveEndpoints(this._endpoints, this._params),
+      ...(Object.keys(metadata).length > 0 && { metadata }),
     };
   }
 }

@@ -1,6 +1,6 @@
 # Markdown View
 
-The markdown view renders a single entity's markdown field as formatted HTML. It is useful for blog posts, notes, or any rich-text content stored as markdown.
+The markdown view renders markdown that the server embeds in the spec — typically one record's markdown field — as formatted HTML. It is useful for blog posts, notes, or any rich-text content stored as markdown.
 
 <PreviewBlock>
 
@@ -22,9 +22,12 @@ The markdown view renders a single entity's markdown field as formatted HTML. It
 
 ```typescript
 const spec: MarkdownViewSpec = {
-  entityEndpoint: { method: 'GET', url: '/posts/{id}' },
-  field: 'body',
-  metadata: { title: 'Post Preview' },
+  kind: 'markdown',
+  content: post.body,
+  metadata: {
+    title: 'Post Preview',
+    back: { type: 'navigate', to: `#/posts/${post.id}` },
+  },
 };
 ```
 
@@ -32,50 +35,59 @@ const spec: MarkdownViewSpec = {
 
 ## How it works
 
-The SPA navigates to `#/{resource}/{id}/render` and fetches a `MarkdownViewSpec` from the server:
+In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/posts/:id/preview')` — points at the endpoint serving the `MarkdownViewSpec`. The server reads the record and embeds the markdown itself:
 
 ```json
 {
-  "entityEndpoint": { "method": "GET", "url": "/posts/42" },
-  "field": "body"
+  "kind": "markdown",
+  "content": "# Getting Started with Vite\n\nVite is a next-generation…",
+  "metadata": { "title": "Post Preview", "back": { "type": "navigate", "to": "#/posts/42" } }
 }
 ```
 
-It then fetches the entity, extracts the `body` field, parses it with [marked](https://marked.js.org/), and renders the HTML.
+The view parses `content` with [marked](https://marked.js.org/) and renders the HTML. It makes no requests of its own.
 
 ## Setup (JS)
 
 ```typescript
 import type { MarkdownViewSpec } from '@retrofit-ui/builder-zod';
 
+// Route in /retrofit.json: route('/posts/:id/preview')
 // URL prefix below is arbitrary — pick anything and match `apiBase` to it.
-app.get('/pages/posts/:id/render', (req, res) => {
+app.get('/pages/posts/:id/preview', (req, res) => {
+  const post = store.find(req.params.id);
+  if (!post) {
+    res.status(404).json({ error: `No post ${req.params.id}` });
+    return;
+  }
   const spec: MarkdownViewSpec = {
-    entityEndpoint: { method: 'GET', url: `/posts/${req.params.id}` },
-    field: 'body',
-    metadata: { title: 'Post Preview' },
+    kind: 'markdown',
+    content: post.body,
+    metadata: {
+      title: 'Post Preview',
+      back: { type: 'navigate', to: `#/posts/${post.id}` },
+    },
   };
-  res.json(retrofit(spec));
+  res.json(spec);
 });
 ```
 
 ## Linking from the table
 
-Use `rowAction` on the table spec to add a per-row "Preview" button:
+Use `rowAction` on the table spec to add a per-row "Preview" button. The link is resolved per row on the server:
 
 ```typescript
-TableView.schema(PostSchema)
-  .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
-  .list({ method: 'GET', url: '/posts' })
-  .find({ method: 'GET', url: '/posts/{id}' })
+TableView.forRows(PostSchema, posts)
+  .rowAction('Preview', (row) => `#/posts/${String(row.id)}/preview`)
+  .rowLink((row) => `#/posts/${String(row.id)}`)
   .build();
 ```
 
-`routePattern` is appended to `#/{resource}/` in the hash router. With `routePattern: '/{id}/render'`, clicking Preview on row 42 navigates to `#/posts/42/render`.
+Clicking Preview on row 42 navigates to `#/posts/42/preview`, which the route above serves.
 
 ## The back button
 
-The markdown view renders a "← Back" button automatically. It navigates to `#/{resource}/{id}` (the edit form).
+The markdown view renders a "← Back" button only when the spec has `metadata.back`. The button dispatches that action — above, a `navigate` to the post's edit form at `#/posts/42`.
 
 ## Markdown field type in forms
 

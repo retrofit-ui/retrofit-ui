@@ -1,41 +1,18 @@
 import '@shoelace-style/shoelace/dist/components/drawer/drawer.js';
 import '@shoelace-style/shoelace/dist/components/icon-button/icon-button.js';
-import { HashRouter, Route, useLocation } from '@solidjs/router';
-import { createSignal, For, Show } from 'solid-js';
-import { CalendarView } from './CalendarView';
-import { ApiBaseContext } from './context';
-import { FormView } from './FormView';
-import { MarkdownView } from './MarkdownView';
-import { createRenderer, type Renderer } from './renderer';
-import { StatView } from './StatView';
-import { TableView } from './TableView';
-import { TimelineView } from './TimelineView';
-import { TreeView } from './TreeView';
+import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
+import type {
+  NavItem,
+  RetrofitConfig,
+  RouteSpec,
+  Spec,
+} from '@retrofit-ui/core';
+import { HashRouter, useLocation, useParams } from '@solidjs/router';
+import { createResource, createSignal, For, Show } from 'solid-js';
+import { ActionHandlers } from './actions';
+import { RenderSpec } from './kinds';
+import type { Renderer } from './renderer';
 import { ToastContainer } from './toast';
-
-export { ApiBaseContext };
-
-export interface NavItem {
-  label: string;
-  href: string;
-  icon?: string;
-}
-
-// Fallback nav shown when /retrofit.json doesn't declare one — keeps the
-// SPA feeling like a real dashboard even for minimal example servers.
-// Servers opt out by setting `nav` to `null`, `false`, or `[]`.
-const DEFAULT_NAV: NavItem[] = [{ label: 'Home', href: '/', icon: 'house' }];
-
-function Landing() {
-  return (
-    <div class="retrofit-view">
-      <h1 class="retrofit-page-title">Retrofit UI</h1>
-      <p>
-        Navigate to <code>#/&lt;resource&gt;</code> to get started.
-      </p>
-    </div>
-  );
-}
 
 function Sidebar(props: {
   title?: string;
@@ -84,27 +61,91 @@ function Sidebar(props: {
   );
 }
 
-export function App(props: {
-  apiBase?: string;
-  /**
-   * Nav items. `undefined` falls back to the built-in default (a single
-   * "Home" link at `/`). Pass an empty array to hide the sidebar
-   * entirely.
-   */
-  nav?: NavItem[];
-  title?: string;
-  /** Kinds and actions the shell renders with. Defaults to the built-ins. */
-  renderer?: Renderer;
-}) {
-  const nav = () => props.nav ?? DEFAULT_NAV;
-  const renderer = props.renderer ?? createRenderer();
+/** The route's spec url: `apiBase` plus `spec`, its `{name}`s filled from `:name` params. */
+export function specUrl(
+  apiBase: string,
+  route: RouteSpec,
+  params: Readonly<Record<string, string | undefined>>,
+): string {
+  const path = route.spec.replace(/\{(\w+)\}/g, (_, name: string) =>
+    encodeURIComponent(params[name] ?? ''),
+  );
+  return `${apiBase.replace(/\/+$/, '')}${path}`;
+}
+
+async function fetchSpec(url: string): Promise<Spec> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
+  return (await res.json()) as Spec;
+}
+
+/**
+ * One route's screen: fetches the route's spec and renders it by kind. The
+ * screen owns its spec, so `refresh` (dispatched by anything inside it)
+ * refetches it.
+ */
+function RouteScreen(props: { route: RouteSpec; apiBase: string }) {
+  const params = useParams();
+  const url = () => specUrl(props.apiBase, props.route, params);
+  return (
+    // Keyed by url: moving between e.g. /contacts/1 and /contacts/2 starts
+    // the screen fresh, rather than leaving form state from the last one.
+    <Show when={url()} keyed>
+      {(current) => {
+        const [spec, { refetch }] = createResource(() => current, fetchSpec);
+        return (
+          <ActionHandlers handlers={{ refresh: () => void refetch() }}>
+            <Show when={spec.error}>
+              <p class="retrofit-error-message">{String(spec.error)}</p>
+            </Show>
+            <Show
+              when={spec.latest}
+              fallback={
+                <Show when={spec.loading}>
+                  <div class="retrofit-view">
+                    <sl-skeleton effect="sheen" />
+                  </div>
+                </Show>
+              }
+            >
+              {(s) => <RenderSpec spec={s()} />}
+            </Show>
+          </ActionHandlers>
+        );
+      }}
+    </Show>
+  );
+}
+
+function NotFound() {
+  const location = useLocation();
+  return (
+    <div class="retrofit-view">
+      <p class="retrofit-error-message">
+        No route for "{location.pathname}" in /retrofit.json.
+      </p>
+    </div>
+  );
+}
+
+/** The hosted app: the sidebar, plus one screen per route in `config.routes`. */
+export function App(props: { config: RetrofitConfig; renderer: Renderer }) {
+  const nav = () => props.config.nav ?? [];
+  const apiBase = () => props.config.apiBase ?? '/api/ui';
   // Drawer is hidden by default; no persistence across reloads. Drawer
   // semantics are "transient — open to navigate, close after" rather
   // than a persistent sidebar preference.
   const [open, setOpen] = createSignal(false);
+  const routes = () => [
+    ...props.config.routes.map((route) => ({
+      path: route.path,
+      component: () => <RouteScreen route={route} apiBase={apiBase()} />,
+    })),
+    { path: '*404', component: NotFound },
+  ];
 
   return (
-    <renderer.Root apiBase={props.apiBase ?? '/api/ui'}>
+    <props.renderer.Root>
       <HashRouter
         root={(routerProps) => (
           <div
@@ -113,7 +154,7 @@ export function App(props: {
           >
             <Show when={nav().length > 0}>
               <Sidebar
-                title={props.title}
+                title={props.config.title}
                 nav={nav()}
                 open={open()}
                 onHide={() => setOpen(false)}
@@ -134,18 +175,9 @@ export function App(props: {
           </div>
         )}
       >
-        <Route path="/" component={Landing} />
-        <Route path="/:resource" component={TableView} />
-        <Route path="/:resource/tree" component={TreeView} />
-        <Route path="/:resource/stats" component={StatView} />
-        <Route path="/:resource/new" component={FormView} />
-        <Route path="/:resource/timeline" component={TimelineView} />
-        <Route path="/:resource/calendar" component={CalendarView} />
-        <Route path="/:resource/:id/render" component={MarkdownView} />
-        <Route path="/:resource/:id/timeline" component={TimelineView} />
-        <Route path="/:resource/:id" component={FormView} />
+        {routes()}
       </HashRouter>
       <ToastContainer />
-    </renderer.Root>
+    </props.renderer.Root>
   );
 }

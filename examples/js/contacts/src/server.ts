@@ -1,3 +1,8 @@
+import {
+  crudRoutes,
+  type RetrofitConfig,
+  route,
+} from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import type { Contact } from './schemas';
@@ -35,19 +40,34 @@ app.delete('/contacts/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme: contactsTheme }),
-);
+// Every screen the SPA can show: a hash route and the spec (under apiBase)
+// it renders. More specific paths first — `/contacts/new` before `/:id`.
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  theme: contactsTheme,
+  routes: [
+    ...crudRoutes('contacts'),
+    route('/contacts-by-type'),
+    route('/dashboard/stats'),
+  ],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
 app.use(express.static(distPath));
 
 app.get('/api/ui/contacts', (_req, res) =>
   res.json(buildContactsPageSpec(store.all().length)),
 );
 
+app.get('/api/ui/contacts/new', (_req, res) =>
+  res.json(buildContactFormSpec(store.all().length, undefined)),
+);
+
 app.get('/api/ui/contacts/:id', (req, res) => {
-  const { id } = req.params;
-  const entity =
-    id !== 'new' ? (store.find(id) as Contact | undefined) : undefined;
+  const entity = store.find(req.params.id) as Contact | undefined;
+  if (!entity) {
+    res.status(404).json({ error: `No contact ${req.params.id}` });
+    return;
+  }
   res.json(buildContactFormSpec(store.all().length, entity));
 });
 

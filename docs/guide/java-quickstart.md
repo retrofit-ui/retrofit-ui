@@ -2,6 +2,10 @@
 
 Get a working table view with Spring Boot in under five minutes.
 
+::: warning The hosted SPA doesn't work with the Java starter yet
+The hosted SPA now requires a route table: `/retrofit.json` must declare `routes` (see [Hosted SPA](/guide/hosted-spa#the-route-table)), and links between screens must arrive in the specs. The Spring Boot starter hasn't been updated for this. Its `/retrofit.json` returns only `apiBase` and `theme`, so the SPA shows a "has no routes" error instead of your screens; its `TableSpec`/`FormSpec` records also carry no `kind`, and the SPA ignores `find`. The steps below describe the starter as it is today, pending a follow-up release.
+:::
+
 ## Add the dependency
 
 ::: code-group
@@ -69,7 +73,7 @@ public class ItemController {
 }
 ```
 
-Start the app and open `http://localhost:8080/retrofit-ui`. The SPA loads and navigates to `#/items`, showing a table with three columns.
+Start the app and open `http://localhost:8080/retrofit-ui`. With the current starter, the SPA loads and reports that `/retrofit.json` has no routes (see the warning above) — it won't show this table until the starter serves a route table.
 
 ## Configuration
 
@@ -111,13 +115,13 @@ public FormSpec itemFormSpec(@PathVariable String id) {
 }
 ```
 
-Also wire `find` on the table spec so rows become clickable:
+The Java builder can also wire `find` on the table spec; the current SPA ignores it (row clicks now need a per-row link, which the Java builder can't express yet):
 
 ```java
 TableSpec.builder()
     // ...columns...
     .list(EndpointDirective.get("/items"))
-    .find(EndpointDirective.get("/items/{id}"))   // enables row clicks
+    .find(EndpointDirective.get("/items/{id}"))   // ignored by the current SPA
     .create(EndpointDirective.post("/items"))
     .build()
 ```

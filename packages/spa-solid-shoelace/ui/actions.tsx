@@ -90,12 +90,9 @@ export const builtinActions = {
     if (action.to.startsWith('#')) window.location.hash = action.to.slice(1);
     else window.location.assign(action.to);
   },
-  refresh: (action) => {
-    console.warn(
-      '[retrofit-ui] "refresh" dispatched but nothing above it owns a spec to refresh',
-      action,
-    );
-  },
+  // Built-in views dispatch `refresh` after every write. With nothing above
+  // owning a spec (e.g. a spec rendered inline by an app), there's nothing to do.
+  refresh: () => {},
 } satisfies ActionHandlers;
 
 function chain(handlers: ActionHandlers, parent: Untyped): Untyped {

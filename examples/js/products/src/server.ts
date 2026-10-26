@@ -7,7 +7,14 @@
  * it appears in the product form immediately.
  */
 
-import { formSpec, TableView, TreeView } from '@retrofit-ui/builder-zod';
+import {
+  crudRoutes,
+  formSpec,
+  type RetrofitConfig,
+  route,
+  TableView,
+  TreeView,
+} from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
 import { z } from 'zod';
@@ -24,8 +31,12 @@ app.use(express.json());
 
 // ── Category REST endpoints ─────────────────────────────────────────────────
 
+// Each category carries its finished UI link: the tree view's "Edit" button
+// opens the selected node's `link` (see linkField below).
 app.get('/categories', (_req, res) => {
-  res.json(categoryStore.all());
+  res.json(
+    categoryStore.all().map((c) => ({ ...c, link: `#/categories/${c.id}` })),
+  );
 });
 app.get('/categories/:id', (req, res) => {
   res.json(categoryStore.find(req.params.id));
@@ -69,11 +80,26 @@ app.post('/test/reset', (_req, res) => {
 });
 
 // ── Serve the SPA bundle + its config ───────────────────────────────────────
-// The SPA fetches /retrofit.json for its apiBase, then renders specs from
-// /api/ui/*. Any server in any language can serve the bundle the same way —
+// The SPA fetches /retrofit.json for its apiBase and routes, then renders
+// each route's spec from /api/ui/*. Any server in any language can serve the bundle the same way —
 // see @retrofit-ui/spa-solid-shoelace.
 
-app.get('/retrofit.json', (_req, res) => res.json({ apiBase: '/api/ui' }));
+// Route order matters: the static /categories/tree must come before
+// /categories/:id (crudRoutes puts /new before /:id itself).
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  nav: [
+    { label: 'Category Tree', href: '/categories/tree', icon: 'diagram-3' },
+    { label: 'Categories', href: '/categories', icon: 'list' },
+    { label: 'Products', href: '/products', icon: 'box' },
+  ],
+  routes: [
+    route('/categories/tree'),
+    ...crudRoutes('categories'),
+    ...crudRoutes('products'),
+  ],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
 app.use(express.static(distPath));
 
 // GET /api/ui/categories/tree → TreeSpec
@@ -85,8 +111,8 @@ app.get('/api/ui/categories/tree', (_req, res) => {
       .parentField('parentId')
       .labelField('name')
       .selection('single')
-      .create({ method: 'POST', url: '/categories' })
-      .update({ method: 'PUT', url: '/categories/{id}' })
+      .linkField('link')
+      .toolbar('New', { type: 'navigate', to: '#/categories/new' })
       .delete({ method: 'DELETE', url: '/categories/{id}' })
       .metadata({ title: 'Category Tree' })
       .build(),
@@ -98,17 +124,17 @@ app.get('/api/ui/categories', (_req, res) => {
   res.json(
     TableView.forRows(CategorySchema, categoryStore.all())
       .columnOverride('parentId', { label: 'Parent ID' })
-      .find({ method: 'GET', url: '/categories/{id}' })
-      .create({ method: 'POST', url: '/categories' })
+      .rowLink((row) => `#/categories/${String(row.id)}`)
+      .toolbar('New', { type: 'navigate', to: '#/categories/new' })
       .build(),
   );
 });
 
-// GET /api/ui/categories/:id → FormSpec
-app.get('/api/ui/categories/:id', (req, res) => {
-  const { id } = req.params;
-  const entity = id !== 'new' ? categoryStore.find(id) : null;
-  const builder = formSpec(CategorySchema, CreateCategorySchema)
+// GET /api/ui/categories/new and /api/ui/categories/:id → FormSpec.
+// Create and edit forms are built per request with their endpoints resolved here.
+function categoryForm() {
+  return formSpec(CategorySchema, CreateCategorySchema)
+    .title('Category')
     .fieldOverride('parentId', {
       type: 'select',
       label: 'Parent Category',
@@ -118,11 +144,31 @@ app.get('/api/ui/categories/:id', (req, res) => {
         value: String(o.value),
       })),
     })
-    .create({ method: 'POST', url: '/categories' })
-    .update({ method: 'PUT', url: '/categories/{id}' })
-    .delete({ method: 'DELETE', url: '/categories/{id}' });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(builder.build());
+    .onDone({ type: 'navigate', to: '#/categories' });
+}
+
+// /new must be registered before /:id so Express doesn't treat 'new' as an id
+app.get('/api/ui/categories/new', (_req, res) => {
+  res.json(
+    categoryForm().create({ method: 'POST', url: '/categories' }).build(),
+  );
+});
+
+app.get('/api/ui/categories/:id', (req, res) => {
+  const entity = categoryStore.find(req.params.id);
+  if (!entity) {
+    res.status(404).json({ error: `No category ${req.params.id}` });
+    return;
+  }
+  res.json(
+    categoryForm()
+      .edit()
+      .values(entity as Record<string, unknown>)
+      .params({ id: entity.id })
+      .update({ method: 'PUT', url: '/categories/{id}' })
+      .delete({ method: 'DELETE', url: '/categories/{id}' })
+      .build(),
+  );
 });
 
 // GET /api/ui/products → TableSpec with enriched categoryName column
@@ -139,17 +185,16 @@ app.get('/api/ui/products', (_req, res) => {
     )
       .visibleColumns(['name', 'sku', 'price', 'categoryName'])
       .columnOverride('categoryName', { label: 'Category' })
-      .find({ method: 'GET', url: '/products/{id}' })
-      .create({ method: 'POST', url: '/products' })
+      .rowLink((row) => `#/products/${String(row.id)}`)
+      .toolbar('New', { type: 'navigate', to: '#/products/new' })
       .build(),
   );
 });
 
-// GET /api/ui/products/:id → FormSpec
-app.get('/api/ui/products/:id', (req, res) => {
-  const { id } = req.params;
-  const entity = id !== 'new' ? productStore.find(id) : null;
-  const builder = formSpec(ProductSchema, CreateProductSchema)
+// GET /api/ui/products/new and /api/ui/products/:id → FormSpec
+function productForm() {
+  return formSpec(ProductSchema, CreateProductSchema)
+    .title('Product')
     .fieldOverride('categoryId', {
       type: 'select',
       label: 'Category',
@@ -159,11 +204,28 @@ app.get('/api/ui/products/:id', (req, res) => {
       })),
     })
     .fieldOverride('price', { validation: { min: 0 } })
-    .create({ method: 'POST', url: '/products' })
-    .update({ method: 'PUT', url: '/products/{id}' })
-    .delete({ method: 'DELETE', url: '/products/{id}' });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  res.json(builder.build());
+    .onDone({ type: 'navigate', to: '#/products' });
+}
+
+app.get('/api/ui/products/new', (_req, res) => {
+  res.json(productForm().create({ method: 'POST', url: '/products' }).build());
+});
+
+app.get('/api/ui/products/:id', (req, res) => {
+  const entity = productStore.find(req.params.id);
+  if (!entity) {
+    res.status(404).json({ error: `No product ${req.params.id}` });
+    return;
+  }
+  res.json(
+    productForm()
+      .edit()
+      .values(entity as Record<string, unknown>)
+      .params({ id: entity.id })
+      .update({ method: 'PUT', url: '/products/{id}' })
+      .delete({ method: 'DELETE', url: '/products/{id}' })
+      .build(),
+  );
 });
 
 const PORT = process.env.PORT ?? 3005;

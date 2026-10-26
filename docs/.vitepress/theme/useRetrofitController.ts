@@ -15,6 +15,6 @@ let _controller: Controller | null = null;
 export async function getController(): Promise<Controller> {
   if (_controller) return _controller;
   const { init } = await import('@retrofit-ui/spa-solid-shoelace/renderer');
-  _controller = init({ rootElement: document.body, apiBase: '' }) as Controller;
+  _controller = init({ rootElement: document.body }) as Controller;
   return _controller;
 }

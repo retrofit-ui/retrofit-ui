@@ -1,6 +1,6 @@
 # Form View
 
-The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{id}`. It renders a create or edit form with validation, and optionally a delete button.
+The form view is driven by a `FormSpec` — in the hosted SPA, the spec served for a route such as `#/posts/new` or `#/posts/:id`. It renders a create or edit form with validation, and optionally a delete button.
 
 <PreviewBlock>
 
@@ -37,7 +37,10 @@ The form view is driven by a `FormSpec` returned from `GET /api/ui/{resource}/{i
 
 ```typescript
 formSpec(PostSchema, UpdatePostSchema)
-  .find({ method: 'GET', url: '/posts/{id}' })
+  .title('Post')
+  .edit()
+  .values(post)
+  .params({ id: post.id })
   .update({ method: 'PUT', url: '/posts/{id}' })
   .delete({ method: 'DELETE', url: '/posts/{id}' })
   .build()
@@ -60,21 +63,38 @@ const PostSchema = z.object({
 
 const UpdatePostSchema = PostSchema.omit({ id: true });
 
+function postForm() {
+  return formSpec(PostSchema, UpdatePostSchema)
+    .title('Post') // headings read "New Post" / "Edit Post"
+    .onDone({ type: 'navigate', to: '#/posts' }); // after save/delete, and Back
+}
+
+// Routes in /retrofit.json: crudRoutes('posts') → #/posts/new and #/posts/:id.
 // URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+// Register /new before /:id so "new" is never read as an id.
+app.get('/admin-ui/posts/new', (_req, res) => {
+  res.json(postForm().create({ method: 'POST', url: '/posts' }).build());
+});
+
 app.get('/admin-ui/posts/:id', (req, res) => {
+  const post = store.find(req.params.id);
+  if (!post) {
+    res.status(404).json({ error: `No post ${req.params.id}` });
+    return;
+  }
   res.json(
-    retrofit(
-      formSpec(PostSchema, UpdatePostSchema)
-        .find({ method: 'GET', url: '/posts/{id}' })
-        .update({ method: 'PUT', url: '/posts/{id}' })
-        .delete({ method: 'DELETE', url: '/posts/{id}' })
-        .build(),
-    ),
+    postForm()
+      .edit()                  // submits to update, offers delete
+      .values(post)            // pre-populates the fields
+      .params({ id: post.id }) // fills {id} in the urls, here on the server
+      .update({ method: 'PUT', url: '/posts/{id}' })
+      .delete({ method: 'DELETE', url: '/posts/{id}' })
+      .build(),
   );
 });
 ```
 
-When `id` is `"new"`, the SPA shows a blank create form. When it's an actual ID, the SPA fetches the entity from the `find` endpoint and pre-populates the fields.
+A form is a create form unless it says otherwise: `.edit()` sets `metadata.mode: 'edit'`, which submits to `update` and shows the delete button. The record's current values travel in the spec (`values()` sets each field's `value`), and `params()` resolves the endpoint urls before the spec leaves the server — the client receives `/posts/7`, not `/posts/{id}`.
 
 ## Field types
 
@@ -327,7 +347,9 @@ const PostSchema = z.object({
 const UpdatePostSchema = PostSchema.pick({ title: true, status: true });
 
 formSpec(PostSchema, UpdatePostSchema)
-  .find({ method: 'GET', url: '/posts/{id}' })
+  .edit()
+  .values(post)
+  .params({ id: post.id })
   .update({ method: 'PUT', url: '/posts/{id}' })
   .build()
 ```
@@ -338,36 +360,44 @@ formSpec(PostSchema, UpdatePostSchema)
 
 | Endpoint | Effect |
 |----------|--------|
-| `find` | Fetches the entity to pre-populate the form. Required for edit mode. |
-| `create` | Wires the submit button for new entities. |
-| `update` | Wires the save button for existing entities. |
-| `delete` | Shows a "Delete" button that confirms then calls this endpoint. |
+| `create` | Wires the submit button of a create form. |
+| `update` | Wires the save button of an edit form (`.edit()`). |
+| `delete` | On an edit form, shows a "Delete" button that confirms then calls this endpoint. |
 
-Only wire the endpoints your use case needs. A read-only detail view wires only `find`.
+Endpoints arrive resolved: the client calls each url exactly as the spec gives it, so fill any `{param}` with `.params()` (or build the url yourself). There is no `find` endpoint — an edit form carries its values.
+
+## Metadata
+
+| Builder method | Spec field | Effect |
+|----------------|------------|--------|
+| `.title(t)` | `metadata.title` | Heading: "New *t*" on a create form, "Edit *t*" on an edit form ("New"/"Edit" without one). Inside a page, shown as is. |
+| `.edit()` | `metadata.mode: 'edit'` | Submit goes to `update`; delete is offered. The default, `'create'`, submits to `create`. |
+| `.onDone(action)` | `metadata.onDone` | Dispatched after a successful save or delete, and by the "← Back" button (shown outside a page when `onDone` is set) — typically a `navigate` back to the list. |
+| `.submitLabel(l)` | `metadata.submitLabel` | Submit button text. Defaults to "Create", or "Save" when editing. |
+| `.params(p)` | — | Fills `{name}` in every endpoint url with `p[name]` on the server. |
+| `.autoSubmit()` | `metadata.autoSubmit` | Inside a page, writes each change to the page's filters instead of submitting. |
+
+A create form starts empty again after a successful submit; an edit form keeps what was saved.
 
 ## Making the table row clickable
 
-For the form view to be reachable from a table, wire `find` on the `TableSpec` too:
+For the form view to be reachable from a table, give each row a link to the form's route — see [Row links](/guide/table-view#row-links):
 
 ```typescript
-// Table spec — makes rows clickable
-TableView.schema(PostSchema)
-  .find({ method: 'GET', url: '/posts/{id}' })
-  // ...
+// Table spec — each row opens #/posts/:id
+TableView.forRows(PostSchema, store.all())
+  .rowLink((row) => `#/posts/${String(row.id)}`)
+  .toolbar('New', { type: 'navigate', to: '#/posts/new' })
+  .build();
 ```
 
-```typescript
-// Form spec — handles the edit page
-app.get('/admin-ui/posts/:id', (req, res) => {
-  res.json(retrofit(formSpec(PostSchema, UpdatePostSchema)
-    .find({ method: 'GET', url: '/posts/{id}' })
-    .update({ method: 'PUT', url: '/posts/{id}' })
-    .delete({ method: 'DELETE', url: '/posts/{id}' })
-    .build()))
-});
-```
+The route `#/posts/:id` fetches the edit form from `/admin-ui/posts/{id}` (the handler above); its `onDone` brings the user back to `#/posts`.
 
 ## Java
+
+::: warning
+The Java starter hasn't caught up with the current form contract: its builders set no `kind`, `mode`, `onDone` or field values, and the SPA ignores its `find`. See the [Java Quickstart](/guide/java-quickstart).
+:::
 
 ```java
 @GetMapping("/admin-ui/items/{id}")

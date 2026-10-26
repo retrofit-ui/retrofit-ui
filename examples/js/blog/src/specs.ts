@@ -46,15 +46,18 @@ export function buildPostsTableSpec(rows: Post[]) {
         archived: 'warning',
       },
     })
-    .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
-    .rowAction({ label: 'History', routePattern: '/{id}/timeline' })
-    .find({ method: 'GET', url: '/posts/{id}' })
-    .create({ method: 'POST', url: '/posts' })
+    .rowLink((row) => `#/posts/${String(row.id)}`)
+    .rowAction('Preview', (row) => `#/posts/${String(row.id)}/render`)
+    .rowAction('History', (row) => `#/posts/${String(row.id)}/timeline`)
+    .toolbar('New', { type: 'navigate', to: '#/posts/new' })
+    .metadata({ title: 'Posts' })
     .build();
 }
 
+/** A post's edit form, or the create form when `entity` is null. */
 export function buildPostFormSpec(entity: Post | null) {
   const builder = formSpec(PostSchema, UpdatePostSchema)
+    .title('Post')
     .fieldOverride('body', { type: 'markdown' })
     .fieldOverride('slug', {
       helpText: 'lowercase, hyphens only',
@@ -68,18 +71,27 @@ export function buildPostFormSpec(entity: Post | null) {
       options: AUTHORS.map((a) => ({ label: a.name, value: a.id })),
     })
     .fieldOverride('status', { type: 'radio-group' })
-    .create({ method: 'POST', url: '/posts' })
+    .onDone({ type: 'navigate', to: '#/posts' });
+  if (!entity) {
+    return builder.create({ method: 'POST', url: '/posts' }).build();
+  }
+  return builder
+    .edit()
+    .values(entity as Record<string, unknown>)
+    .params({ id: entity.id })
     .update({ method: 'PUT', url: '/posts/{id}' })
-    .delete({ method: 'DELETE', url: '/posts/{id}' });
-  if (entity) builder.values(entity as Record<string, unknown>);
-  return builder.build();
+    .delete({ method: 'DELETE', url: '/posts/{id}' })
+    .build();
 }
 
 export function buildPostRenderSpec(post: Post): MarkdownViewSpec {
   return {
     kind: 'markdown',
     content: String(post.body ?? ''),
-    metadata: { title: 'Preview' },
+    metadata: {
+      title: 'Preview',
+      back: { type: 'navigate', to: `#/posts/${String(post.id)}` },
+    },
   };
 }
 
@@ -104,6 +116,7 @@ export function buildPostTimelineSpec(post: Post) {
     },
   ])
     .title('Post History')
+    .back({ type: 'navigate', to: `#/posts/${String(post.id)}` })
     .build();
 }
 

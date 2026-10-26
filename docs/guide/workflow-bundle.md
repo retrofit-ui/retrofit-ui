@@ -6,7 +6,7 @@ into a single unit. See the [Higher-Order Components overview](/guide/higher-ord
 for how it relates to `pageSpec`.
 :::
 
-`TableFormWorkflowBundle` combines a table view and a form view into a single builder, producing two complementary specs you serve on a collection route and an item route. It is the right choice when you want a standard list-then-edit CRUD flow and do not need inline table editing.
+`TableFormWorkflowBundle` combines a table view and a form view into a single builder, producing a table spec plus its create and edit forms, which you serve on a list route, a create route and an item route. It is the right choice when you want a standard list-then-edit CRUD flow and do not need inline table editing.
 
 <PreviewBlock>
 
@@ -63,12 +63,15 @@ for how it relates to `pageSpec`.
 ```typescript
 const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .updateSchema(UpdateContactSchema)
+  .form((f) => f.title('Contact'))
+  .route('/contacts')
   .list({ method: 'GET', url: '/contacts' })
-  .find({ method: 'GET', url: '/contacts/{id}' })
   .create({ method: 'POST', url: '/contacts' })
   .update({ method: 'PUT', url: '/contacts/{id}' })
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
+
+res.json(bundle.editForm(contact, { id: contact.id }));
 ```
 
 :::
@@ -77,14 +80,14 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
 
 | Pattern | Use when |
 |---------|----------|
-| `TableFormWorkflowBundle` | Standard list → click row → edit form flow |
+| `TableFormWorkflowBundle` | Standard list → create/edit form flow from one schema |
 | `TableView` + separate `formSpec` | You need different schemas or custom routing per view |
 | `TableView` with `updateSchema` | You want inline cell editing without a separate form page |
 
 ## Basic setup
 
 ```typescript
-import { TableFormWorkflowBundle } from '@retrofit-ui/builder-zod';
+import { crudRoutes, TableFormWorkflowBundle } from '@retrofit-ui/builder-zod';
 import { z } from 'zod';
 
 const ContactSchema = z.object({
@@ -100,39 +103,61 @@ const UpdateContactSchema = ContactSchema.omit({ id: true });
 
 const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .updateSchema(UpdateContactSchema)
+  .form((f) => f.title('Contact')) // "New Contact" / "Edit Contact"
+  .route('/contacts')              // the hash route the screens live under
   .list({ method: 'GET', url: '/contacts' })
-  .find({ method: 'GET', url: '/contacts/{id}' })
   .create({ method: 'POST', url: '/contacts' })
   .update({ method: 'PUT', url: '/contacts/{id}' })
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
 
-// Serve the two specs. The table spec goes on the collection route; the form
-// spec on the item route, with the entity's values baked onto the fields for edit.
+// /retrofit.json: the three screens, #/contacts, #/contacts/new, #/contacts/:id
 // URL prefix below is arbitrary — pick anything and match `apiBase` to it.
+app.get('/retrofit.json', (_req, res) =>
+  res.json({ apiBase: '/admin-ui', routes: crudRoutes('contacts') }),
+);
+
 app.get('/admin-ui/contacts', (_req, res) => res.json(bundle.tableSpec));
 
+// /new before /:id, so Express never reads "new" as an id
+app.get('/admin-ui/contacts/new', (_req, res) => res.json(bundle.createForm));
+
 app.get('/admin-ui/contacts/:id', (req, res) => {
-  const { id } = req.params;
-  const entity =
-    id !== 'new'
-      ? (store.find(id) as Record<string, unknown> | undefined)
-      : undefined;
-  const fields = entity
-    ? bundle.formSpec.fields.map((f) =>
-        entity[f.name] !== undefined ? { ...f, value: entity[f.name] } : f,
-      )
-    : bundle.formSpec.fields;
-  res.json({ ...bundle.formSpec, fields });
+  const contact = store.find(req.params.id);
+  if (!contact) {
+    res.status(404).json({ error: `No contact ${req.params.id}` });
+    return;
+  }
+  // Prefilled with the contact's values; update/delete urls resolved to its id
+  res.json(bundle.editForm(contact, { id: contact.id }));
 });
 ```
 
-The two routes you wire:
+The three routes you wire:
 
 | Route | Spec | Notes |
 |-------|------|-------|
-| `GET /api/ui/contacts` | `TableSpec` | Clicking a row navigates to the form |
-| `GET /api/ui/contacts/:id` | `FormSpec` | `"new"` for create, an ID for edit |
+| `GET /admin-ui/contacts` | `bundle.tableSpec` | The list, with a "New" toolbar button |
+| `GET /admin-ui/contacts/new` | `bundle.createForm` | Submits to `create` |
+| `GET /admin-ui/contacts/:id` | `bundle.editForm(values, params)` | Prefilled; submits to `update` with `{param}`s filled from `params`, and offers `delete` |
+
+## Routing with `.route()`
+
+`.route(path)` tells the bundle which hash route its screens live under — the same resource `crudRoutes` declares. From it the bundle builds the navigation into the specs:
+
+- the table gets a **New** toolbar button navigating to `#<path>/new` (only when `create` is wired);
+- both forms get `onDone: { type: 'navigate', to: '#<path>' }`, so saving, deleting or pressing Back returns to the list.
+
+Without `.route()` the specs carry no navigation at all.
+
+::: warning Table rows aren't linked
+The bundle doesn't give the table's rows a link, so clicking a row doesn't open its edit form. Rows come from `list`, which the builder never sees: have your list endpoint return a link per row and set `rowLinkField` on the table spec yourself:
+
+```typescript
+// GET /contacts returns [{ id: 7, …, link: '#/contacts/7' }, …]
+res.json({ ...bundle.tableSpec, rowLinkField: 'link' });
+```
+:::
 
 ## Customising the table
 
@@ -150,7 +175,7 @@ TableFormWorkflowBundle.schema(ContactSchema)
   .build();
 ```
 
-The `table()` callback receives a `TableCustomizer` which exposes `columnOverride`. The same `visibleColumns` and `rowAction` methods from `TableViewBuilder` are also available.
+The `table()` callback receives a `TableCustomizer`, which exposes `columnOverride` and `metadata` (e.g. a title or pagination). Other `TableViewBuilder` methods aren't available on it; to change anything else, spread `bundle.tableSpec` into a new object before serving it.
 
 ## Customising the form
 
@@ -161,6 +186,7 @@ TableFormWorkflowBundle.schema(ContactSchema)
   .updateSchema(UpdateContactSchema)
   .form((f) =>
     f
+      .title('Contact') // headings: "New Contact", "Edit Contact"
       .fieldOverride('notes', { type: 'textarea' })
       .fieldOverride('phone', {
         placeholder: '+1 555 000 0000',
@@ -179,7 +205,7 @@ If you want inline cell editing, use `TableView.schema(...).updateSchema(...)` d
 
 ## Accessing the specs directly
 
-`bundle.tableSpec` and `bundle.formSpec` are plain `TableSpec` and `FormSpec` objects if you need to inspect or extend them before serving:
+`bundle.tableSpec`, `bundle.createForm` and `bundle.editForm(values, params)` are plain `TableSpec` and `FormSpec` objects if you need to inspect or extend them before serving:
 
 ```typescript
 const bundle = TableFormWorkflowBundle.schema(ContactSchema)

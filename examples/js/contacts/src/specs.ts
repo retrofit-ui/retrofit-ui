@@ -3,6 +3,7 @@
 
 import {
   col,
+  type FormSpec,
   filterForm,
   formSpec,
   pageSpec,
@@ -34,26 +35,33 @@ export const contactsTheme = {
 // is needed for pagination in the table metadata; caller supplies it based on
 // its own store size.
 export function buildContactsBundle(totalRows: number) {
-  return TableFormWorkflowBundle.schema(ContactSchema)
-    .updateSchema(UpdateContactSchema)
-    .table((t) =>
-      t
-        .columnOverride('name', { sortable: true })
-        .columnOverride('email', { filterable: true })
-        .metadata({ pagination: { pageSize: 2, totalRows } }),
-    )
-    .form((f) =>
-      f.fieldOverride('notes', { type: 'textarea' }).fieldOverride('phone', {
-        placeholder: '+1 555 000 0000',
-        validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
-      }),
-    )
-    .list({ method: 'GET', url: '/contacts?page={page}&pageSize={pageSize}' })
-    .find({ method: 'GET', url: '/contacts/{id}' })
-    .create({ method: 'POST', url: '/contacts' })
-    .update({ method: 'PUT', url: '/contacts/{id}' })
-    .delete({ method: 'DELETE', url: '/contacts/{id}' })
-    .build();
+  return (
+    TableFormWorkflowBundle.schema(ContactSchema)
+      .updateSchema(UpdateContactSchema)
+      .table((t) =>
+        t
+          .columnOverride('name', { sortable: true })
+          .columnOverride('email', { filterable: true })
+          .metadata({ pagination: { pageSize: 2, totalRows } }),
+      )
+      .form((f) =>
+        f
+          .title('Contact')
+          .fieldOverride('notes', { type: 'textarea' })
+          .fieldOverride('phone', {
+            placeholder: '+1 555 000 0000',
+            validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
+          }),
+      )
+      // The hash route the bundle's screens live under (see crudRoutes in
+      // server.ts): adds the table's "New" button and sends forms back here.
+      .route('/contacts')
+      .list({ method: 'GET', url: '/contacts?page={page}&pageSize={pageSize}' })
+      .create({ method: 'POST', url: '/contacts' })
+      .update({ method: 'PUT', url: '/contacts/{id}' })
+      .delete({ method: 'DELETE', url: '/contacts/{id}' })
+      .build()
+  );
 }
 
 export function buildContactsPageSpec(totalRows: number) {
@@ -65,18 +73,16 @@ export function buildContactsPageSpec(totalRows: number) {
     .build();
 }
 
+// The create form when `entity` is undefined; otherwise that contact's edit
+// form, prefilled and with its update/delete urls resolved to its id.
 export function buildContactFormSpec(
   totalRows: number,
   entity: Contact | undefined,
-) {
+): FormSpec {
   const bundle = buildContactsBundle(totalRows);
-  const fields = entity
-    ? bundle.formSpec.fields.map((f) => {
-        const val = (entity as Record<string, unknown>)[f.name];
-        return val !== undefined ? { ...f, value: val } : f;
-      })
-    : bundle.formSpec.fields;
-  return { ...bundle.formSpec, fields };
+  return entity
+    ? bundle.editForm(entity, { id: entity.id })
+    : bundle.createForm;
 }
 
 export function buildContactsByTypeSpec() {

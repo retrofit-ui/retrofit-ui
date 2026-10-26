@@ -256,6 +256,32 @@ describe('actions', () => {
     await vi.waitFor(() => expect(results).toEqual(['wrapped(kit:7)']));
   });
 
+  it('accepts interface-typed kit actions', () => {
+    // Type-level: kits declare actions as interfaces, which have no index
+    // signature; dispatch must accept them. Checked by `tsc`, run by typecheck.
+    interface AddToCart {
+      type: 'test.add-to-cart';
+      mode: 'now' | 'later';
+    }
+    function Probe() {
+      const { dispatch } = useActions();
+      const add: AddToCart = { type: 'test.add-to-cart', mode: 'now' };
+      void dispatch(add, { id: 1 }).catch(() => {});
+      void dispatch({ type: 'navigate', to: '#/x' }).catch(() => {});
+      // Known gap: `{ type: 'navigate' }` without `to` also type-checks, as
+      // it matches ActionDescriptor; TS can't exclude built-in type names
+      // from `string`. The navigate handler would then receive no `to`.
+      return <span />;
+    }
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { Root } = createRenderer({ actions: { navigate: () => {} } });
+    mount(() => (
+      <Root>
+        <Probe />
+      </Root>
+    ));
+  });
+
   it('rejects an action type nobody handles', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const results: unknown[] = [];

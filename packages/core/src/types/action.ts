@@ -35,7 +35,8 @@ export interface RefreshAction {
 
 export type BuiltinAction = HttpAction | NavigateAction | RefreshAction;
 
-/** Any action a spec can carry: a built-in one or a namespaced custom one. */
-export type AnyAction =
-  | BuiltinAction
-  | (ActionDescriptor & Record<string, unknown>);
+/**
+ * Any action a spec can carry: a built-in one, or a namespaced custom one.
+ * A custom action is typed by its own interface extending `ActionDescriptor`.
+ */
+export type AnyAction = BuiltinAction | ActionDescriptor;

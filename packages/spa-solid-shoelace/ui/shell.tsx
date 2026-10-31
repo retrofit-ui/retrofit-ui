@@ -8,7 +8,7 @@ import { type ActionHandlers, createDispatch } from './actions';
 import type { Kit } from './kinds';
 import { createRenderer, mergeActions } from './renderer';
 
-const SHOELACE_CDN =
+export const SHOELACE_CDN =
   'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/';
 
 export interface ShellOptions {
@@ -27,7 +27,7 @@ export interface Shell {
   mount(root: HTMLElement): Promise<() => void>;
 }
 
-function applyTheme(theme: RetrofitTheme | undefined) {
+export function applyTheme(theme: RetrofitTheme | undefined) {
   if (!theme) return;
   for (const [key, value] of Object.entries(theme.cssVariables ?? {})) {
     document.documentElement.style.setProperty(key, value);

@@ -13,6 +13,12 @@ export {
 export { builtinKinds } from './builtins';
 export { FormViewComponent } from './FormView';
 export {
+  createIslands,
+  type InitOptions,
+  type IslandController,
+  type IslandsOptions,
+} from './islands';
+export {
   type AnyKindDefinition,
   defineKind,
   defineKit,

@@ -175,6 +175,15 @@
   background-color: var(--sl-color-neutral-50);
 }
 
+.retrofit-sort-button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
 .retrofit-th {
   padding: var(--sl-spacing-small) var(--sl-spacing-medium);
   font-size: var(--sl-font-size-small);

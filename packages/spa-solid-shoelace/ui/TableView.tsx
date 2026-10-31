@@ -53,6 +53,7 @@ function formatCellValue(col: Column, row: Record<string, unknown>): string {
 }
 
 import {
+  batch,
   createResource,
   createSignal,
   For,
@@ -483,11 +484,14 @@ export function TableViewComponent(props: { spec: TableSpec }) {
     order: 'asc' | 'desc';
   }>();
   const toggleSort = (key: string) =>
-    setSort((s) =>
-      s?.key === key && s.order === 'asc'
-        ? { key, order: 'desc' }
-        : { key, order: 'asc' },
-    );
+    batch(() => {
+      setSort((s) =>
+        s?.key === key && s.order === 'asc'
+          ? { key, order: 'desc' }
+          : { key, order: 'asc' },
+      );
+      setCurrentPage(1);
+    });
 
   const page = usePage();
 
@@ -500,17 +504,10 @@ export function TableViewComponent(props: { spec: TableSpec }) {
         currentPageSize(),
         props.spec.rows,
         page?.filters(),
-        page?.version(),
         sort(),
+        page?.version(),
       ] as const,
-    async ([
-      pageNumber,
-      pageSizeOverride,
-      inlineRows,
-      filters,
-      ,
-      activeSort,
-    ]) => {
+    async ([pageNumber, pageSizeOverride, inlineRows, filters, activeSort]) => {
       if (inlineRows) return inlineRows;
       const ep = props.spec.endpoints?.list;
       if (!ep) return [];
@@ -582,29 +579,33 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                           'text-align': col.alignment,
                           width: col.width,
                         }}
-                        {...(col.sortable && !props.spec.rows
-                          ? {
-                              role: 'button',
-                              tabindex: 0,
-                              'aria-sort':
-                                sort()?.key !== col.key
-                                  ? 'none'
-                                  : sort()?.order === 'asc'
-                                    ? 'ascending'
-                                    : 'descending',
-                              onClick: () => toggleSort(col.key),
-                              onKeyDown: (e: KeyboardEvent) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  toggleSort(col.key);
-                                }
-                              },
-                            }
-                          : {})}
+                        aria-sort={
+                          col.sortable && !props.spec.rows
+                            ? sort()?.key !== col.key
+                              ? 'none'
+                              : sort()?.order === 'asc'
+                                ? 'ascending'
+                                : 'descending'
+                            : undefined
+                        }
                       >
-                        {col.label}
-                        {sort()?.key === col.key &&
-                          (sort()?.order === 'asc' ? ' ▲' : ' ▼')}
+                        <Show
+                          when={col.sortable && !props.spec.rows}
+                          fallback={col.label}
+                        >
+                          <button
+                            type="button"
+                            class="retrofit-sort-button"
+                            onClick={() => toggleSort(col.key)}
+                          >
+                            {col.label}
+                            <Show when={sort()?.key === col.key}>
+                              <span aria-hidden="true">
+                                {sort()?.order === 'asc' ? ' ▲' : ' ▼'}
+                              </span>
+                            </Show>
+                          </button>
+                        </Show>
                       </th>
                     )}
                   </For>

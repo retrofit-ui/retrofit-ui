@@ -161,7 +161,7 @@ TableView.schema(PostSchema)
 
 | Override field | Type | Effect |
 |----------------|------|--------|
-| `sortable` | `boolean` | Shows sort indicator (visual only — sorting is done server-side) |
+| `sortable` | `boolean` | Clicking the header sends `sort=<key>&order=asc\|desc` with the list request; the server sorts |
 | `width` | `string` | CSS width, e.g. `'120px'` |
 | `alignment` | `'left' \| 'center' \| 'right'` | Cell alignment |
 | `label` | `string` | Override the auto-derived column header |

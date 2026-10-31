@@ -630,6 +630,12 @@ describe('table columns', () => {
     return el;
   };
 
+  const btn = (root: HTMLElement, label: string) => {
+    const el = th(root, label).querySelector('button');
+    if (!el) throw new Error(`no ${label} button`);
+    return el;
+  };
+
   it('sorts by a sortable column through query params', async () => {
     const fetched: string[] = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
@@ -641,7 +647,7 @@ describe('table columns', () => {
     await vi.waitFor(() => expect(items()).toEqual(['/items']));
     await vi.waitFor(() => expect(root.querySelector('th')).not.toBeNull());
     expect(th(root, 'Name').getAttribute('aria-sort')).toBe('none');
-    th(root, 'Name').click();
+    btn(root, 'Name').click();
     await vi.waitFor(() =>
       expect(items().at(-1)).toBe('/items?sort=name&order=asc'),
     );
@@ -649,16 +655,12 @@ describe('table columns', () => {
       expect(th(root, 'Name').getAttribute('aria-sort')).toBe('ascending'),
     );
     expect(th(root, 'Age').getAttribute('aria-sort')).toBe('none');
-    // Space and Enter operate the header too.
-    th(root, 'Name').dispatchEvent(
-      new KeyboardEvent('keydown', { key: ' ', bubbles: true }),
-    );
+    // A native button, so Enter and Space click it.
+    btn(root, 'Name').click();
     await vi.waitFor(() =>
       expect(items().at(-1)).toBe('/items?sort=name&order=desc'),
     );
-    th(root, 'Age').dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
-    );
+    btn(root, 'Age').click();
     await vi.waitFor(() =>
       expect(items().at(-1)).toBe('/items?sort=age&order=asc'),
     );
@@ -671,5 +673,34 @@ describe('table columns', () => {
     const root = mount(() => <SpecRenderer spec={table} />);
     await vi.waitFor(() => expect(root.querySelector('th')).not.toBeNull());
     expect(th(root, 'Note').style.width).toBe('12rem');
+  });
+
+  it('resets to page 1 when the sort changes', async () => {
+    const fetched: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      fetched.push(String(input));
+      return new Response('[{"name":"a"}]');
+    });
+    const paged: TableSpec = {
+      ...table,
+      metadata: { pagination: { pageSize: 1, totalRows: 5 } },
+    };
+    const root = mount(() => <SpecRenderer spec={paged} />);
+    await vi.waitFor(() => expect(root.querySelector('th')).not.toBeNull());
+    const next = root.querySelector('sl-icon-button[label="Next page"]');
+    if (!next) throw new Error('no Next button');
+    next.dispatchEvent(new Event('click'));
+    await vi.waitFor(() =>
+      expect(fetched.at(-1)).toBe('/items?page=2&pageSize=1'),
+    );
+    await vi.waitFor(() =>
+      expect(root.querySelector('th button')).not.toBeNull(),
+    );
+    btn(root, 'Name').click();
+    await vi.waitFor(() =>
+      expect(fetched.at(-1)).toBe(
+        '/items?page=1&pageSize=1&sort=name&order=asc',
+      ),
+    );
   });
 });

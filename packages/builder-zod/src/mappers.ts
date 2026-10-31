@@ -8,6 +8,8 @@ type ZodCheckDef = {
   format?: string;
   minimum?: number;
   maximum?: number;
+  value?: number;
+  inclusive?: boolean;
 };
 type ZodCheck = { _zod?: { def: ZodCheckDef } };
 
@@ -90,6 +92,12 @@ function extractValidation(
       hasAny = true;
     } else if (check.check === 'max_length' && check.maximum !== undefined) {
       validation.max = check.maximum;
+      hasAny = true;
+    } else if (check.check === 'greater_than' && check.inclusive) {
+      validation.min = check.value;
+      hasAny = true;
+    } else if (check.check === 'less_than' && check.inclusive) {
+      validation.max = check.value;
       hasAny = true;
     }
   }

@@ -170,3 +170,10 @@ describe('getShape', () => {
     expect(Object.keys(shape)).toEqual(['id', 'name']);
   });
 });
+
+describe('number validation', () => {
+  it('extracts min and max from z.number().min().max()', () => {
+    const field = zodFieldToField('n', z.number().min(1).max(5));
+    expect(field.validation).toMatchObject({ min: 1, max: 5 });
+  });
+});

@@ -31,6 +31,11 @@ declare module 'solid-js' {
       };
       'sl-input': SlBaseProps & {
         type?: string;
+        min?: number;
+        max?: number;
+        minlength?: number;
+        maxlength?: number;
+        pattern?: string;
         value?: string;
         'prop:value'?: string;
         placeholder?: string;
@@ -51,7 +56,7 @@ declare module 'solid-js' {
       };
       'sl-select': SlBaseProps & {
         value?: string;
-        'prop:value'?: string;
+        'prop:value'?: string | string[];
         placeholder?: string;
         multiple?: boolean;
         clearable?: boolean;

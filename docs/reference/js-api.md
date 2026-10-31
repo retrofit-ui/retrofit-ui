@@ -361,8 +361,8 @@ interface Field {
   name: string;
   label: string;
   type: 'text' | 'email' | 'password' | 'number' | 'date' | 'datetime' | 'time'
-      | 'select' | 'multiselect' | 'checkbox' | 'switch' | 'radio' | 'radio-group'
-      | 'textarea' | 'markdown' | 'file' | 'color' | 'tags' | 'rating';
+      | 'select' | 'multiselect' | 'checkbox' | 'switch' | 'radio-group'
+      | 'textarea' | 'markdown' | 'color' | 'tags' | 'rating';
   required?: boolean; // default false
   readOnly?: boolean; // default false
   value?: unknown;    // initial value

@@ -10,15 +10,18 @@ export type FieldType =
   | 'multiselect'
   | 'checkbox'
   | 'switch'
-  | 'radio'
   | 'radio-group'
   | 'textarea'
   | 'markdown'
-  | 'file'
   | 'color'
   | 'tags'
   | 'rating';
 
+/**
+ * For `number` fields `min`/`max` bound the value; for text-like fields they
+ * bound the length. `pattern` is a JS regex source matched against the whole
+ * string.
+ */
 export interface FieldValidation {
   required?: boolean;
   min?: number;

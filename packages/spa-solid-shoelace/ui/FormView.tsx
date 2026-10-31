@@ -263,7 +263,30 @@ function FormEditor(props: FormEditorProps) {
         (Array.isArray(val) && val.length === 0);
       if (field.required && isEmpty) {
         errs[field.name] = `${field.label} is required`;
+        continue;
       }
+      if (isEmpty) continue;
+      const { min, max, pattern } = field.validation ?? {};
+      const label = field.label;
+      if (field.type === 'number') {
+        const n = Number(val);
+        if (min !== undefined && n < min)
+          errs[field.name] = `${label} must be at least ${min}`;
+        else if (max !== undefined && n > max)
+          errs[field.name] = `${label} must be at most ${max}`;
+      } else if (typeof val === 'string') {
+        if (min !== undefined && val.length < min)
+          errs[field.name] = `${label} must be at least ${min} characters`;
+        else if (max !== undefined && val.length > max)
+          errs[field.name] = `${label} must be at most ${max} characters`;
+      }
+      if (
+        !errs[field.name] &&
+        pattern !== undefined &&
+        typeof val === 'string' &&
+        !new RegExp(`^(?:${pattern})$`).test(val)
+      )
+        errs[field.name] = `${label} is invalid`;
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -388,15 +411,26 @@ function FormEditor(props: FormEditorProps) {
                     </Show>
                   </sl-textarea>
                 </Show>
-                <Show when={field.type === 'select'}>
+                <Show
+                  when={field.type === 'select' || field.type === 'multiselect'}
+                >
                   <sl-select
+                    multiple={field.type === 'multiselect' || undefined}
                     label={
                       !hideLabel() && !field.tooltip ? fieldLabel() : undefined
                     }
                     aria-label={fieldLabel()}
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}
-                    prop:value={strVal()}
+                    // shortcut: sl-select joins multiple values with spaces, so
+                    // option values containing spaces are not supported.
+                    prop:value={
+                      field.type === 'multiselect'
+                        ? ([values()[field.name]]
+                            .flat()
+                            .filter((v) => v !== '') as string[])
+                        : strVal()
+                    }
                     invalid={!!err() || undefined}
                     on:sl-change={(e: Event) =>
                       setValue(
@@ -412,7 +446,9 @@ function FormEditor(props: FormEditorProps) {
                         </span>
                       )}
                     </Show>
-                    <sl-option value="">-- select --</sl-option>
+                    <Show when={field.type === 'select'}>
+                      <sl-option value="">-- select --</sl-option>
+                    </Show>
                     <For each={field.options}>
                       {(opt) => (
                         <sl-option value={String(opt.value)}>
@@ -633,6 +669,7 @@ function FormEditor(props: FormEditorProps) {
                   when={
                     !isTextarea() &&
                     field.type !== 'select' &&
+                    field.type !== 'multiselect' &&
                     field.type !== 'radio-group' &&
                     field.type !== 'checkbox' &&
                     field.type !== 'switch' &&
@@ -648,6 +685,27 @@ function FormEditor(props: FormEditorProps) {
                     }
                     aria-label={fieldLabel()}
                     type={field.type}
+                    min={
+                      field.type === 'number'
+                        ? field.validation?.min
+                        : undefined
+                    }
+                    max={
+                      field.type === 'number'
+                        ? field.validation?.max
+                        : undefined
+                    }
+                    minlength={
+                      field.type !== 'number'
+                        ? field.validation?.min
+                        : undefined
+                    }
+                    maxlength={
+                      field.type !== 'number'
+                        ? field.validation?.max
+                        : undefined
+                    }
+                    pattern={field.validation?.pattern}
                     placeholder={field.placeholder}
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}

@@ -5,6 +5,7 @@ import type {
   ActionType,
   CardSpec,
   ContainerSpec,
+  Field,
   FlexSpec,
   PageSpec,
   Spec,
@@ -60,6 +61,16 @@ describe('Spec', () => {
       { kind: 'text', content: 'x', score: 1 },
     ];
     expect(children).toHaveLength(3);
+  });
+
+  it('rejects field types the renderer has no input for', () => {
+    const field: Field = {
+      name: 'x',
+      label: 'X',
+      // @ts-expect-error radio was dropped; use radio-group
+      type: 'radio',
+    };
+    expect(field.name).toBe('x');
   });
 
   it('narrows by kind', () => {

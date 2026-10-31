@@ -94,7 +94,6 @@ app.get('/api/ui/events/calendar', (_req, res) => {
       .defaultView('month')
       .editable(true)
       .toolbar('New', { type: 'navigate', to: '#/events/new' })
-      .create({ method: 'POST', url: '/events' })
       .update({ method: 'PUT', url: '/events/{id}' })
       .delete({ method: 'DELETE', url: '/events/{id}' })
       .build(),

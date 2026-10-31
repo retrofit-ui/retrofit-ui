@@ -171,8 +171,6 @@ const spec = {
               endpoints: {
                 list: { method: 'GET', url: '/landing/tasks' },
                 create: { method: 'POST', url: '/landing/tasks' },
-                update: { method: 'PUT', url: '/landing/tasks/{id}' },
-                delete: { method: 'DELETE', url: '/landing/tasks/{id}' },
               },
             },
           ],
@@ -328,7 +326,18 @@ onMounted(async () => {
     const { setupWorker } = await import('msw/browser');
     const { http, HttpResponse } = await import('msw');
     _worker = setupWorker(
-      http.get('/landing/tasks', () => HttpResponse.json([..._tasks])),
+      // Each row carries its finished writes, as a real server would send.
+      http.get('/landing/tasks', () =>
+        HttpResponse.json(
+          _tasks.map((t) => ({
+            ...t,
+            _actions: {
+              update: { method: 'PUT', url: `/landing/tasks/${t.id}` },
+              delete: { method: 'DELETE', url: `/landing/tasks/${t.id}` },
+            },
+          })),
+        ),
+      ),
       http.post('/landing/tasks', async ({ request }) => {
         const body = (await request.json()) as Record<string, unknown>;
         const task = {

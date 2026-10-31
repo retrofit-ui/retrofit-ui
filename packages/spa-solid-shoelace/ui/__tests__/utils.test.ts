@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillIdParam, substitutePattern } from '../utils';
+import { substitutePattern } from '../utils';
 
 describe('substitutePattern', () => {
   it('substitutes page and pageSize placeholders', () => {
@@ -21,12 +21,5 @@ describe('substitutePattern', () => {
     expect(
       substitutePattern('/items?page={page}', { page: '3', pageSize: '10' }),
     ).toBe('/items?page=3');
-  });
-});
-
-describe('fillIdParam', () => {
-  it("fills the url's own param, whatever it is named, encoded", () => {
-    expect(fillIdParam('/posts/{slug}', 'a b/c')).toBe('/posts/a%20b%2Fc');
-    expect(fillIdParam('/todos/{id}', 7)).toBe('/todos/7');
   });
 });

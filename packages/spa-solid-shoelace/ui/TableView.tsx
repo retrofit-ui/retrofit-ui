@@ -11,7 +11,13 @@ import '@shoelace-style/shoelace/dist/components/option/option.js';
 import '@shoelace-style/shoelace/dist/components/select/select.js';
 import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 
-import type { Cell, Column, TableSpec, ToolbarButton } from '@retrofit-ui/core';
+import type {
+  Cell,
+  Column,
+  RowActions,
+  TableSpec,
+  ToolbarButton,
+} from '@retrofit-ui/core';
 
 function isoToDatetimeLocal(iso: string): string {
   return iso ? iso.slice(0, 16) : '';
@@ -57,20 +63,23 @@ import {
 import { useActions, useHttp } from './actions';
 import { usePage } from './page-context';
 import { showToast } from './toast';
-import {
-  cellFormatted,
-  cellValue,
-  fillIdParam,
-  rawRow,
-  substitutePattern,
-} from './utils';
+import { cellFormatted, cellValue, rawRow, substitutePattern } from './utils';
 
-// The row field that fills `{id}` in the update/delete endpoints: the spec's
-// idField, else the endpoint's own `{param}`, else "id".
-function resolveIdField(spec: TableSpec): string {
-  if (spec.idField) return spec.idField;
-  const ep = spec.endpoints?.update ?? spec.endpoints?.delete;
-  return ep?.url.match(/\{(\w+)\}/)?.[1] ?? 'id';
+/** A row's own finished writes, if it has any. */
+function writesOf(row: Record<string, unknown>): RowActions | undefined {
+  return cellValue(row._actions) as RowActions | undefined;
+}
+
+/** Whether the table needs an actions column. */
+function tableHasActions(
+  spec: TableSpec,
+  rows: Record<string, unknown>[] | undefined,
+): boolean {
+  return (
+    spec.columns.some((c) => c.editable) ||
+    (spec.rowActions?.length ?? 0) > 0 ||
+    !!rows?.some((row) => writesOf(row))
+  );
 }
 
 /** A row's finished link in `field`, if it has one. */
@@ -255,9 +264,6 @@ function NewRow(props: { spec: TableSpec; onCreated: () => void }) {
     }
   }
 
-  const hasActions = () =>
-    !!props.spec.endpoints?.delete || (props.spec.rowActions?.length ?? 0) > 0;
-
   return (
     <tr class="retrofit-tr retrofit-tr--new">
       <For each={props.spec.columns}>
@@ -275,18 +281,16 @@ function NewRow(props: { spec: TableSpec; onCreated: () => void }) {
           </td>
         )}
       </For>
-      <Show when={hasActions()}>
-        <td class="retrofit-td">
-          <sl-button
-            size="small"
-            variant="primary"
-            disabled={adding()}
-            on:click={handleAdd}
-          >
-            Add
-          </sl-button>
-        </td>
-      </Show>
+      <td class="retrofit-td">
+        <sl-button
+          size="small"
+          variant="primary"
+          disabled={adding()}
+          on:click={handleAdd}
+        >
+          Add
+        </sl-button>
+      </td>
     </tr>
   );
 }
@@ -294,12 +298,15 @@ function NewRow(props: { spec: TableSpec; onCreated: () => void }) {
 function DataRow(props: {
   row: Record<string, unknown>;
   spec: TableSpec;
+  hasActions: boolean;
   onRefresh: () => void;
 }) {
   const send = useHttp();
   const { dispatch } = useActions();
   const rowLink = () => linkOf(props.row, props.spec.rowLinkField);
-  const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
+  const writes = () => writesOf(props.row);
+  const canEdit = () =>
+    !!writes()?.update && props.spec.columns.some((c) => c.editable);
   const [editing, setEditing] = createSignal(false);
   const [values, setValues] = createSignal<Record<string, unknown>>(
     rawRow(props.row),
@@ -307,8 +314,6 @@ function DataRow(props: {
   const [saving, setSaving] = createSignal(false);
   const [deleting, setDeleting] = createSignal(false);
   const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
-
-  const idField = () => resolveIdField(props.spec);
 
   function startEdit() {
     setValues(rawRow(props.row));
@@ -321,15 +326,16 @@ function DataRow(props: {
   }
 
   async function saveEdit() {
-    const ep = props.spec.endpoints?.update;
+    const ep = writes()?.update;
     if (!ep) return;
     setSaving(true);
-    const url = fillIdParam(ep.url, cellValue(props.row[idField()]));
+    // The row's writes are spec data, not part of the record.
+    const { _actions, ...body } = values();
     try {
-      const res = await send(url, {
+      const res = await send(ep.url, {
         method: ep.method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values()),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         setEditing(false);
@@ -343,13 +349,12 @@ function DataRow(props: {
   }
 
   async function deleteRow() {
-    const ep = props.spec.endpoints?.delete;
+    const ep = writes()?.delete;
     if (!ep) return;
     setShowDeleteDialog(false);
     setDeleting(true);
-    const url = fillIdParam(ep.url, cellValue(props.row[idField()]));
     try {
-      const res = await send(url, { method: ep.method });
+      const res = await send(ep.url, { method: ep.method });
       if (res.ok) {
         showToast('success', 'Deleted successfully');
         props.onRefresh();
@@ -359,11 +364,6 @@ function DataRow(props: {
       setDeleting(false);
     }
   }
-
-  const hasActions = () =>
-    hasInlineEdit() ||
-    !!props.spec.endpoints?.delete ||
-    (props.spec.rowActions?.length ?? 0) > 0;
 
   return (
     <>
@@ -398,14 +398,14 @@ function DataRow(props: {
             </td>
           )}
         </For>
-        <Show when={hasActions()}>
+        <Show when={props.hasActions}>
           <td
             class="retrofit-td"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', gap: '4px', 'flex-wrap': 'wrap' }}>
-              <Show when={!editing() && hasInlineEdit()}>
+              <Show when={!editing() && canEdit()}>
                 <sl-button size="small" variant="default" on:click={startEdit}>
                   Edit
                 </sl-button>
@@ -423,7 +423,7 @@ function DataRow(props: {
                   Cancel
                 </sl-button>
               </Show>
-              <Show when={!!props.spec.endpoints?.delete}>
+              <Show when={writes()?.delete}>
                 <sl-button
                   size="small"
                   variant="danger"
@@ -520,10 +520,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
   );
 
   const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
-  const hasActions = () =>
-    hasInlineEdit() ||
-    !!props.spec.endpoints?.delete ||
-    (props.spec.rowActions?.length ?? 0) > 0;
+  const hasActions = () => tableHasActions(props.spec, data());
 
   return (
     <div class="retrofit-view">
@@ -599,6 +596,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                       <DataRow
                         row={row}
                         spec={props.spec}
+                        hasActions={hasActions()}
                         onRefresh={() => void refetch()}
                       />
                     )}

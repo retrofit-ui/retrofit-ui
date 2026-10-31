@@ -38,58 +38,33 @@ describe('TableViewBuilder.columnOverride', () => {
   });
 });
 
-describe('TableViewBuilder embedded-row id', () => {
-  it('declares idField and carries it in rows even when hidden via visibleColumns', () => {
-    const spec = TableViewBuilder.forRows(TodoSchema, [
-      { id: 7, title: 'Ship it', priority: 'high' },
-    ])
-      .visibleColumns(['title', 'priority'])
-      .update({ method: 'PUT', url: '/todos/{id}' })
-      .build();
-
-    // The id field is an explicit part of the spec...
-    expect(spec.idField).toBe('id');
-    // ...not a displayed column...
-    expect(spec.columns.some((c) => c.key === 'id')).toBe(false);
-    // ...but its value rides along so inline edits can resolve their url.
-    expect(spec.rows?.[0]?.id).toEqual({ value: 7 });
-  });
-
-  it('respects a non-default id field name from the update url', () => {
-    const spec = TableViewBuilder.forRows(TodoSchema, [
-      { id: 7, title: 'Ship it', priority: 'high' },
-    ])
-      .visibleColumns(['priority'])
-      .update({ method: 'PUT', url: '/todos/{title}' })
-      .build();
-
-    expect(spec.idField).toBe('title');
-    expect(spec.columns.some((c) => c.key === 'title')).toBe(false);
-    expect(spec.rows?.[0]?.title).toEqual({ value: 'Ship it' });
-  });
-
-  it('derives idField from update/delete', () => {
+describe('TableViewBuilder row writes', () => {
+  it('gives each inline row its finished writes, and the spec none', () => {
     const spec = TableViewBuilder.forRows(TodoSchema, [
       { id: 7, title: 'Ship it', priority: 'high' },
     ])
       .visibleColumns(['title'])
-      .update({ method: 'PUT', url: '/todos/{id}' })
-      .delete({ method: 'DELETE', url: '/todos/{id}' })
+      .update({ method: 'PUT', url: '/c/{id}' })
+      .delete({ method: 'DELETE', url: '/c/{id}' })
       .build();
 
-    expect(spec.idField).toBe('id');
-    expect(spec.rows?.[0]?.id).toEqual({ value: 7 });
-  });
-
-  it('omits idField and does not carry id for a read-only table', () => {
-    const spec = TableViewBuilder.forRows(TodoSchema, [
-      { id: 7, title: 'Ship it', priority: 'high' },
-    ])
-      .visibleColumns(['title'])
-      .build();
-
-    expect(spec.idField).toBeUndefined();
+    expect(spec.rows?.[0]?._actions).toEqual({
+      value: {
+        update: { method: 'PUT', url: '/c/7' },
+        delete: { method: 'DELETE', url: '/c/7' },
+      },
+    });
+    expect(spec.endpoints).toEqual({});
+    expect('idField' in spec).toBe(false);
+    // A hidden id is no longer carried: the row's writes are already finished.
     expect(spec.rows?.[0]?.id).toBeUndefined();
+  });
+
+  it('gives a read-only table no _actions', () => {
+    const spec = TableViewBuilder.forRows(TodoSchema, [
+      { id: 7, title: 'Ship it', priority: 'high' },
+    ]).build();
+    expect(spec.rows?.[0]?._actions).toBeUndefined();
   });
 });
 

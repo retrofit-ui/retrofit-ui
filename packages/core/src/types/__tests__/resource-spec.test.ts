@@ -143,6 +143,10 @@ describe('CalendarSpec', () => {
           title: 'Meeting',
           start: '2026-06-15T09:00:00',
           link: '#/events/1',
+          actions: {
+            update: { method: 'PUT', url: '/events/1' },
+            delete: { method: 'DELETE', url: '/events/1' },
+          },
         },
       ],
       defaultView: 'month',
@@ -153,11 +157,6 @@ describe('CalendarSpec', () => {
           action: { type: 'navigate', to: '#/events/new' },
         },
       ],
-      endpoints: {
-        create: { method: 'POST', url: '/events' },
-        update: { method: 'PUT', url: '/events/{id}' },
-        delete: { method: 'DELETE', url: '/events/{id}' },
-      },
       metadata: { title: 'Events' },
     };
     expect(spec.defaultView).toBe('month');

@@ -5,13 +5,13 @@ import type {
   TreeSpec,
 } from '@retrofit-ui/core';
 
+/** Nodes carry their own writes: the endpoint's handler adds them with `withRowActions()`. */
 export class TreeViewBuilder {
   private _endpoint?: EndpointDirective;
   private _idField = 'id';
   private _parentField = 'parentId';
   private _labelField = 'name';
   private _selection?: TreeSpec['selection'];
-  private _actions: NonNullable<TreeSpec['actions']> = {};
   private _metadata?: TreeSpec['metadata'];
   private _linkField?: string;
   private _toolbar: ToolbarButton[] = [];
@@ -38,21 +38,6 @@ export class TreeViewBuilder {
 
   selection(mode: NonNullable<TreeSpec['selection']>): this {
     this._selection = mode;
-    return this;
-  }
-
-  create(directive: EndpointDirective): this {
-    this._actions = { ...this._actions, create: directive };
-    return this;
-  }
-
-  update(directive: EndpointDirective): this {
-    this._actions = { ...this._actions, update: directive };
-    return this;
-  }
-
-  delete(directive: EndpointDirective): this {
-    this._actions = { ...this._actions, delete: directive };
     return this;
   }
 
@@ -90,7 +75,6 @@ export class TreeViewBuilder {
       ...(this._selection && { selection: this._selection }),
       ...(this._linkField && { linkField: this._linkField }),
       ...(this._toolbar.length > 0 && { toolbar: this._toolbar }),
-      ...(Object.keys(this._actions).length > 0 && { actions: this._actions }),
       ...(this._metadata && { metadata: this._metadata }),
     };
   }

@@ -17,10 +17,10 @@ describe('CalendarViewBuilder', () => {
   });
 
   it('build() omits optional fields when not set', () => {
-    const spec = CalendarViewBuilder.events([]).build();
+    const spec = CalendarViewBuilder.events(baseEvents).build();
     expect(spec.defaultView).toBeUndefined();
     expect(spec.editable).toBeUndefined();
-    expect(spec.endpoints).toBeUndefined();
+    expect(spec.events.every((e) => e.actions === undefined)).toBe(true);
     expect(spec.metadata).toBeUndefined();
   });
 
@@ -30,7 +30,6 @@ describe('CalendarViewBuilder', () => {
       .editable()
       .title('My Agenda')
       .toolbar('New', { type: 'navigate', to: '#/events/new' })
-      .create({ method: 'POST', url: '/events' })
       .update({ method: 'PUT', url: '/events/{id}' })
       .delete({ method: 'DELETE', url: '/events/{id}' })
       .build();
@@ -40,15 +39,11 @@ describe('CalendarViewBuilder', () => {
     expect(spec.toolbar).toEqual([
       { label: 'New', action: { type: 'navigate', to: '#/events/new' } },
     ]);
-    expect(spec.endpoints?.create).toEqual({ method: 'POST', url: '/events' });
-    expect(spec.endpoints?.update).toEqual({
-      method: 'PUT',
-      url: '/events/{id}',
+    expect(spec.events[0]?.actions).toEqual({
+      update: { method: 'PUT', url: '/events/1' },
+      delete: { method: 'DELETE', url: '/events/1' },
     });
-    expect(spec.endpoints?.delete).toEqual({
-      method: 'DELETE',
-      url: '/events/{id}',
-    });
+    expect('endpoints' in spec).toBe(false);
   });
 
   it('defaultView maps all four valid values', () => {

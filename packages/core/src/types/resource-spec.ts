@@ -6,6 +6,12 @@ import type { Cell, Column } from './table';
 /** A `{ method, url }` pair. Every endpoint directive is also an http action. */
 export type EndpointDirective = HttpAction;
 
+/** The writes one row supports, each a finished http action, e.g. `{ method: 'PUT', url: '/contacts/7' }`. */
+export interface RowActions {
+  update?: HttpAction;
+  delete?: HttpAction;
+}
+
 /** A button above a view, e.g. "New" navigating to a create form. */
 export interface ToolbarButton {
   label: string;
@@ -22,15 +28,13 @@ export interface RowAction {
   linkField: string;
 }
 
-/** Drives the table view. */
+/**
+ * Drives the table view. A row (inline or fetched) may carry `_actions:
+ * RowActions`: its own finished update/delete; a row without one has no writes.
+ */
 export interface TableSpec extends SpecNode<'table'> {
   columns: Column[];
   rows?: Record<string, Cell>[];
-  /**
-   * Field holding each row's id, used to fill `{id}` in the update/delete
-   * endpoints for inline edits. Defaults to "id".
-   */
-  idField?: string;
   /**
    * Field holding each row's finished link (e.g. `#/contacts/7`). When set,
    * clicking a row opens it. The field needn't be a column.
@@ -43,10 +47,6 @@ export interface TableSpec extends SpecNode<'table'> {
     list?: EndpointDirective;
     /** With editable columns, adds an inline "new row". */
     create?: EndpointDirective;
-    /** Enables inline row save. */
-    update?: EndpointDirective;
-    /** Enables the row delete button. */
-    delete?: EndpointDirective;
   };
   rowActions?: RowAction[];
   metadata?: {
@@ -102,7 +102,7 @@ export interface MarkdownViewSpec extends SpecNode<'markdown'> {
   metadata?: { title?: string; back?: Action };
 }
 
-/** Drives the tree view. */
+/** Drives the tree view. A node may carry `_actions: RowActions`: its own finished writes. */
 export interface TreeSpec extends SpecNode<'tree'> {
   endpoint: EndpointDirective;
   idField: string;
@@ -113,11 +113,6 @@ export interface TreeSpec extends SpecNode<'tree'> {
   /** Buttons above the tree, e.g. "New". */
   toolbar?: ToolbarButton[];
   selection?: 'single' | 'multiple' | 'leaf';
-  actions?: {
-    create?: EndpointDirective;
-    update?: EndpointDirective;
-    delete?: EndpointDirective;
-  };
   metadata?: { title?: string };
 }
 
@@ -161,6 +156,8 @@ export interface CalendarEvent {
   allDay?: boolean;
   /** Finished link opened when the event is clicked, e.g. `#/events/3`. */
   link?: string;
+  /** This event's finished writes; `update` receives a drag or resize. */
+  actions?: RowActions;
 }
 
 /** Drives the calendar view. */
@@ -170,10 +167,5 @@ export interface CalendarSpec extends SpecNode<'calendar'> {
   editable?: boolean;
   /** Buttons above the calendar, e.g. "New". */
   toolbar?: ToolbarButton[];
-  endpoints?: {
-    create?: EndpointDirective;
-    update?: EndpointDirective;
-    delete?: EndpointDirective;
-  };
   metadata?: { title?: string };
 }

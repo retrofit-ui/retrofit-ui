@@ -87,6 +87,18 @@ describe('Spec', () => {
     const filter: Spec = { kind: 'filter-form', fields: [] };
     expect(filter.kind).toBe('filter-form');
   });
+
+  it('has no table-level update/delete; rows carry their own writes', () => {
+    const table: TableSpec = {
+      kind: 'table',
+      columns: [],
+      endpoints: {
+        // @ts-expect-error writes are per row, in each row's `_actions`
+        update: { method: 'PUT', url: '/c/{id}' },
+      },
+    };
+    expect(table.kind).toBe('table');
+  });
 });
 
 describe('Action', () => {

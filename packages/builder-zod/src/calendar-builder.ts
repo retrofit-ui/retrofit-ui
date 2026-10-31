@@ -5,12 +5,14 @@ import type {
   EndpointDirective,
   ToolbarButton,
 } from '@retrofit-ui/core';
+import { withRowActions } from './row-actions';
 
 export class CalendarViewBuilder {
   private _events: CalendarEvent[] = [];
   private _defaultView?: CalendarSpec['defaultView'];
   private _editable?: boolean;
-  private _endpoints: CalendarSpec['endpoints'] = {};
+  private _writes: { update?: EndpointDirective; delete?: EndpointDirective } =
+    {};
   private _title?: string;
   private _toolbar: ToolbarButton[] = [];
 
@@ -42,29 +44,30 @@ export class CalendarViewBuilder {
     this._toolbar.push({ label, action, ...(variant && { variant }) });
     return this;
   }
-  create(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, create: directive };
-    return this;
-  }
+  /** Each event's drag/resize save, its `{name}`s filled from the event. */
   update(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, update: directive };
+    this._writes = { ...this._writes, update: directive };
     return this;
   }
+  /** Each event's delete, its `{name}`s filled from the event. */
   delete(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, delete: directive };
+    this._writes = { ...this._writes, delete: directive };
     return this;
   }
 
   build(): CalendarSpec {
+    const events =
+      Object.keys(this._writes).length > 0
+        ? withRowActions(this._events, this._writes).map(
+            ({ _actions, ...event }) => ({ ...event, actions: _actions }),
+          )
+        : this._events;
     return {
       kind: 'calendar',
-      events: this._events,
+      events,
       ...(this._defaultView && { defaultView: this._defaultView }),
       ...(this._editable !== undefined && { editable: this._editable }),
       ...(this._toolbar.length > 0 && { toolbar: this._toolbar }),
-      ...(Object.keys(this._endpoints ?? {}).length > 0 && {
-        endpoints: this._endpoints,
-      }),
       ...(this._title && { metadata: { title: this._title } }),
     };
   }

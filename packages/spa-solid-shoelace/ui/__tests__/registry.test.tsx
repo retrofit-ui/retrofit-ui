@@ -528,3 +528,86 @@ describe('http interception', () => {
     );
   });
 });
+
+describe('row writes', () => {
+  const columns: TableSpec['columns'] = [
+    { key: 'name', label: 'Name', type: 'string' },
+  ];
+  const buttons = (root: HTMLElement) =>
+    [...root.querySelectorAll('tbody tr sl-button')].map((b) =>
+      b.textContent?.trim(),
+    );
+
+  it('deletes a row through its own finished delete action', async () => {
+    const spy = vi.fn(async () => new Response('{}'));
+    const { SpecRenderer: R } = createRenderer({ actions: { http: spy } });
+    const table: TableSpec = {
+      kind: 'table',
+      columns,
+      endpoints: {},
+      rows: [
+        {
+          name: { value: 'Bo' },
+          _actions: {
+            value: { delete: { method: 'DELETE', url: '/c/a%20b?v=2' } },
+          },
+        },
+        { name: { value: 'Al' } },
+      ],
+    };
+    const root = mount(() => <R spec={table} />);
+    await vi.waitFor(() =>
+      expect(root.querySelectorAll('tbody tr')).toHaveLength(2),
+    );
+    const rows = root.querySelectorAll('tbody tr');
+    expect(rows[0]?.textContent).toContain('Delete');
+    // A row without `_actions` offers no writes.
+    expect(rows[1]?.textContent).not.toContain('Delete');
+    expect(rows[1]?.textContent).not.toContain('Edit');
+    expect(buttons(root)).toEqual(['Delete']);
+    (rows[0]?.querySelector('sl-button') as HTMLElement).click();
+    const confirm = [
+      ...root.querySelectorAll('sl-dialog sl-button[variant="danger"]'),
+    ][0] as HTMLElement;
+    confirm.click();
+    await vi.waitFor(() =>
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ method: 'DELETE', url: '/c/a%20b?v=2' }),
+        expect.anything(),
+        expect.any(Function),
+      ),
+    );
+  });
+
+  it("saves an inline edit through the row's own update, without _actions in the body", async () => {
+    const spy = vi.fn(async () => new Response('{}'));
+    const { SpecRenderer: R } = createRenderer({ actions: { http: spy } });
+    const table: TableSpec = {
+      kind: 'table',
+      columns: [{ key: 'name', label: 'Name', type: 'string', editable: true }],
+      endpoints: {},
+      rows: [
+        {
+          name: { value: 'Bo' },
+          _actions: { value: { update: { method: 'PUT', url: '/c/7' } } },
+        },
+      ],
+    };
+    const root = mount(() => <R spec={table} />);
+    await vi.waitFor(() => expect(buttons(root)).toEqual(['Edit']));
+    (root.querySelector('tbody tr sl-button') as HTMLElement).click();
+    await vi.waitFor(() => expect(buttons(root)).toContain('Save'));
+    (
+      [...root.querySelectorAll('tbody tr sl-button')].find(
+        (b) => b.textContent?.trim() === 'Save',
+      ) as HTMLElement
+    ).click();
+    await vi.waitFor(() =>
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ method: 'PUT', url: '/c/7' }),
+        { init: expect.objectContaining({ body: '{"name":"Bo"}' }) },
+        expect.any(Function),
+      ),
+    );
+  });
+});

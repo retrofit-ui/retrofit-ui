@@ -21,6 +21,13 @@ describe('TableFormWorkflowBundle', () => {
     ]);
   });
 
+  it('leaves row writes to the list handler, not the table', () => {
+    expect(bundle().tableSpec.endpoints).toEqual({
+      list: { method: 'GET', url: '/contacts' },
+      create: { method: 'POST', url: '/contacts' },
+    });
+  });
+
   it('builds a create form that returns to the list', () => {
     const form = bundle().createForm;
     expect(form.endpoints).toEqual({

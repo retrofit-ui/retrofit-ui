@@ -14,6 +14,7 @@ import {
   route,
   TableView,
   TreeView,
+  withRowActions,
 } from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
@@ -31,11 +32,15 @@ app.use(express.json());
 
 // ── Category REST endpoints ─────────────────────────────────────────────────
 
-// Each category carries its finished UI link: the tree view's "Edit" button
-// opens the selected node's `link` (see linkField below).
+// Each category carries its finished UI link and writes: the tree view's
+// "Edit" opens the selected node's `link` (see linkField below), and
+// "Delete" sends its `_actions.delete`.
 app.get('/categories', (_req, res) => {
   res.json(
-    categoryStore.all().map((c) => ({ ...c, link: `#/categories/${c.id}` })),
+    withRowActions(
+      categoryStore.all().map((c) => ({ ...c, link: `#/categories/${c.id}` })),
+      { delete: { method: 'DELETE', url: '/categories/{id}' } },
+    ),
   );
 });
 app.get('/categories/:id', (req, res) => {
@@ -113,7 +118,6 @@ app.get('/api/ui/categories/tree', (_req, res) => {
       .selection('single')
       .linkField('link')
       .toolbar('New', { type: 'navigate', to: '#/categories/new' })
-      .delete({ method: 'DELETE', url: '/categories/{id}' })
       .metadata({ title: 'Category Tree' })
       .build(),
   );

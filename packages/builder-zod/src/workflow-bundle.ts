@@ -152,8 +152,6 @@ export class WorkflowBundleBuilder<S extends ZodRawShape> {
     }
     if (this._endpoints.list) tableBuilder.list(this._endpoints.list);
     if (this._endpoints.create) tableBuilder.create(this._endpoints.create);
-    if (this._endpoints.update) tableBuilder.update(this._endpoints.update);
-    if (this._endpoints.delete) tableBuilder.delete(this._endpoints.delete);
     const route = this._route;
     if (route && this._endpoints.create) {
       tableBuilder.toolbar('New', { type: 'navigate', to: `#${route}/new` });

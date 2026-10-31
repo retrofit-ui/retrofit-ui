@@ -17,6 +17,7 @@ export type {
   RetrofitConfig,
   RouteSpec,
   RowAction,
+  RowActions,
   Spec,
   Stat,
   StatSpec,
@@ -40,6 +41,7 @@ export {
   row,
 } from './page-builder';
 export { crudRoutes, route } from './routes';
+export { withRowActions } from './row-actions';
 export { StatView, StatViewBuilder } from './stat-view-builder';
 export type { RetrofitTheme } from './theme';
 export { TimelineView, TimelineViewBuilder } from './timeline-builder';

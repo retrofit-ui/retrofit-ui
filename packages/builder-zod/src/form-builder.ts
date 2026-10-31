@@ -7,20 +7,17 @@ import type {
 } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape } from 'zod';
 import { getShape, zodFieldToField } from './mappers';
+import { fillUrl } from './row-actions';
 
 function resolveEndpoints(
   endpoints: FormSpec['endpoints'],
   params: Record<string, string | number>,
 ): FormSpec['endpoints'] {
-  const fill = (ep: EndpointDirective | undefined) =>
-    ep && {
-      ...ep,
-      url: ep.url.replace(/\{(\w+)\}/g, (match, name: string) =>
-        name in params ? encodeURIComponent(String(params[name])) : match,
-      ),
-    };
   return Object.fromEntries(
-    Object.entries(endpoints).map(([key, ep]) => [key, fill(ep)]),
+    Object.entries(endpoints).map(([key, ep]) => [
+      key,
+      ep && { ...ep, url: fillUrl(ep.url, params) },
+    ]),
   ) as FormSpec['endpoints'];
 }
 

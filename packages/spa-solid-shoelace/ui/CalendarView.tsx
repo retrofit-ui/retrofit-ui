@@ -1,9 +1,10 @@
-import { Calendar } from '@fullcalendar/core';
+import { Calendar, type EventDropArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import type { EventResizeDoneArg } from '@fullcalendar/interaction';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import type { CalendarSpec } from '@retrofit-ui/core';
+import type { CalendarSpec, RowActions } from '@retrofit-ui/core';
 import { onCleanup, onMount, Show } from 'solid-js';
 import { useActions, useHttp } from './actions';
 import { Toolbar } from './TableView';
@@ -21,10 +22,6 @@ function viewNameToFullCalendar(view: CalendarSpec['defaultView']): string {
   }
 }
 
-function substituteParams(url: string, params: Record<string, string>): string {
-  return url.replace(/\{(\w+)\}/g, (_, key: string) => params[key] ?? '');
-}
-
 function CalendarStandalone(props: { spec: CalendarSpec }) {
   const send = useHttp();
   const { dispatch } = useActions();
@@ -33,7 +30,23 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
 
   onMount(() => {
     const spec = props.spec;
-    const isEditable = !!(spec.editable && spec.endpoints?.update);
+    async function save(info: EventDropArg | EventResizeDoneArg) {
+      const ep = (info.event.extendedProps.actions as RowActions | undefined)
+        ?.update;
+      if (!ep) {
+        info.revert();
+        return;
+      }
+      const res = await send(ep.url, {
+        method: ep.method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          start: info.event.startStr,
+          end: info.event.endStr,
+        }),
+      });
+      if (!res.ok) info.revert();
+    }
 
     cal = new Calendar(el, {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
@@ -43,8 +56,11 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
       },
-      editable: isEditable,
-      events: spec.events,
+      editable: !!spec.editable,
+      // An event without its own update can't be dragged or resized.
+      events: spec.events.map((e) =>
+        e.actions?.update ? e : { ...e, editable: false },
+      ),
       // An event's `link` (kept in extendedProps by FullCalendar) opens it.
       eventClick: (info) => {
         const link: unknown = info.event.extendedProps.link;
@@ -53,40 +69,9 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
           void dispatch({ type: 'navigate', to: link });
         }
       },
-      eventDrop: async (info) => {
-        const ep = spec.endpoints?.update;
-        if (!ep) {
-          info.revert();
-          return;
-        }
-        const url = substituteParams(ep.url, { id: info.event.id });
-        const res = await send(url, {
-          method: ep.method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            start: info.event.startStr,
-            end: info.event.endStr,
-          }),
-        });
-        if (!res.ok) info.revert();
-      },
-      eventResize: async (info) => {
-        const ep = spec.endpoints?.update;
-        if (!ep) {
-          info.revert();
-          return;
-        }
-        const url = substituteParams(ep.url, { id: info.event.id });
-        const res = await send(url, {
-          method: ep.method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            start: info.event.startStr,
-            end: info.event.endStr,
-          }),
-        });
-        if (!res.ok) info.revert();
-      },
+      // Each event saves through its own finished `actions.update`.
+      eventDrop: (info) => void save(info),
+      eventResize: (info) => void save(info),
     });
     cal.render();
   });

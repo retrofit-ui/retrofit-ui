@@ -45,29 +45,6 @@ describe('TreeViewBuilder', () => {
     expect('selection' in spec).toBe(false);
   });
 
-  it('create() populates actions.create', () => {
-    const createEp = { method: 'POST' as const, url: '/api/nodes' };
-    const spec = new TreeViewBuilder().endpoint(ep).create(createEp).build();
-    expect(spec.actions?.create).toEqual(createEp);
-  });
-
-  it('update() populates actions.update', () => {
-    const updateEp = { method: 'PUT' as const, url: '/api/nodes/{id}' };
-    const spec = new TreeViewBuilder().endpoint(ep).update(updateEp).build();
-    expect(spec.actions?.update).toEqual(updateEp);
-  });
-
-  it('delete() populates actions.delete', () => {
-    const deleteEp = { method: 'DELETE' as const, url: '/api/nodes/{id}' };
-    const spec = new TreeViewBuilder().endpoint(ep).delete(deleteEp).build();
-    expect(spec.actions?.delete).toEqual(deleteEp);
-  });
-
-  it('actions object omitted from spec when no actions configured', () => {
-    const spec = new TreeViewBuilder().endpoint(ep).build();
-    expect('actions' in spec).toBe(false);
-  });
-
   it('metadata() sets metadata.title', () => {
     const spec = new TreeViewBuilder()
       .endpoint(ep)
@@ -92,14 +69,12 @@ describe('TreeViewBuilder', () => {
   });
 
   it('build() produces a valid TreeSpec shape', () => {
-    const deleteEp = { method: 'DELETE' as const, url: '/api/nodes/{id}' };
     const spec = new TreeViewBuilder()
       .endpoint(ep)
       .idField('nodeId')
       .parentField('parentNodeId')
       .labelField('displayName')
       .selection('leaf')
-      .delete(deleteEp)
       .metadata({ title: 'Nodes' })
       .build();
 
@@ -109,7 +84,6 @@ describe('TreeViewBuilder', () => {
       parentField: 'parentNodeId',
       labelField: 'displayName',
       selection: 'leaf',
-      actions: { delete: deleteEp },
       metadata: { title: 'Nodes' },
     });
   });

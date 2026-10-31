@@ -2,6 +2,7 @@ import {
   crudRoutes,
   type RetrofitConfig,
   route,
+  withRowActions,
 } from '@retrofit-ui/builder-zod';
 import { distPath } from '@retrofit-ui/spa-solid-shoelace';
 import express from 'express';
@@ -18,9 +19,13 @@ import { store } from './store';
 const app = express();
 app.use(express.json());
 
+// Each row carries its finished writes, which the table's Delete sends.
 app.get('/contacts', (req, res) => {
   const type = req.query.type as string | undefined;
-  const all = type ? store.byType(type) : store.all();
+  const all = withRowActions(type ? store.byType(type) : store.all(), {
+    update: { method: 'PUT', url: '/contacts/{id}' },
+    delete: { method: 'DELETE', url: '/contacts/{id}' },
+  });
   const page = Number(req.query.page);
   const pageSize = Number(req.query.pageSize);
   if (page > 0 && pageSize > 0) {

@@ -10,6 +10,7 @@ import type {
 } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape, ZodTypeAny } from 'zod';
 import { getShape, zodFieldToColumn } from './mappers';
+import { withRowActions } from './row-actions';
 
 function getDef(schema: ZodTypeAny): Record<string, unknown> {
   return schema._def as unknown as Record<string, unknown>;
@@ -18,11 +19,6 @@ function getDef(schema: ZodTypeAny): Record<string, unknown> {
 function unwrapOptional(schema: ZodTypeAny): ZodTypeAny {
   const def = getDef(schema);
   return def.type === 'optional' ? (def.innerType as ZodTypeAny) : schema;
-}
-
-/** The `{param}` name from an endpoint url (e.g. /todos/{id} -> "id"). */
-function idParam(endpoint: EndpointDirective | undefined): string | undefined {
-  return endpoint?.url.match(/\{(\w+)\}/)?.[1];
 }
 
 function deriveEnumOptions(schema: ZodTypeAny): FieldOption[] | undefined {
@@ -54,6 +50,8 @@ export class TableViewBuilder<S extends ZodRawShape> {
   private _toolbar: ToolbarButton[] = [];
   private _visibleKeys?: string[];
   private _endpoints: TableSpec['endpoints'] = {};
+  private _writes: { update?: EndpointDirective; delete?: EndpointDirective } =
+    {};
   private _rows?: Record<string, unknown>[];
   private _metadata?: TableSpec['metadata'];
 
@@ -158,13 +156,18 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return this;
   }
 
+  /**
+   * Each inline row's save, its `{name}`s filled from the row. For `list()`
+   * rows, the list handler adds them with `withRowActions()`.
+   */
   update(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, update: directive };
+    this._writes = { ...this._writes, update: directive };
     return this;
   }
 
+  /** Each inline row's delete; see `update()`. */
   delete(directive: EndpointDirective): this {
-    this._endpoints = { ...this._endpoints, delete: directive };
+    this._writes = { ...this._writes, delete: directive };
     return this;
   }
 
@@ -191,12 +194,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
       columns = columns.filter((c) => keySet.has(c.key));
     }
 
-    // Inline update/delete urls are keyed by an id field. Derive it from the
-    // endpoint's {param} and expose it so the SPA needn't re-parse the url.
-    const idField =
-      idParam(this._endpoints.update) ?? idParam(this._endpoints.delete);
-    const columnKeys = new Set(columns.map((c) => c.key));
-
+    const hasWrites = Object.keys(this._writes).length > 0;
     const rows =
       this._rows !== undefined
         ? this._rows.map((row) => {
@@ -210,14 +208,9 @@ export class TableViewBuilder<S extends ZodRawShape> {
                 return [col.key, cell];
               }),
             );
-            // Carry the id even when it is hidden via visibleColumns(), so the
-            // client can still resolve a mutation target.
-            if (
-              idField !== undefined &&
-              !columnKeys.has(idField) &&
-              row[idField] !== undefined
-            ) {
-              cells[idField] = { value: row[idField] };
+            if (hasWrites) {
+              const [withWrites] = withRowActions([row], this._writes);
+              cells._actions = { value: withWrites?._actions };
             }
             const link = this._rowLink?.(row);
             if (link) cells[ROW_LINK] = { value: link };
@@ -235,7 +228,6 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return {
       kind: 'table' as const,
       columns,
-      ...(idField !== undefined && { idField }),
       endpoints: this._endpoints,
       ...(rows !== undefined && { rows }),
       ...(rowLinkField !== undefined && { rowLinkField }),

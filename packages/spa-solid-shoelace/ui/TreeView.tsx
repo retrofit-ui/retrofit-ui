@@ -4,14 +4,13 @@ import '@shoelace-style/shoelace/dist/components/skeleton/skeleton.js';
 import '@shoelace-style/shoelace/dist/components/tree/tree.js';
 import '@shoelace-style/shoelace/dist/components/tree-item/tree-item.js';
 
-import type { TreeSpec } from '@retrofit-ui/core';
+import type { RowActions, TreeSpec } from '@retrofit-ui/core';
 import { createResource, createSignal, For, Show } from 'solid-js';
 import { useActions, useHttp } from './actions';
 import { Toolbar } from './TableView';
 import { showToast } from './toast';
 import type { TreeNode } from './tree-utils';
 import { buildTree } from './tree-utils';
-import { fillIdParam } from './utils';
 
 function TreeItem(props: { treeNode: TreeNode; spec: TreeSpec }) {
   return (
@@ -47,24 +46,33 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
   const [showDeleteDialog, setShowDeleteDialog] = createSignal(false);
   const [deleting, setDeleting] = createSignal(false);
 
+  const nodeById = (id: string) =>
+    flatNodes()?.find((n) => String(n[props.spec.idField]) === id);
+  const deleteOf = (node: Record<string, unknown> | undefined) =>
+    (node?._actions as RowActions | undefined)?.delete;
+  const anyDeletable = () => !!flatNodes()?.some((n) => deleteOf(n));
+
   // The selected node's finished link, from the spec's linkField.
   const selectedLink = () => {
     const field = props.spec.linkField;
     const [id] = selectedIds();
-    if (!field || selectedIds().length !== 1) return undefined;
-    const node = flatNodes()?.find((n) => String(n[props.spec.idField]) === id);
-    const link = node?.[field];
+    if (!field || id === undefined || selectedIds().length !== 1)
+      return undefined;
+    const link = nodeById(id)?.[field];
     return typeof link === 'string' && link !== '' ? link : undefined;
   };
 
   async function handleDelete() {
-    const deleteEp = props.spec.actions?.delete;
-    if (!deleteEp) return;
     setDeleting(true);
+    const skipped: string[] = [];
     try {
       for (const id of selectedIds()) {
-        const url = fillIdParam(deleteEp.url, id);
-        const res = await send(url, { method: deleteEp.method });
+        const ep = deleteOf(nodeById(id));
+        if (!ep) {
+          skipped.push(id);
+          continue;
+        }
+        const res = await send(ep.url, { method: ep.method });
         if (!res.ok) {
           showToast('danger', `Delete failed for id ${id}`);
           return;
@@ -72,7 +80,11 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
       }
       setShowDeleteDialog(false);
       setSelectedIds([]);
-      showToast('success', 'Deleted successfully');
+      if (skipped.length > 0) {
+        showToast('warning', `Cannot delete: ${skipped.join(', ')}`);
+      } else {
+        showToast('success', 'Deleted successfully');
+      }
       void refetch();
       void dispatch({ type: 'refresh' });
     } finally {
@@ -137,7 +149,7 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
               </For>
             </sl-tree>
           </Show>
-          <Show when={props.spec.linkField || props.spec.actions?.delete}>
+          <Show when={props.spec.linkField || anyDeletable()}>
             <div style={{ display: 'flex', gap: '8px', 'margin-top': '1rem' }}>
               <Show when={props.spec.linkField}>
                 <sl-button
@@ -151,7 +163,7 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
                   Edit
                 </sl-button>
               </Show>
-              <Show when={props.spec.actions?.delete}>
+              <Show when={anyDeletable()}>
                 <sl-button
                   variant="danger"
                   disabled={selectedIds().length === 0}

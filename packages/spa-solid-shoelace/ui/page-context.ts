@@ -2,12 +2,15 @@ import { createContext, useContext } from 'solid-js';
 
 /**
  * What a page shares with the specs inside it. A filter-form writes
- * `filters`; tables fill them into their `list` url and refetch when they or
- * `version` change; forms seed from them, and `refresh` after a write so
- * sibling tables reload.
+ * `filters`; tables send those named in `filterNames` as list query params
+ * and refetch when they or `version` change; forms seed from them, and
+ * `refresh` after a write so sibling tables reload.
  */
 export interface PageContextValue {
+  /** Every search param of the page url (or the in-memory filters). */
   filters: () => Readonly<Record<string, string>>;
+  /** The field names of the page's filter-forms and autoSubmit forms. */
+  filterNames: ReadonlySet<string>;
   setFilter: (name: string, value: string) => void;
   /** Bumped by `refresh`. */
   version: () => number;

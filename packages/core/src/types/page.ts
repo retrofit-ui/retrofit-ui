@@ -14,7 +14,8 @@ export interface FilterField {
 
 /**
  * Filter inputs for a page. Each change is written to the page's filters,
- * which tables in the same page fill into their `list` url.
+ * which tables in the same page send as `list` query params by field name.
+ * `page`, `pageSize`, `sort` and `order` are reserved: do not use them as names.
  */
 export interface FilterFormSpec extends SpecNode<'filter-form'> {
   fields: FilterField[];

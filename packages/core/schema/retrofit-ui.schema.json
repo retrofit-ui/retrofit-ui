@@ -119,7 +119,7 @@
           "properties": {
             "list": {
               "$ref": "#/definitions/EndpointDirective",
-              "description": "Fetches rows as a raw row array. The client adds query params to `url`: `page` and `pageSize` (with `metadata.pagination`), `sort` and `order=asc|desc` (a sortable column is active), and each page filter by name. Empty values are omitted."
+              "description": "Fetches rows as a raw `ListRow[]`. The client adds query params to `url`: `page` and `pageSize` (with `metadata.pagination`), `sort` and `order=asc|desc` (a sortable column is active), and, inside a page, each field of the page's filter-forms and `autoSubmit` forms by name (other url search params are not sent). Empty values are omitted. `page`, `pageSize`, `sort` and `order` are reserved: a filter must not use them."
             },
             "create": {
               "$ref": "#/definitions/EndpointDirective",
@@ -672,7 +672,7 @@
         "kind"
       ],
       "additionalProperties": false,
-      "description": "Filter inputs for a page. Each change is written to the page's filters, which tables in the same page fill into their `list` url."
+      "description": "Filter inputs for a page. Each change is written to the page's filters, which tables in the same page send as `list` query params by field name. `page`, `pageSize`, `sort` and `order` are reserved: do not use them as names."
     },
     "FilterField": {
       "type": "object",

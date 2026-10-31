@@ -513,8 +513,12 @@ export function TableViewComponent(props: { spec: TableSpec }) {
       if (!ep) return [];
       const pagination = props.spec.metadata?.pagination;
       const pageSize = pageSizeOverride ?? pagination?.pageSize;
+      // Only the page's own filters: other search params stay in the url.
+      const pageFilters = Object.fromEntries(
+        Object.entries(filters ?? {}).filter(([k]) => page?.filterNames.has(k)),
+      );
       const url = listUrl(ep.url, {
-        ...filters,
+        ...pageFilters,
         ...(pagination && { page: pageNumber, pageSize }),
         sort: activeSort?.key,
         order: activeSort?.order,

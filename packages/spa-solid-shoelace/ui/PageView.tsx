@@ -344,11 +344,48 @@ function usePageFilters(): Filters {
   };
 }
 
+// The table's own list query params; a filter must not use these names.
+const RESERVED = ['page', 'pageSize', 'sort', 'order'];
+
+/**
+ * The field names of the page's filter writers (filter-forms and autoSubmit
+ * forms), found anywhere under its children except inside a nested page.
+ */
+export function filterNamesOf(children: Spec[]): Set<string> {
+  const names = new Set<string>();
+  const visit = (node: unknown): void => {
+    if (typeof node !== 'object' || node === null) return;
+    const spec = node as {
+      kind?: unknown;
+      fields?: { name: string }[];
+      metadata?: { autoSubmit?: boolean };
+    };
+    if (spec.kind === 'page') return;
+    if (
+      spec.kind === 'filter-form' ||
+      (spec.kind === 'form' && spec.metadata?.autoSubmit)
+    ) {
+      for (const f of spec.fields ?? []) names.add(f.name);
+      return;
+    }
+    Object.values(node).forEach(visit);
+  };
+  visit(children);
+  const reserved = RESERVED.filter((n) => names.has(n));
+  if (reserved.length > 0) {
+    console.warn(
+      `[retrofit-ui] filter names ${reserved.join(', ')} are reserved for a table's list query; rename them`,
+    );
+  }
+  return names;
+}
+
 export function PageView(props: { spec: PageSpec; onRefresh?: () => void }) {
   const { filters, setFilter } = usePageFilters();
   const [version, setVersion] = createSignal(0);
   const page: PageContextValue = {
     filters,
+    filterNames: filterNamesOf(props.spec.children),
     setFilter,
     version,
     refresh: () => {

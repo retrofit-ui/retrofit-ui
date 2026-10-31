@@ -418,6 +418,61 @@ describe('pages', () => {
     );
   });
 
+  it("sends only the page's filter names, not other search params", async () => {
+    const fetched: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      fetched.push(String(input));
+      return new Response('[]');
+    });
+    window.location.hash = '#/?tab=2&status=open';
+    const page: PageSpec = {
+      kind: 'page',
+      children: [
+        {
+          kind: 'grid',
+          children: [
+            {
+              kind: 'filter-form',
+              fields: [{ name: 'status', label: 'Status', type: 'text' }],
+            },
+          ],
+        },
+        listTable,
+      ],
+    };
+    inRouter(() => <SpecRenderer spec={page} />);
+    await vi.waitFor(() =>
+      expect(fetched.filter((url) => url.startsWith('/items'))).toEqual([
+        '/items?status=open',
+      ]),
+    );
+  });
+
+  it('warns once when a filter writer uses a reserved query name', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response('[]'),
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const page: PageSpec = {
+      kind: 'page',
+      children: [
+        {
+          kind: 'filter-form',
+          fields: [
+            { name: 'sort', label: 'Sort', type: 'text' },
+            { name: 'page', label: 'Page', type: 'text' },
+          ],
+        },
+        listTable,
+      ],
+    };
+    mount(() => <SpecRenderer spec={page} />);
+    const reserved = () =>
+      warn.mock.calls.filter((c) => String(c[0]).includes('reserved'));
+    expect(reserved()).toHaveLength(1);
+    expect(String(reserved()[0]?.[0])).toContain('page, sort');
+  });
+
   it('keeps filters in memory when there is no router', async () => {
     const fetched: string[] = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {

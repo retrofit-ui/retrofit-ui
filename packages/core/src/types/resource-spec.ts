@@ -60,10 +60,12 @@ export interface TableSpec extends SpecNode<'table'> {
   toolbar?: ToolbarButton[];
   endpoints: {
     /**
-     * Fetches rows as a raw row array. The client adds query params to `url`:
-     * `page` and `pageSize` (with `metadata.pagination`), `sort` and
-     * `order=asc|desc` (a sortable column is active), and each page filter by
-     * name. Empty values are omitted.
+     * Fetches rows as a raw `ListRow[]`. The client adds query params to
+     * `url`: `page` and `pageSize` (with `metadata.pagination`), `sort` and
+     * `order=asc|desc` (a sortable column is active), and, inside a page, each
+     * field of the page's filter-forms and `autoSubmit` forms by name (other
+     * url search params are not sent). Empty values are omitted. `page`,
+     * `pageSize`, `sort` and `order` are reserved: a filter must not use them.
      */
     list?: EndpointDirective;
     /** With editable columns, adds an inline "new row". */

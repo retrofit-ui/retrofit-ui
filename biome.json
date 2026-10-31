@@ -10,7 +10,8 @@
       "!**/definitions",
       "!.claude",
       "!**/META-INF/resources",
-      "!docs/public/mockServiceWorker.js"
+      "!docs/public/mockServiceWorker.js",
+      "!packages/core/schema"
     ]
   },
   "linter": {

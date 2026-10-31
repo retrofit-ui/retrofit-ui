@@ -29,13 +29,15 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./schema.json": "./schema/retrofit-ui.schema.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "schema"
   ],
   "sideEffects": false,
   "publishConfig": {
@@ -45,7 +47,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm gen:schema && tsup",
+    "gen:schema": "node scripts/gen-schema.mjs",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -54,6 +57,7 @@
     "prepublishOnly": "pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "devDependencies": {
+    "ts-json-schema-generator": "^2.9.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

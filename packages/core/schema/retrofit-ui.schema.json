@@ -1,0 +1,1402 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "The retrofit-ui wire format, generated from the TypeScript types in @retrofit-ui/core. It covers the built-in spec kinds and actions only: an app with custom kinds or actions adds its own definitions for them.",
+  "$ref": "#/definitions/SchemaRoot",
+  "definitions": {
+    "SchemaRoot": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/BuiltinSpec"
+        },
+        "config": {
+          "$ref": "#/definitions/RetrofitConfig"
+        }
+      },
+      "required": [
+        "spec",
+        "config"
+      ],
+      "additionalProperties": false,
+      "description": "The retrofit-ui wire format: one spec and the app config. Covers the built-in spec kinds and actions only; an app with custom kinds or actions adds its own definitions for them."
+    },
+    "BuiltinSpec": {
+      "description": "Any built-in spec node.",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "discriminator": {
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/definitions/TableSpec"
+        },
+        {
+          "$ref": "#/definitions/FormSpec"
+        },
+        {
+          "$ref": "#/definitions/FilterFormSpec"
+        },
+        {
+          "$ref": "#/definitions/MarkdownViewSpec"
+        },
+        {
+          "$ref": "#/definitions/StatSpec"
+        },
+        {
+          "$ref": "#/definitions/CalendarSpec"
+        },
+        {
+          "$ref": "#/definitions/TreeSpec"
+        },
+        {
+          "$ref": "#/definitions/TimelineSpec"
+        },
+        {
+          "$ref": "#/definitions/TextSpec"
+        },
+        {
+          "$ref": "#/definitions/DetailsSpec"
+        },
+        {
+          "$ref": "#/definitions/PageSpec"
+        },
+        {
+          "$ref": "#/definitions/CardSpec"
+        },
+        {
+          "$ref": "#/definitions/FlexSpec"
+        },
+        {
+          "$ref": "#/definitions/GridSpec"
+        },
+        {
+          "$ref": "#/definitions/TabsSpec"
+        }
+      ]
+    },
+    "TableSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "table"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Column"
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/Cell"
+            }
+          }
+        },
+        "rowLinkField": {
+          "type": "string",
+          "description": "Field holding each row's finished link (e.g. `#/contacts/7`). When set, clicking a row opens it. The field needn't be a column."
+        },
+        "toolbar": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ToolbarButton"
+          },
+          "description": "Buttons above the table, e.g. \"New\"."
+        },
+        "endpoints": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "$ref": "#/definitions/EndpointDirective",
+              "description": "Fetches rows as a raw row array. The client adds query params to `url`: `page` and `pageSize` (with `metadata.pagination`), `sort` and `order=asc|desc` (a sortable column is active), and each page filter by name. Empty values are omitted."
+            },
+            "create": {
+              "$ref": "#/definitions/EndpointDirective",
+              "description": "With editable columns, adds an inline \"new row\"."
+            }
+          },
+          "additionalProperties": false
+        },
+        "rowActions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RowAction"
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "pagination": {
+              "type": "object",
+              "properties": {
+                "pageSize": {
+                  "type": "number"
+                },
+                "totalRows": {
+                  "type": "number"
+                },
+                "pageSizeOptions": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "pageSize",
+                "totalRows"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "columns",
+        "endpoints",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "Drives the table view. A row (inline or fetched) may carry `_actions: RowActions`: its own finished update/delete; a row without one has no writes."
+    },
+    "Column": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ColumnType"
+        },
+        "sortable": {
+          "type": "boolean",
+          "description": "Clicking the header sorts through the `sort` and `order` query params."
+        },
+        "editable": {
+          "type": "boolean"
+        },
+        "width": {
+          "type": "string",
+          "description": "A CSS width for the column, e.g. `12rem`."
+        },
+        "alignment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldOption"
+          }
+        },
+        "badgeVariants": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BadgeVariant"
+          },
+          "description": "Badge colour per cell value, for enum columns."
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "currency",
+            "bytes",
+            "percent",
+            "decimal"
+          ]
+        },
+        "currency": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "label",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "One table column. Omitted flags default to `false`, alignment to `left`."
+    },
+    "ColumnType": {
+      "type": "string",
+      "enum": [
+        "string",
+        "number",
+        "date",
+        "datetime",
+        "time",
+        "boolean",
+        "enum",
+        "custom"
+      ]
+    },
+    "FieldOption": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "BadgeVariant": {
+      "type": "string",
+      "enum": [
+        "primary",
+        "success",
+        "neutral",
+        "warning",
+        "danger"
+      ]
+    },
+    "Cell": {
+      "type": "object",
+      "properties": {
+        "value": {},
+        "formatted": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false,
+      "description": "A table cell: the raw value plus, optionally, its server-formatted display text."
+    },
+    "ToolbarButton": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "action": {
+          "$ref": "#/definitions/Action"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "primary",
+            "default"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "action"
+      ],
+      "additionalProperties": false,
+      "description": "A button above a view, e.g. \"New\" navigating to a create form."
+    },
+    "Action": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/HttpAction"
+        },
+        {
+          "$ref": "#/definitions/NavigateAction"
+        },
+        {
+          "$ref": "#/definitions/RefreshAction"
+        }
+      ],
+      "description": "Any registered action descriptor."
+    },
+    "NavigateAction": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "navigate"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "to",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "Moves the client to a route, e.g. `#/properties`."
+    },
+    "RefreshAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "refresh"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "description": "Asks whoever owns the current spec to fetch it again."
+    },
+    "EndpointDirective": {
+      "$ref": "#/definitions/HttpAction",
+      "description": "A `{ method, url }` pair. Every endpoint directive is also an http action."
+    },
+    "HttpAction": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "http"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "url"
+      ],
+      "additionalProperties": false,
+      "description": "Issues an HTTP request. `type` is optional so every `EndpointDirective` (`{ method, url }`) is an http action as-is."
+    },
+    "RowAction": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "linkField": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "linkField"
+      ],
+      "additionalProperties": false,
+      "description": "Per-row link button shown in the table's actions column. Each row carries its own finished link in `linkField`; a row without one shows no button."
+    },
+    "FormSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "form"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Field"
+          }
+        },
+        "endpoints": {
+          "type": "object",
+          "properties": {
+            "create": {
+              "$ref": "#/definitions/EndpointDirective"
+            },
+            "update": {
+              "$ref": "#/definitions/EndpointDirective"
+            },
+            "delete": {
+              "$ref": "#/definitions/EndpointDirective"
+            }
+          },
+          "additionalProperties": false
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "create",
+                "edit"
+              ],
+              "description": "`edit` submits to `endpoints.update` and offers delete; `create` (the default) submits to `endpoints.create`. Endpoints arrive resolved, e.g. `/contacts/7`."
+            },
+            "onDone": {
+              "$ref": "#/definitions/Action",
+              "description": "Dispatched after a successful submit or delete, and by the Back button (shown outside a page), e.g. a `navigate` back to the list."
+            },
+            "submitLabel": {
+              "type": "string",
+              "description": "Submit button text. Defaults to \"Create\", or \"Save\" when editing."
+            },
+            "autoSubmit": {
+              "type": "boolean",
+              "description": "Inside a page: write each change to the page's filters instead of submitting."
+            },
+            "layout": {
+              "$ref": "#/definitions/FormLayoutConfig"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "endpoints",
+        "fields",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "Drives create and edit forms."
+    },
+    "Field": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/FieldType"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "validation": {
+          "$ref": "#/definitions/FieldValidation"
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "helpText": {
+          "type": "string"
+        },
+        "tooltip": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldOption"
+          }
+        },
+        "value": {
+          "description": "Initial value, e.g. the current value of an edit form."
+        },
+        "colorFormat": {
+          "type": "string",
+          "enum": [
+            "hex",
+            "rgb",
+            "hsl"
+          ]
+        },
+        "colorSwatches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ratingMax": {
+          "type": "number",
+          "description": "Positive integer."
+        },
+        "ratingPrecision": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "type"
+      ],
+      "additionalProperties": false,
+      "description": "One form field. Omitted flags default to `false`."
+    },
+    "FieldType": {
+      "type": "string",
+      "enum": [
+        "text",
+        "email",
+        "password",
+        "number",
+        "date",
+        "datetime",
+        "time",
+        "select",
+        "multiselect",
+        "checkbox",
+        "switch",
+        "radio-group",
+        "textarea",
+        "markdown",
+        "color",
+        "tags",
+        "rating"
+      ]
+    },
+    "FieldValidation": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "description": "For `number` fields `min`/`max` bound the value; for text-like fields they bound the length. `pattern` is a JS regex source matched against the whole string."
+    },
+    "FormLayoutConfig": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": [
+            "row",
+            "column"
+          ]
+        },
+        "gap": {
+          "type": "string"
+        },
+        "columns": {
+          "type": "number"
+        },
+        "labelPosition": {
+          "type": "string",
+          "enum": [
+            "above",
+            "hidden"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "FilterFormSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "filter-form"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FilterField"
+          }
+        }
+      },
+      "required": [
+        "fields",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "Filter inputs for a page. Each change is written to the page's filters, which tables in the same page fill into their `list` url."
+    },
+    "FilterField": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "select",
+            "text",
+            "date",
+            "datetime",
+            "time"
+          ]
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldOption"
+          }
+        },
+        "placeholder": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "label",
+        "type"
+      ],
+      "additionalProperties": false
+    },
+    "MarkdownViewSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "markdown"
+        },
+        "content": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "back": {
+              "$ref": "#/definitions/Action"
+            }
+          },
+          "additionalProperties": false,
+          "description": "`back` adds a Back button dispatching it."
+        }
+      },
+      "required": [
+        "content",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "Drives the markdown view."
+    },
+    "StatSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "stat"
+        },
+        "stats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Stat"
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "kind",
+        "stats"
+      ],
+      "additionalProperties": false,
+      "description": "Drives the stat/KPI grid view."
+    },
+    "Stat": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "number",
+            "currency",
+            "percent",
+            "bytes"
+          ]
+        },
+        "currency": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "additionalProperties": false,
+      "description": "A single KPI/statistic card. Value is computed server-side and embedded in the spec."
+    },
+    "CalendarSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "calendar"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CalendarEvent"
+          }
+        },
+        "defaultView": {
+          "type": "string",
+          "enum": [
+            "month",
+            "week",
+            "day",
+            "list"
+          ]
+        },
+        "editable": {
+          "type": "boolean"
+        },
+        "toolbar": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ToolbarButton"
+          },
+          "description": "Buttons above the calendar, e.g. \"New\"."
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "events",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "Drives the calendar view."
+    },
+    "CalendarEvent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "start": {
+          "type": "string"
+        },
+        "end": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "allDay": {
+          "type": "boolean"
+        },
+        "link": {
+          "type": "string",
+          "description": "Finished link opened when the event is clicked, e.g. `#/events/3`."
+        },
+        "actions": {
+          "$ref": "#/definitions/RowActions",
+          "description": "This event's finished writes; `update` receives a drag or resize."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "start"
+      ],
+      "additionalProperties": false,
+      "description": "A single calendar event, fully populated server-side."
+    },
+    "RowActions": {
+      "type": "object",
+      "properties": {
+        "update": {
+          "$ref": "#/definitions/HttpAction"
+        },
+        "delete": {
+          "$ref": "#/definitions/HttpAction"
+        }
+      },
+      "additionalProperties": false,
+      "description": "The writes one row supports, each a finished http action, e.g. `{ method: 'PUT', url: '/contacts/7' }`."
+    },
+    "TreeSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "tree"
+        },
+        "endpoint": {
+          "$ref": "#/definitions/EndpointDirective"
+        },
+        "idField": {
+          "type": "string"
+        },
+        "parentField": {
+          "type": "string"
+        },
+        "labelField": {
+          "type": "string"
+        },
+        "linkField": {
+          "type": "string",
+          "description": "Field holding each node's finished link; \"Edit\" opens the selected node's."
+        },
+        "toolbar": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ToolbarButton"
+          },
+          "description": "Buttons above the tree, e.g. \"New\"."
+        },
+        "selection": {
+          "type": "string",
+          "enum": [
+            "single",
+            "multiple",
+            "leaf"
+          ]
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "endpoint",
+        "idField",
+        "kind",
+        "labelField",
+        "parentField"
+      ],
+      "additionalProperties": false,
+      "description": "Drives the tree view. A node may carry `_actions: RowActions`: its own finished writes."
+    },
+    "TimelineSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "timeline"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TimelineEvent"
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "back": {
+              "$ref": "#/definitions/Action"
+            }
+          },
+          "additionalProperties": false,
+          "description": "`back` adds a Back button dispatching it."
+        }
+      },
+      "required": [
+        "events",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "description": "Drives the timeline view."
+    },
+    "TimelineEvent": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "success",
+            "warning",
+            "danger",
+            "neutral",
+            "primary"
+          ]
+        },
+        "icon": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "timestamp",
+        "title"
+      ],
+      "additionalProperties": false
+    },
+    "TextSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "text"
+        },
+        "content": {
+          "type": "string"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "body",
+            "muted",
+            "small"
+          ]
+        }
+      },
+      "required": [
+        "content",
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "DetailsSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "details"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DetailsItem"
+          }
+        }
+      },
+      "required": [
+        "items",
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "DetailsItem": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "open": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "summary",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "PageSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "page"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Spec"
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "layout": {
+          "$ref": "#/definitions/LayoutConfig",
+          "description": "Layout applied to the root container. Defaults to flex-column."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "children",
+        "kind"
+      ]
+    },
+    "Spec": {
+      "description": "Any spec node: the union of every registered kind.",
+      "$ref": "#/definitions/BuiltinSpec"
+    },
+    "LayoutConfig": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": [
+            "row",
+            "column"
+          ]
+        },
+        "wrap": {
+          "type": "boolean"
+        },
+        "gap": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "stretch"
+          ]
+        },
+        "justify": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "space-between",
+            "space-around"
+          ]
+        },
+        "columns": {
+          "type": "number",
+          "description": "CSS grid: shorthand for repeat(n, 1fr)"
+        },
+        "columnTemplate": {
+          "type": "string",
+          "description": "CSS grid: full grid-template-columns value, e.g. '200px 1fr 2fr'"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CardSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "card"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Spec"
+          }
+        },
+        "header": {
+          "type": "string"
+        },
+        "footer": {
+          "$ref": "#/definitions/Spec"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "children",
+        "kind"
+      ]
+    },
+    "FlexSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "flex"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Spec"
+          }
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "row",
+            "column"
+          ]
+        },
+        "gap": {
+          "type": "string"
+        },
+        "wrap": {
+          "type": "boolean"
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "stretch"
+          ]
+        },
+        "justify": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "space-between",
+            "space-around"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "children",
+        "kind"
+      ]
+    },
+    "GridSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "grid"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Spec"
+          }
+        },
+        "columns": {
+          "type": "number"
+        },
+        "columnTemplate": {
+          "type": "string"
+        },
+        "gap": {
+          "type": "string"
+        },
+        "align": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "stretch"
+          ]
+        },
+        "justify": {
+          "type": "string",
+          "enum": [
+            "start",
+            "center",
+            "end",
+            "space-between",
+            "space-around"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "children",
+        "kind"
+      ]
+    },
+    "TabsSpec": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "const": "tabs"
+        },
+        "placement": {
+          "type": "string",
+          "enum": [
+            "top",
+            "bottom",
+            "start",
+            "end"
+          ]
+        },
+        "tabs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TabItem"
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "tabs"
+      ],
+      "additionalProperties": false,
+      "description": "A container whose children are grouped per tab."
+    },
+    "TabItem": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Spec"
+          }
+        }
+      },
+      "required": [
+        "label",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "RetrofitConfig": {
+      "type": "object",
+      "properties": {
+        "apiBase": {
+          "type": "string",
+          "description": "Prefix for every route's `spec` endpoint. Defaults to `/api/ui`."
+        },
+        "title": {
+          "type": "string"
+        },
+        "nav": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavItem"
+          },
+          "description": "Sidebar links. Omit, or pass an empty list, for no sidebar."
+        },
+        "theme": {
+          "$ref": "#/definitions/RetrofitTheme"
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RouteSpec"
+          }
+        }
+      },
+      "required": [
+        "routes"
+      ],
+      "additionalProperties": false,
+      "description": "Served at `/retrofit.json`: everything the hosted app needs to know about the server. The app has no routes of its own; it renders `routes`."
+    },
+    "NavItem": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string",
+          "description": "Hash route to open, e.g. `/contacts`."
+        },
+        "icon": {
+          "type": "string",
+          "description": "Shoelace icon name."
+        }
+      },
+      "required": [
+        "label",
+        "href"
+      ],
+      "additionalProperties": false
+    },
+    "RetrofitTheme": {
+      "type": "object",
+      "properties": {
+        "cssVariables": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "CSS custom properties set on `:root`, e.g. `--sl-color-primary-600`."
+        },
+        "extraCss": {
+          "type": "string",
+          "description": "CSS appended to the document as a `<style>`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "RouteSpec": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Hash route, e.g. `/contacts` or `/contacts/:id`."
+        },
+        "spec": {
+          "type": "string",
+          "description": "Spec endpoint, relative to `apiBase`. Each `{name}` is filled from the route's `:name` param, e.g. `/contacts/{id}` for `/contacts/:id`."
+        }
+      },
+      "required": [
+        "path",
+        "spec"
+      ],
+      "additionalProperties": false,
+      "description": "One screen of the hosted app: a hash route and the endpoint that serves its spec. The spec's `kind` decides what renders it."
+    }
+  }
+}

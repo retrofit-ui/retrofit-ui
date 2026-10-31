@@ -3,9 +3,13 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@retrofit-ui/core': path.resolve(__dirname, '../core/src/index.ts'),
-    },
+    // Exact match, so subpaths like `@retrofit-ui/core/schema.json` resolve normally.
+    alias: [
+      {
+        find: /^@retrofit-ui\/core$/,
+        replacement: path.resolve(__dirname, '../core/src/index.ts'),
+      },
+    ],
   },
   test: {
     globals: true,

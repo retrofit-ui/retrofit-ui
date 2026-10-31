@@ -37,6 +37,33 @@ function datetimeLocalToIso(local: string): string {
   return Number.isNaN(d.getTime()) ? '' : d.toISOString();
 }
 
+// Only these types treat validation.min/max as a length and use pattern.
+const TEXT_LIKE = new Set([
+  'text',
+  'email',
+  'password',
+  'textarea',
+  'markdown',
+]);
+
+const warnedPatterns = new Set<string>();
+/** The pattern as a whole-string RegExp, or undefined (warning once) if the server sent a bad one. */
+function compilePattern(name: string, pattern?: string): RegExp | undefined {
+  if (pattern === undefined) return undefined;
+  try {
+    return new RegExp(`^(?:${pattern})$`);
+  } catch {
+    if (!warnedPatterns.has(name)) {
+      warnedPatterns.add(name);
+      console.warn(
+        `[retrofit-ui] invalid pattern for field "${name}"`,
+        pattern,
+      );
+    }
+    return undefined;
+  }
+}
+
 export function FormViewComponent(props: { spec: FormSpec }) {
   // A field's `value` is its current value when editing.
   const entity = () =>
@@ -274,7 +301,7 @@ function FormEditor(props: FormEditorProps) {
           errs[field.name] = `${label} must be at least ${min}`;
         else if (max !== undefined && n > max)
           errs[field.name] = `${label} must be at most ${max}`;
-      } else if (typeof val === 'string') {
+      } else if (TEXT_LIKE.has(field.type) && typeof val === 'string') {
         if (min !== undefined && val.length < min)
           errs[field.name] = `${label} must be at least ${min} characters`;
         else if (max !== undefined && val.length > max)
@@ -282,9 +309,9 @@ function FormEditor(props: FormEditorProps) {
       }
       if (
         !errs[field.name] &&
-        pattern !== undefined &&
+        TEXT_LIKE.has(field.type) &&
         typeof val === 'string' &&
-        !new RegExp(`^(?:${pattern})$`).test(val)
+        compilePattern(field.name, pattern)?.test(val) === false
       )
         errs[field.name] = `${label} is invalid`;
     }
@@ -428,7 +455,7 @@ function FormEditor(props: FormEditorProps) {
                       field.type === 'multiselect'
                         ? ([values()[field.name]]
                             .flat()
-                            .filter((v) => v !== '') as string[])
+                            .filter((v) => v !== '' && v != null) as string[])
                         : strVal()
                     }
                     invalid={!!err() || undefined}
@@ -696,16 +723,21 @@ function FormEditor(props: FormEditorProps) {
                         : undefined
                     }
                     minlength={
-                      field.type !== 'number'
+                      TEXT_LIKE.has(field.type)
                         ? field.validation?.min
                         : undefined
                     }
                     maxlength={
-                      field.type !== 'number'
+                      TEXT_LIKE.has(field.type)
                         ? field.validation?.max
                         : undefined
                     }
-                    pattern={field.validation?.pattern}
+                    pattern={
+                      TEXT_LIKE.has(field.type) &&
+                      compilePattern(field.name, field.validation?.pattern)
+                        ? field.validation?.pattern
+                        : undefined
+                    }
                     placeholder={field.placeholder}
                     help-text={field.helpText ?? undefined}
                     disabled={field.readOnly || undefined}

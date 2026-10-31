@@ -93,10 +93,18 @@ function extractValidation(
     } else if (check.check === 'max_length' && check.maximum !== undefined) {
       validation.max = check.maximum;
       hasAny = true;
-    } else if (check.check === 'greater_than' && check.inclusive) {
+    } else if (
+      check.check === 'greater_than' &&
+      check.inclusive &&
+      typeof check.value === 'number'
+    ) {
       validation.min = check.value;
       hasAny = true;
-    } else if (check.check === 'less_than' && check.inclusive) {
+    } else if (
+      check.check === 'less_than' &&
+      check.inclusive &&
+      typeof check.value === 'number'
+    ) {
       validation.max = check.value;
       hasAny = true;
     }

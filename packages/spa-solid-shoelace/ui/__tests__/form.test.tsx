@@ -102,6 +102,71 @@ describe('form validation', () => {
     );
   });
 
+  it('reports number validation.max', async () => {
+    const { root, submit } = await mountForm([
+      {
+        name: 'n',
+        label: 'N',
+        type: 'number',
+        value: 9,
+        validation: { max: 5 },
+      },
+    ]);
+    submit();
+    await vi.waitFor(() =>
+      expect(root.textContent).toContain('N must be at most 5'),
+    );
+  });
+
+  it('reports text validation.min as a length', async () => {
+    const { root, submit } = await mountForm([
+      {
+        name: 'n',
+        label: 'Nm',
+        type: 'text',
+        value: 'a',
+        validation: { min: 3 },
+      },
+    ]);
+    submit();
+    await vi.waitFor(() =>
+      expect(root.textContent).toContain('Nm must be at least 3 characters'),
+    );
+  });
+
+  it('does not apply length bounds to a date', async () => {
+    const { writes, submit } = await mountForm([
+      {
+        name: 'd',
+        label: 'D',
+        type: 'date',
+        value: '2020-01-01',
+        validation: { min: 50 },
+      },
+    ]);
+    submit();
+    await vi.waitFor(() => expect(writes).toHaveLength(1));
+  });
+
+  it('ignores an invalid pattern and still submits', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { writes, submit } = await mountForm([
+      {
+        name: 'p',
+        label: 'P',
+        type: 'text',
+        value: 'x',
+        validation: { pattern: '[' },
+      },
+    ]);
+    submit();
+    await vi.waitFor(() => expect(writes).toHaveLength(1));
+    expect(warn).toHaveBeenCalledWith(
+      '[retrofit-ui] invalid pattern for field "p"',
+      '[',
+    );
+  });
+
   it('skips bounds on an empty optional value', async () => {
     const { writes, submit } = await mountForm([
       { name: 'age', label: 'Age', type: 'number', validation: { min: 18 } },
@@ -112,6 +177,21 @@ describe('form validation', () => {
 });
 
 describe('multiselect', () => {
+  it('requires at least one value', async () => {
+    const { root, writes, submit } = await mountForm([
+      {
+        name: 't',
+        label: 'T',
+        type: 'multiselect',
+        required: true,
+        options: [],
+      },
+    ]);
+    submit();
+    await vi.waitFor(() => expect(root.textContent).toContain('T is required'));
+    expect(writes).toEqual([]);
+  });
+
   it('renders sl-select[multiple] and submits an array', async () => {
     const { root, writes, submit } = await mountForm([
       {

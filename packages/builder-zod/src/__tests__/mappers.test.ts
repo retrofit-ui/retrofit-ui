@@ -176,4 +176,9 @@ describe('number validation', () => {
     const field = zodFieldToField('n', z.number().min(1).max(5));
     expect(field.validation).toMatchObject({ min: 1, max: 5 });
   });
+
+  it('ignores date bounds', () => {
+    const field = zodFieldToField('d', z.date().min(new Date(0)));
+    expect(field.validation?.min).toBeUndefined();
+  });
 });

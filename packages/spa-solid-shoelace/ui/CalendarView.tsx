@@ -39,14 +39,20 @@ export async function saveEvent(
     info.revert();
     return;
   }
-  const res = await send(ep.url, {
-    method: ep.method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      start: info.event.startStr,
-      end: info.event.endStr,
-    }),
-  });
+  let res: Response;
+  try {
+    res = await send(ep.url, {
+      method: ep.method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        start: info.event.startStr,
+        end: info.event.endStr,
+      }),
+    });
+  } catch {
+    info.revert();
+    return;
+  }
   if (res.ok) void dispatch({ type: 'refresh' });
   else info.revert();
 }

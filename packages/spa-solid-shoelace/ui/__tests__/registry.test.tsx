@@ -744,10 +744,12 @@ describe('small behavior fixes', () => {
           endStr: 'e',
         },
       }) as never;
-    for (const ok of [true, false]) {
-      const send = vi.fn(
-        async () => new Response('{}', { status: ok ? 200 : 500 }),
-      );
+    for (const mode of ['ok', 'status', 'reject']) {
+      const ok = mode === 'ok';
+      const send = vi.fn(async () => {
+        if (mode === 'reject') throw new Error('network');
+        return new Response('{}', { status: ok ? 200 : 500 });
+      });
       const dispatch = vi.fn(async () => undefined);
       const revert = vi.fn();
       await saveEvent(info(revert), send as never, dispatch as never);
@@ -774,69 +776,90 @@ describe('small behavior fixes', () => {
     expect(b).toMatchObject({ editable: false });
   });
 
-  it('keeps deleting after a failure, names the failed id and refreshes', async () => {
+  it.each([
+    '500',
+    'rejection',
+  ])('keeps deleting after a %s, names the failed id and refreshes', async (failure) => {
     // jsdom lacks these; sl-dialog calls them on open.
-    Element.prototype.getAnimations = () => [];
-    Element.prototype.animate = (() => ({
-      addEventListener() {},
-      cancel() {},
-    })) as never;
-    window.matchMedia = (() => ({ matches: false })) as never;
-    const del = (id: number) => ({ method: 'DELETE', url: `/n/${id}` });
-    const nodes = [1, 2, 3].map((id) => ({
-      id,
-      parent: null,
-      name: `n${id}`,
-      _actions: { delete: del(id) },
-    }));
-    const http = vi.fn(async (a: { url: string; method: string }) =>
-      a.method === 'DELETE'
-        ? new Response('{}', { status: a.url === '/n/2' ? 500 : 200 })
-        : new Response(JSON.stringify(nodes)),
-    );
-    const refresh = vi.fn();
-    const { SpecRenderer: R } = createRenderer({
-      actions: { http: http as never, refresh },
-    });
-    const root = mount(() => (
-      <R
-        spec={
-          {
-            kind: 'tree',
-            idField: 'id',
-            parentField: 'parent',
-            labelField: 'name',
-            selection: 'multiple',
-            endpoint: { method: 'GET', url: '/nodes' },
-          } as Spec
-        }
-      />
-    ));
-    await vi.waitFor(() =>
-      expect(root.querySelectorAll('sl-tree-item').length).toBe(3),
-    );
-    const items = [...root.querySelectorAll('sl-tree-item')] as HTMLElement[];
-    root.querySelector('sl-tree')?.dispatchEvent(
-      new CustomEvent('sl-selection-change', {
-        detail: { selection: items },
-      }),
-    );
-    await vi.waitFor(() =>
-      expect(
-        root
-          .querySelector('sl-button[variant="danger"]')
-          ?.hasAttribute('disabled'),
-      ).toBe(false),
-    );
-    (root.querySelector('sl-button[variant="danger"]') as HTMLElement).click();
-    (
-      root.querySelector('sl-dialog sl-button[variant="danger"]') as HTMLElement
-    ).click();
-    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
-    const urls = http.mock.calls
-      .filter(([a]) => a.method === 'DELETE')
-      .map(([a]) => a.url);
-    expect(urls).toEqual(['/n/1', '/n/2', '/n/3']);
-    expect(showToast).toHaveBeenCalledWith('danger', 'Delete failed for: 2');
+    const saved = {
+      getAnimations: Element.prototype.getAnimations,
+      animate: Element.prototype.animate,
+      matchMedia: window.matchMedia,
+    };
+    try {
+      Element.prototype.getAnimations = () => [];
+      Element.prototype.animate = (() => ({
+        addEventListener() {},
+        cancel() {},
+      })) as never;
+      window.matchMedia = (() => ({ matches: false })) as never;
+      const del = (id: number) => ({ method: 'DELETE', url: `/n/${id}` });
+      const nodes = [1, 2, 3].map((id) => ({
+        id,
+        parent: null,
+        name: `n${id}`,
+        _actions: { delete: del(id) },
+      }));
+      const http = vi.fn(async (a: { url: string; method: string }) => {
+        if (a.method !== 'DELETE') return new Response(JSON.stringify(nodes));
+        if (a.url === '/n/2' && failure === 'rejection')
+          throw new Error('network');
+        return new Response('{}', { status: a.url === '/n/2' ? 500 : 200 });
+      });
+      const refresh = vi.fn();
+      const { SpecRenderer: R } = createRenderer({
+        actions: { http: http as never, refresh },
+      });
+      const root = mount(() => (
+        <R
+          spec={
+            {
+              kind: 'tree',
+              idField: 'id',
+              parentField: 'parent',
+              labelField: 'name',
+              selection: 'multiple',
+              endpoint: { method: 'GET', url: '/nodes' },
+            } as Spec
+          }
+        />
+      ));
+      await vi.waitFor(() =>
+        expect(root.querySelectorAll('sl-tree-item').length).toBe(3),
+      );
+      const items = [...root.querySelectorAll('sl-tree-item')] as HTMLElement[];
+      root.querySelector('sl-tree')?.dispatchEvent(
+        new CustomEvent('sl-selection-change', {
+          detail: { selection: items },
+        }),
+      );
+      await vi.waitFor(() =>
+        expect(
+          root
+            .querySelector('sl-button[variant="danger"]')
+            ?.hasAttribute('disabled'),
+        ).toBe(false),
+      );
+      (
+        root.querySelector('sl-button[variant="danger"]') as HTMLElement
+      ).click();
+      (
+        root.querySelector(
+          'sl-dialog sl-button[variant="danger"]',
+        ) as HTMLElement
+      ).click();
+      await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+      const urls = http.mock.calls
+        .filter(([a]) => a.method === 'DELETE')
+        .map(([a]) => a.url);
+      expect(urls).toEqual(['/n/1', '/n/2', '/n/3']);
+      expect(showToast).toHaveBeenCalledWith('danger', 'Delete failed for: 2');
+    } finally {
+      Object.assign(Element.prototype, {
+        getAnimations: saved.getAnimations,
+        animate: saved.animate,
+      });
+      window.matchMedia = saved.matchMedia;
+    }
   });
 });

@@ -74,9 +74,13 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
           skipped.push(id);
           continue;
         }
-        const res = await send(ep.url, { method: ep.method });
-        if (res.ok) deleted++;
-        else failed.push(id);
+        try {
+          const res = await send(ep.url, { method: ep.method });
+          if (res.ok) deleted++;
+          else failed.push(id);
+        } catch {
+          failed.push(id);
+        }
       }
       setShowDeleteDialog(false);
       setSelectedIds([]);

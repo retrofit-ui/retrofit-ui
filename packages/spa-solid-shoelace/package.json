@@ -1,7 +1,7 @@
 {
   "name": "@retrofit-ui/spa-solid-shoelace",
   "version": "0.3.0",
-  "description": "Prebuilt SolidJS + Shoelace renderer for retrofit-ui \u2014 drop into any server as static assets; no frontend build required",
+  "description": "Prebuilt SolidJS + Shoelace renderer for retrofit-ui — drop into any server as static assets; no frontend build required",
   "keywords": [
     "retrofit-ui",
     "server-driven-ui",
@@ -65,8 +65,8 @@
     "@retrofit-ui/core": "workspace:^"
   },
   "peerDependencies": {
-    "solid-js": ">=1.9.0",
-    "@solidjs/router": ">=0.15.0"
+    "@solidjs/router": ">=0.15.0",
+    "solid-js": ">=1.9.0"
   },
   "peerDependenciesMeta": {
     "solid-js": {
@@ -82,6 +82,7 @@
     "@shoelace-style/shoelace": "^2.20.0",
     "@solidjs/router": "^0.15.0",
     "@types/node": "^20",
+    "dompurify": "^3.4.17",
     "jsdom": "^25.0.1",
     "marked": "^18.0.5",
     "solid-js": "^1.9.0",

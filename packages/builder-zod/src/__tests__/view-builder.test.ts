@@ -39,6 +39,17 @@ describe('TableViewBuilder.columnOverride', () => {
 });
 
 describe('TableViewBuilder row writes', () => {
+  it('throws when update()/delete() have no inline rows to fill', () => {
+    for (const write of ['update', 'delete'] as const) {
+      const b = TableViewBuilder.schema(TodoSchema).list({
+        method: 'GET',
+        url: '/todos',
+      });
+      b[write]({ method: 'PUT', url: '/todos/{id}' });
+      expect(() => b.build()).toThrow(/withRowActions\(\)/);
+    }
+  });
+
   it('gives each inline row its finished writes, and the spec none', () => {
     const spec = TableViewBuilder.forRows(TodoSchema, [
       { id: 7, title: 'Ship it', priority: 'high' },

@@ -158,7 +158,8 @@ export class TableViewBuilder<S extends ZodRawShape> {
 
   /**
    * Each inline row's save, its `{name}`s filled from the row. For `list()`
-   * rows, the list handler adds them with `withRowActions()`.
+   * rows, the list handler adds them with `withRowActions()`; `build()`
+   * throws when there are no inline `rows()`.
    */
   update(directive: EndpointDirective): this {
     this._writes = { ...this._writes, update: directive };
@@ -195,6 +196,11 @@ export class TableViewBuilder<S extends ZodRawShape> {
     }
 
     const hasWrites = Object.keys(this._writes).length > 0;
+    if (hasWrites && this._rows === undefined) {
+      throw new Error(
+        "TableViewBuilder: update()/delete() fill inline rows() only; for a list() table, add each row's _actions in the list handler with withRowActions()",
+      );
+    }
     const rows =
       this._rows !== undefined
         ? this._rows.map((row) => {

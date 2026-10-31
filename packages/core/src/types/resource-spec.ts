@@ -29,12 +29,28 @@ export interface RowAction {
 }
 
 /**
- * Drives the table view. A row (inline or fetched) may carry `_actions:
- * RowActions`: its own finished update/delete; a row without one has no writes.
+ * One fetched row, as a table's `endpoints.list` or a tree's `endpoint`
+ * returns it (the response is a raw `ListRow[]`). It may carry `_actions`
+ * raw: its own finished writes; a row without one has no writes.
+ */
+export interface ListRow {
+  _actions?: RowActions;
+  [field: string]: unknown;
+}
+
+/** One inline table row: a cell per field, `_actions` wrapped as a cell. */
+export type InlineRow = Record<string, Cell> & {
+  _actions?: { value: RowActions };
+};
+
+/**
+ * Drives the table view. A row may carry its own finished update/delete in
+ * `_actions`: inline rows wrap it as a cell, `{ value: RowActions }`; fetched
+ * rows carry it raw (see `ListRow`). A row without one has no writes.
  */
 export interface TableSpec extends SpecNode<'table'> {
   columns: Column[];
-  rows?: Record<string, Cell>[];
+  rows?: InlineRow[];
   /**
    * Field holding each row's finished link (e.g. `#/contacts/7`). When set,
    * clicking a row opens it. The field needn't be a column.
@@ -107,7 +123,7 @@ export interface MarkdownViewSpec extends SpecNode<'markdown'> {
   metadata?: { title?: string; back?: Action };
 }
 
-/** Drives the tree view. A node may carry `_actions: RowActions`: its own finished writes. */
+/** Drives the tree view. `endpoint` returns `ListRow[]`; a node may carry raw `_actions` (only `delete` is used). */
 export interface TreeSpec extends SpecNode<'tree'> {
   endpoint: EndpointDirective;
   idField: string;

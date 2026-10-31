@@ -11,14 +11,21 @@
         },
         "config": {
           "$ref": "#/definitions/RetrofitConfig"
+        },
+        "listResponse": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ListRow"
+          }
         }
       },
       "required": [
         "spec",
-        "config"
+        "config",
+        "listResponse"
       ],
       "additionalProperties": false,
-      "description": "The retrofit-ui wire format: one spec and the app config. Covers the built-in spec kinds and actions only; an app with custom kinds or actions adds its own definitions for them."
+      "description": "The retrofit-ui wire format: one spec, the app config, and the rows a table's `list` or a tree's `endpoint` returns. Covers the built-in spec kinds and actions only; an app with custom kinds or actions adds its own definitions for them."
     },
     "BuiltinSpec": {
       "description": "Any built-in spec node.",
@@ -93,10 +100,7 @@
         "rows": {
           "type": "array",
           "items": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/definitions/Cell"
-            }
+            "$ref": "#/definitions/InlineRow"
           }
         },
         "rowLinkField": {
@@ -168,7 +172,7 @@
         "kind"
       ],
       "additionalProperties": false,
-      "description": "Drives the table view. A row (inline or fetched) may carry `_actions: RowActions`: its own finished update/delete; a row without one has no writes."
+      "description": "Drives the table view. A row may carry its own finished update/delete in `_actions`: inline rows wrap it as a cell, `{ value: RowActions }`; fetched rows carry it raw (see `ListRow`). A row without one has no writes."
     },
     "Column": {
       "type": "object",
@@ -277,6 +281,68 @@
         "danger"
       ]
     },
+    "InlineRow": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/Cell"
+      },
+      "properties": {
+        "_actions": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "$ref": "#/definitions/RowActions"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "description": "One inline table row: a cell per field, `_actions` wrapped as a cell."
+    },
+    "RowActions": {
+      "type": "object",
+      "properties": {
+        "update": {
+          "$ref": "#/definitions/HttpAction"
+        },
+        "delete": {
+          "$ref": "#/definitions/HttpAction"
+        }
+      },
+      "additionalProperties": false,
+      "description": "The writes one row supports, each a finished http action, e.g. `{ method: 'PUT', url: '/contacts/7' }`."
+    },
+    "HttpAction": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "http"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "url"
+      ],
+      "additionalProperties": false,
+      "description": "Issues an HTTP request. `type` is optional so every `EndpointDirective` (`{ method, url }`) is an http action as-is."
+    },
     "Cell": {
       "type": "object",
       "properties": {
@@ -364,34 +430,6 @@
     "EndpointDirective": {
       "$ref": "#/definitions/HttpAction",
       "description": "A `{ method, url }` pair. Every endpoint directive is also an http action."
-    },
-    "HttpAction": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "http"
-        },
-        "method": {
-          "type": "string",
-          "enum": [
-            "GET",
-            "POST",
-            "PUT",
-            "PATCH",
-            "DELETE"
-          ]
-        },
-        "url": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "method",
-        "url"
-      ],
-      "additionalProperties": false,
-      "description": "Issues an HTTP request. `type` is optional so every `EndpointDirective` (`{ method, url }`) is an http action as-is."
     },
     "RowAction": {
       "type": "object",
@@ -855,19 +893,6 @@
       "additionalProperties": false,
       "description": "A single calendar event, fully populated server-side."
     },
-    "RowActions": {
-      "type": "object",
-      "properties": {
-        "update": {
-          "$ref": "#/definitions/HttpAction"
-        },
-        "delete": {
-          "$ref": "#/definitions/HttpAction"
-        }
-      },
-      "additionalProperties": false,
-      "description": "The writes one row supports, each a finished http action, e.g. `{ method: 'PUT', url: '/contacts/7' }`."
-    },
     "TreeSpec": {
       "type": "object",
       "properties": {
@@ -924,7 +949,7 @@
         "parentField"
       ],
       "additionalProperties": false,
-      "description": "Drives the tree view. A node may carry `_actions: RowActions`: its own finished writes."
+      "description": "Drives the tree view. `endpoint` returns `ListRow[]`; a node may carry raw `_actions` (only `delete` is used)."
     },
     "TimelineSpec": {
       "type": "object",
@@ -1397,6 +1422,16 @@
       ],
       "additionalProperties": false,
       "description": "One screen of the hosted app: a hash route and the endpoint that serves its spec. The spec's `kind` decides what renders it."
+    },
+    "ListRow": {
+      "type": "object",
+      "properties": {
+        "_actions": {
+          "$ref": "#/definitions/RowActions"
+        }
+      },
+      "additionalProperties": {},
+      "description": "One fetched row, as a table's `endpoints.list` or a tree's `endpoint` returns it (the response is a raw `ListRow[]`). It may carry `_actions` raw: its own finished writes; a row without one has no writes."
     }
   }
 }

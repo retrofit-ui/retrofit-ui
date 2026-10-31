@@ -15,6 +15,7 @@ const ajv = new Ajv({ strict: false, discriminator: true });
 ajv.addSchema(schema, 'retrofit-ui');
 const validateSpec = ajv.getSchema('retrofit-ui#/definitions/BuiltinSpec');
 const validateConfig = ajv.getSchema('retrofit-ui#/definitions/RetrofitConfig');
+const validateListRow = ajv.getSchema('retrofit-ui#/definitions/ListRow');
 
 function expectValid(validate: typeof validateSpec, value: unknown) {
   if (!validate) throw new Error('definition missing from the schema');
@@ -100,6 +101,33 @@ describe('the generated JSON Schema', () => {
   it('rejects an unknown kind nested in a container', () => {
     const page = { kind: 'page', children: [{ kind: 'nope' }] };
     expect(validateSpec?.(page)).toBe(false);
+  });
+
+  it("validates an inline row's cell-wrapped _actions", () => {
+    const row = (actions: unknown) => ({
+      kind: 'table',
+      columns: [],
+      endpoints: {},
+      rows: [{ name: { value: 'Ada' }, _actions: { value: actions } }],
+    });
+    expectValid(validateSpec, row({ update: { method: 'PUT', url: '/c/7' } }));
+    expect(validateSpec?.(row({ updte: { method: 'PUT', url: '/c/7' } }))).toBe(
+      false,
+    );
+  });
+
+  it("validates a fetched list row's raw _actions", () => {
+    expectValid(validateListRow, {
+      id: 7,
+      name: 'Ada',
+      _actions: { delete: { method: 'DELETE', url: '/c/7' } },
+    });
+    expect(
+      validateListRow?.({
+        id: 7,
+        _actions: { updte: { method: 'PUT', url: '/c/7' } },
+      }),
+    ).toBe(false);
   });
 
   it('accepts a config', () => {

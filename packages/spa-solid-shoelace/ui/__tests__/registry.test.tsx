@@ -458,7 +458,8 @@ describe('pages', () => {
     const { SpecRenderer: R } = createRenderer({
       actions: {
         http: async (action, _input, next) => {
-          writes.push(`${action.method} ${action.url}`);
+          if (action.method !== 'GET')
+            writes.push(`${action.method} ${action.url}`);
           return next();
         },
       },
@@ -482,5 +483,48 @@ describe('pages', () => {
     await vi.waitFor(() => expect(writes).toEqual(['POST /items']));
     // The table refetches once the write succeeds.
     await vi.waitFor(() => expect(items()).toHaveLength(2));
+  });
+});
+
+describe('http interception', () => {
+  async function renderWith(spec: Spec) {
+    const spy = vi.fn(async () => new Response('[]'));
+    const { SpecRenderer: R } = createRenderer({ actions: { http: spy } });
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    dispose = render(() => <R spec={spec} />, root);
+    return spy;
+  }
+
+  it('sends a table list load through the http action', async () => {
+    const spy = await renderWith({
+      kind: 'table',
+      columns: [],
+      endpoints: { list: { method: 'GET', url: '/rows' } },
+    });
+    await vi.waitFor(() =>
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ url: '/rows' }),
+        expect.anything(),
+        expect.any(Function),
+      ),
+    );
+  });
+
+  it('sends a tree load through the http action', async () => {
+    const spy = await renderWith({
+      kind: 'tree',
+      idField: 'id',
+      parentField: 'parent',
+      labelField: 'name',
+      endpoint: { method: 'GET', url: '/nodes' },
+    } as Spec);
+    await vi.waitFor(() =>
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ url: '/nodes' }),
+        expect.anything(),
+        expect.any(Function),
+      ),
+    );
   });
 });

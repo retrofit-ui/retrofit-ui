@@ -46,6 +46,14 @@ export function Scope(props: RootProps) {
   );
 }
 
+/** Kits' action handlers, then the renderer's own, outermost first. */
+export function mergeActions(
+  kits: Kit[] = [],
+  actions: ActionHandlers = {},
+): ActionHandlers[] {
+  return [...kits.map((kit) => kit.actions ?? {}), actions];
+}
+
 export function createRenderer(options: RendererOptions = {}): Renderer {
   const kits = options.kits ?? [];
   const kinds: KindComponents = { ...builtinKinds };
@@ -60,11 +68,7 @@ export function createRenderer(options: RendererOptions = {}): Renderer {
     kinds,
     fallback: options.fallback ?? UnsupportedKind,
   };
-  // Outermost first: each kit, then the renderer's own overrides.
-  const levels = [
-    ...kits.map((kit) => kit.actions ?? {}),
-    options.actions ?? {},
-  ];
+  const levels = mergeActions(kits, options.actions);
 
   function Root(props: RootProps) {
     const withKitActions = (i: number): JSX.Element =>

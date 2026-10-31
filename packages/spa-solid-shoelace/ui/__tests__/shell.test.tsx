@@ -138,6 +138,30 @@ describe('the shell', () => {
   });
 });
 
+describe('http interception', () => {
+  it('sends the config and the first route spec through the http action', async () => {
+    const config = {
+      apiBase: '/api/ui',
+      routes: [{ path: '/', spec: '/home' }],
+    };
+    const spy = vi.fn(async (action: { url: string }) =>
+      action.url === '/retrofit.json'
+        ? new Response(JSON.stringify(config))
+        : new Response(JSON.stringify(text('home'))),
+    );
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    dispose = await createShell({ actions: { http: spy } }).mount(root);
+    await vi.waitFor(() => expect(root.textContent).toContain('home'));
+    expect(spy.mock.calls.map(([a]) => a.url)).toEqual([
+      '/retrofit.json',
+      '/api/ui/home',
+    ]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe('server-resolved navigation', () => {
   it('opens a row, a row action and a toolbar button through their links', async () => {
     const table: TableSpec = {

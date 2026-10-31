@@ -472,6 +472,7 @@ function DataRow(props: {
 }
 
 export function TableViewComponent(props: { spec: TableSpec }) {
+  const send = useHttp();
   const [currentPage, setCurrentPage] = createSignal(1);
   const [currentPageSize, setCurrentPageSize] = createSignal<number | null>(
     null,
@@ -507,7 +508,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
           pageSize: encodeURIComponent(String(pageSize)),
         }),
       });
-      const res = await fetch(url);
+      const res = await send(url);
       if (!res.ok) throw new Error('Failed to fetch table data');
       const raw = (await res.json()) as Record<string, unknown>[];
       return raw.map((row) =>

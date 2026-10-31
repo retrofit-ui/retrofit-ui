@@ -112,7 +112,19 @@ function chain(handlers: ActionHandlers, parent: Untyped): Untyped {
   };
 }
 
-const ActionsContext = createContext<Untyped>(chain(builtinActions, unhandled));
+/**
+ * The handler chain `handlers → built-ins → unhandled`, usable outside any
+ * component (e.g. before the first render, to load the config). With several
+ * levels, give them outermost first; the last wins and may fall through.
+ */
+export function createDispatch(...levels: ActionHandlers[]): Dispatch {
+  return levels.reduce(
+    (parent, handlers) => chain(handlers, parent),
+    chain(builtinActions, unhandled),
+  ) as Dispatch;
+}
+
+const ActionsContext = createContext<Untyped>(createDispatch() as Untyped);
 
 /**
  * Registers handlers for everything rendered inside it. Inner handlers win;
@@ -135,8 +147,9 @@ export function useActions(): { dispatch: Dispatch } {
 }
 
 /**
- * `fetch`, routed through the `http` action so integrators can intercept
- * every request a built-in view makes on the user's behalf.
+ * `fetch`, routed through the `http` action. Every request a built-in view
+ * makes (list loads, writes, route specs, the config) goes through it, so
+ * integrators can intercept all of them, e.g. to add auth headers.
  */
 export function useHttp(): (
   url: string,

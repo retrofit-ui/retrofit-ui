@@ -5,7 +5,7 @@ import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import type { Spec } from '@retrofit-ui/core';
 import { HashRouter, Route } from '@solidjs/router';
 import { render } from 'solid-js/web';
-import type { ActionHandlers } from './actions';
+import { type ActionHandlers, createDispatch } from './actions';
 import { createRenderer, type Renderer } from './renderer';
 import './layout.css';
 
@@ -42,6 +42,7 @@ export interface IslandController {
 
 let controller: IslandController | null = null;
 let renderer: Renderer = createRenderer();
+let dispatch = createDispatch();
 const mounted = new Map<HTMLElement, () => void>();
 
 function renderError(element: HTMLElement, message: string): void {
@@ -72,7 +73,7 @@ async function processWithSrc(element: HTMLElement): Promise<void> {
   const src = element.getAttribute('data-retrofit-src');
   if (!src) return;
   try {
-    const res = await fetch(src);
+    const res = await dispatch({ type: 'http', method: 'GET', url: src });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     let spec = (await res.json()) as Spec;
 
@@ -134,6 +135,7 @@ export function init(options: InitOptions): IslandController {
 
   const { rootElement } = options;
   renderer = createRenderer({ actions: options.actions });
+  dispatch = createDispatch(options.actions ?? {});
 
   setBasePath(options.shoelacePath ?? SHOELACE_CDN);
 

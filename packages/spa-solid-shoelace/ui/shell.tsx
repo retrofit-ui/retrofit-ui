@@ -4,9 +4,9 @@ import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import type { RetrofitConfig, RetrofitTheme } from '@retrofit-ui/core';
 import { render } from 'solid-js/web';
 import { App } from './App';
-import type { ActionHandlers } from './actions';
+import { type ActionHandlers, createDispatch } from './actions';
 import type { Kit } from './kinds';
-import { createRenderer } from './renderer';
+import { createRenderer, mergeActions } from './renderer';
 
 const SHOELACE_CDN =
   'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/';
@@ -67,13 +67,16 @@ export function createShell(options: ShellOptions = {}): Shell {
     kits: options.kits,
     actions: options.actions,
   });
+  const dispatch = createDispatch(
+    ...mergeActions(options.kits, options.actions),
+  );
   return {
     async mount(root) {
       setBasePath(options.shoelacePath ?? SHOELACE_CDN);
       const url = options.configUrl ?? '/retrofit.json';
       let config: RetrofitConfig;
       try {
-        const res = await fetch(url);
+        const res = await dispatch({ type: 'http', method: 'GET', url });
         if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
         config = checkConfig(await res.json(), url);
       } catch (err) {

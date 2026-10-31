@@ -9,7 +9,7 @@ import type {
 } from '@retrofit-ui/core';
 import { HashRouter, useLocation, useParams } from '@solidjs/router';
 import { createResource, createSignal, For, Show } from 'solid-js';
-import { ActionHandlers } from './actions';
+import { ActionHandlers, useHttp } from './actions';
 import { RenderSpec } from './kinds';
 import type { Renderer } from './renderer';
 import { ToastContainer } from './toast';
@@ -73,12 +73,6 @@ export function specUrl(
   return `${apiBase.replace(/\/+$/, '')}${path}`;
 }
 
-async function fetchSpec(url: string): Promise<Spec> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
-  return (await res.json()) as Spec;
-}
-
 /**
  * One route's screen: fetches the route's spec and renders it by kind. The
  * screen owns its spec, so `refresh` (dispatched by anything inside it)
@@ -86,13 +80,22 @@ async function fetchSpec(url: string): Promise<Spec> {
  */
 function RouteScreen(props: { route: RouteSpec; apiBase: string }) {
   const params = useParams();
+  const send = useHttp();
   const url = () => specUrl(props.apiBase, props.route, params);
   return (
     // Keyed by url: moving between e.g. /contacts/1 and /contacts/2 starts
     // the screen fresh, rather than leaving form state from the last one.
     <Show when={url()} keyed>
       {(current) => {
-        const [spec, { refetch }] = createResource(() => current, fetchSpec);
+        const [spec, { refetch }] = createResource(
+          () => current,
+          async (u): Promise<Spec> => {
+            const res = await send(u);
+            if (!res.ok)
+              throw new Error(`${u}: ${res.status} ${res.statusText}`);
+            return (await res.json()) as Spec;
+          },
+        );
         return (
           <ActionHandlers handlers={{ refresh: () => void refetch() }}>
             <Show when={spec.error}>

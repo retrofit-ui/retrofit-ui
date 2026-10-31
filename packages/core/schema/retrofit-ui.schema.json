@@ -1084,8 +1084,8 @@
       ]
     },
     "Spec": {
-      "description": "Any spec node: the union of every registered kind.",
-      "$ref": "#/definitions/BuiltinSpec"
+      "$ref": "#/definitions/BuiltinSpec",
+      "description": "Any built-in spec node. Custom kinds are app-owned."
     },
     "LayoutConfig": {
       "type": "object",

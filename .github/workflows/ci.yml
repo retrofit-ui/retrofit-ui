@@ -20,8 +20,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r --filter '!@retrofit-ui/docs' run build
       # core's build regenerates its JSON Schema from the TS types; a diff
-      # means the committed schema is stale.
-      - run: git diff --exit-code packages/core/schema
+      # or untracked file means the committed schema is stale.
+      - run: git diff --exit-code packages/core/schema && test -z "$(git status --porcelain packages/core/schema)"
       # Packs each public package and fails if any workspace: range would ship
       # to npm (see scripts/verify-publish-manifests.mjs). Build must run first
       # so pack has dist/ to include.

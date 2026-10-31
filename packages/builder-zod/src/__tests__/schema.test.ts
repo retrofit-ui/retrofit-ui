@@ -68,6 +68,19 @@ describe('the generated JSON Schema', () => {
     expectValid(validateSpec, calendar);
   });
 
+  it('accepts every built-in action', () => {
+    const refs = schema.definitions.Action.anyOf.map((a) => a.$ref).sort();
+    expect(refs).toEqual(
+      ['HttpAction', 'NavigateAction', 'RefreshAction'].map(
+        (n) => `#/definitions/${n}`,
+      ),
+    );
+    const calendar = CalendarView.events([])
+      .toolbar('New', { type: 'navigate', to: '#/x' })
+      .build();
+    expectValid(validateSpec, calendar);
+  });
+
   it('accepts an http action where an action goes', () => {
     expectValid(validateSpec, {
       kind: 'markdown',

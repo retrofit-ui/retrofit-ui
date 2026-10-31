@@ -17,11 +17,8 @@ packages/
   spa-solid-shoelace/         # @retrofit-ui/spa-solid-shoelace — SPA bundle + SolidJS components
 examples/
   js/                         # Node.js example servers (contacts, todos, events, …)
-  java/                       # Spring Boot example
 docs/                         # VitePress documentation site
 ```
-
-The Java packages (`retrofit-ui-spring-boot-autoconfigure`, `retrofit-ui-spring-boot-starter`) live in a separate repo: [`retrofit-ui/retrofit-ui-java`](https://github.com/retrofit-ui/retrofit-ui-java).
 
 ---
 

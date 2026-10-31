@@ -52,7 +52,6 @@ export default defineConfig({
             },
             { text: 'Design philosophy', link: '/guide/design-philosophy' },
             { text: 'JS Quickstart', link: '/guide/js-quickstart' },
-            { text: 'Java Quickstart', link: '/guide/java-quickstart' },
           ],
         },
         {
@@ -98,10 +97,7 @@ export default defineConfig({
       '/reference/': [
         {
           text: 'Reference',
-          items: [
-            { text: 'JS API', link: '/reference/js-api' },
-            { text: 'Java API', link: '/reference/java-api' },
-          ],
+          items: [{ text: 'JS API', link: '/reference/js-api' }],
         },
       ],
       '/examples/': [

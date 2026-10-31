@@ -127,4 +127,4 @@ A "New" button now opens the create form, and each row gets a "Delete" button. N
 - **Edit forms and row links** — see [Form View](/guide/form-view) and [Table View](/guide/table-view#row-links).
 - **More routes** — `crudRoutes('items')` declares the list, create and edit screens at once. See [Hosted SPA](/guide/hosted-spa#the-route-table).
 - **Combined table + form** — use `TableFormWorkflowBundle` for the most common pattern. See [Workflow Bundle](/guide/workflow-bundle).
-- **Run a full example** — `just example js todos` starts the todos example from the repo.
+- **Run a full example** — `just example todos` starts the todos example from the repo.

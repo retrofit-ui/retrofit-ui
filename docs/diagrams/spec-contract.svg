@@ -26,7 +26,7 @@
     }
   }</style>
       <title id="rf-contract-title">The spec is the contract</title>
-      <desc id="rf-contract-desc">Producers on the left (builder-zod and builder-java) and a renderer on the right (spa-solid-shoelace) both meet at a central spec JSON, which sits on top of the @retrofit-ui/core foundation. Producers never talk directly to the renderer.</desc>
+      <desc id="rf-contract-desc">Producers on the left (builder-zod, and any server that writes the JSON by hand) and a renderer on the right (spa-solid-shoelace) both meet at a central spec JSON, which sits on top of the @retrofit-ui/core foundation. Producers never talk directly to the renderer.</desc>
       <defs>
         <marker id="rf-arrow-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
           <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -42,8 +42,8 @@
         <g transform="translate(40,150)">
           <rect width="200" height="60" rx="10" fill="var(--rf-teal)" opacity="0.15" />
           <rect width="200" height="60" rx="10" fill="none" stroke="var(--rf-teal)" stroke-width="1.5" />
-          <text x="100" y="30" text-anchor="middle" fill="var(--rf-ink)" font-weight="600">builder-java</text>
-          <text x="100" y="48" text-anchor="middle" fill="var(--rf-ink-3)" font-size="11" font-family="system-ui, -apple-system, sans-serif">Spring Boot</text>
+          <text x="100" y="30" text-anchor="middle" fill="var(--rf-ink)" font-weight="600">any server</text>
+          <text x="100" y="48" text-anchor="middle" fill="var(--rf-ink-3)" font-size="11" font-family="system-ui, -apple-system, sans-serif">plain JSON, any language</text>
         </g>
       </g>
       <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">

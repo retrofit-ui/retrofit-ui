@@ -102,12 +102,6 @@ crudRoutes('posts');
 
 `route(path)` defaults `spec` to the path with each `:name` turned into `{name}`. List more specific paths before a `:param` path that would also match them — `crudRoutes` puts `/new` before `/:id` for that reason — and register your server's spec handlers in the same order, so `new` is never read as an id.
 
-### Java / Spring Boot
-
-::: warning The Java starter does not serve a route table yet
-The Spring Boot starter's `/retrofit.json` has no `routes`, so the hosted SPA shows a "has no routes" error instead of your screens. Its `TableSpec` and `FormSpec` records also carry no `kind`. Until the starter is updated, a Java app cannot drive the hosted SPA; see the [Java Quickstart](/guide/java-quickstart).
-:::
-
 ## Keeping the hosted app with custom kinds
 
 The prebuilt bundle (`distPath`) renders the built-in kinds only. It is exactly `createShell()` from `@retrofit-ui/spa-solid-shoelace/components`, so an app with [custom kinds](/guide/extending) keeps the same hosted app — route table, sidebar, theme — with a tiny client entry of its own:

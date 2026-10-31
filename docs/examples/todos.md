@@ -12,8 +12,7 @@ The demo above is live — try editing a row, adding a new todo, or deleting one
 
 Run it locally:
 ```bash
-just example js todos   # Node.js / Express
-just example java todos # Spring Boot
+just example todos
 ```
 
 ## What it demonstrates

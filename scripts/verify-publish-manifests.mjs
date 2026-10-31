@@ -37,7 +37,6 @@ function discoverPublicPackages() {
     if (!entry.isDirectory()) continue;
     const dir = join(packagesDir, entry.name);
     const manifestPath = join(dir, 'package.json');
-    // Java/Gradle packages have no package.json — skip them.
     if (!existsSync(manifestPath)) continue;
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
     // Mirror publish-local.sh: only publishable packages (have a version,

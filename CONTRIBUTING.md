@@ -2,7 +2,7 @@
 
 > **Status: experimental.** This project is in active exploration. APIs, package boundaries, and even which languages are supported may change without notice while we're pre-1.0. Feedback and issues are welcome; please expect breaking changes between releases.
 
-`retrofit-ui` is developed as a **monorepo** so the spec types, builders, and renderer can evolve in lockstep. Right now we publish JavaScript artifacts to npm. Java artifacts (Spring Boot autoconfigure and starter) live in a [separate repo](https://github.com/retrofit-ui/retrofit-ui-java) and will be released to **Maven Central** — not from this repo.
+`retrofit-ui` is developed as a **monorepo** so the spec types, builders, and renderer can evolve in lockstep. Right now we publish JavaScript artifacts to npm.
 
 ---
 
@@ -72,7 +72,6 @@ PRs that don't touch published packages (docs, example apps, CI config, internal
 
 - `docs/` — VitePress docs site, deployed separately via `docs.yml`
 - `examples/js/*` — reference example apps
-- `packages/retrofit-ui-spring-boot-*` — Java bits, released from the [`retrofit-ui-java`](https://github.com/retrofit-ui/retrofit-ui-java) repo to Maven Central (not yet published)
 
 ---
 

@@ -392,28 +392,3 @@ TableView.forRows(PostSchema, store.all())
 ```
 
 The route `#/posts/:id` fetches the edit form from `/admin-ui/posts/{id}` (the handler above); its `onDone` brings the user back to `#/posts`.
-
-## Java
-
-::: warning
-The Java starter hasn't caught up with the current form contract: its builders set no `kind`, `mode`, `onDone` or field values, and the SPA ignores its `find`. See the [Java Quickstart](/guide/java-quickstart).
-:::
-
-```java
-@GetMapping("/admin-ui/items/{id}")
-public FormSpec itemForm(@PathVariable String id) {
-    boolean isNew = "new".equals(id);
-    var builder = FormSpec.builder()
-        .field(Field.builder("name",   "Name",   "text").required(true).build())
-        .field(Field.builder("active", "Active", "checkbox").build());
-
-    if (isNew) {
-        builder.create(EndpointDirective.post("/items"));
-    } else {
-        builder.find(EndpointDirective.get("/items/{id}"))
-               .update(EndpointDirective.put("/items/{id}"))
-               .delete(EndpointDirective.delete("/items/{id}"));
-    }
-    return builder.build();
-}
-```

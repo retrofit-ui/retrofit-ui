@@ -33,7 +33,7 @@ onBeforeUnmount(() => observer?.disconnect());
     <section class="rf-hero">
       <div class="rf-hero__inner">
         <p class="rf-eyebrow rf-load" style="--d: 0ms">
-          <span class="rf-tick" />Open source · Declarative UI · JS&nbsp;+&nbsp;Java
+          <span class="rf-tick" />Open source · Declarative UI · TypeScript
         </p>
 
         <h1 class="rf-title">
@@ -59,7 +59,6 @@ onBeforeUnmount(() => observer?.disconnect());
             </svg>
           </a>
           <a class="rf-btn rf-btn--ghost" href="/guide/js-quickstart">JS Quickstart</a>
-          <a class="rf-btn rf-btn--ghost" href="/guide/java-quickstart">Java Quickstart</a>
         </div>
 
         <!-- pipeline: schema → spec → ui -->
@@ -135,7 +134,6 @@ onBeforeUnmount(() => observer?.disconnect());
         <h2>Wire up your first view<br />in five minutes.</h2>
         <div class="rf-cta">
           <a class="rf-btn rf-btn--warm" href="/guide/js-quickstart">JS Quickstart</a>
-          <a class="rf-btn rf-btn--ghost" href="/guide/java-quickstart">Java Quickstart</a>
         </div>
         <p class="rf-final__alt">
           Prefer to read first? Start with

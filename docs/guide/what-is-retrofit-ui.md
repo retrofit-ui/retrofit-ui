@@ -1,6 +1,6 @@
 # What is retrofit-ui?
 
-retrofit-ui is a framework for **declarative, server-driven UI**. Your server describes a piece of UI as JSON — a table, a form, a timeline — and the browser renders it, with no frontend code required. You declare the components on the backend, often straight from your existing Zod (JS) or Java schemas.
+retrofit-ui is a framework for **declarative, server-driven UI**. Your server describes a piece of UI as JSON — a table, a form, a timeline — and the browser renders it, with no frontend code required. You declare the components on the backend, often straight from your existing Zod schemas.
 
 Admin and internal tools are the obvious fit, but they're just one use case: anything you can describe declaratively is fair game.
 

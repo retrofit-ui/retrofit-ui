@@ -12,7 +12,7 @@ The demo above shows the posts table live — try adding a new post or filtering
 
 Run it locally:
 ```bash
-just example js blog
+just example blog
 ```
 
 ## What it demonstrates

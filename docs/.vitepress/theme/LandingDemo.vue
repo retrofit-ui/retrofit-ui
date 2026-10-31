@@ -35,7 +35,6 @@ const spec = {
       stats: [
         { label: 'View types', value: 8 },
         { label: 'Lines of frontend to write', value: 0 },
-        { label: 'SDKs', value: 2, description: 'JavaScript (Zod) and Java' },
         { label: 'Minutes to first view', value: 5 },
       ],
     },
@@ -53,7 +52,7 @@ const spec = {
             {
               kind: 'text',
               content:
-                'One Zod or Java schema. Columns, fields, and validation are derived — never duplicated.',
+                'One Zod schema. Columns, fields, and validation are derived — never duplicated.',
               variant: 'muted',
             },
           ],
@@ -77,7 +76,7 @@ const spec = {
             {
               kind: 'text',
               content:
-                'Any language that can emit the JSON contract gets the full UI — JS, Java, Go, Python.',
+                'Any language that can emit the JSON contract gets the full UI — the spec is just JSON.',
               variant: 'muted',
             },
           ],
@@ -241,13 +240,6 @@ const spec = {
                   variant: 'success',
                 },
                 {
-                  timestamp: '2025-05-20T10:00:00Z',
-                  title: 'Java SDK released',
-                  description:
-                    'Spring Boot autoconfiguration — zero-config setup',
-                  variant: 'success',
-                },
-                {
                   timestamp: '2025-08-10T11:00:00Z',
                   title: 'Composite layouts',
                   description: 'Page, flex, grid, and filter-form nesting',
@@ -295,10 +287,10 @@ const spec = {
         },
         {
           summary: 'What backends are supported?',
-          body: 'Any backend that can emit JSON. First-class SDKs exist for JavaScript/TypeScript (via Zod) and Java (Spring Boot autoconfiguration). Any other language works too — the spec is just JSON.',
+          body: 'Any backend that can emit JSON. The TypeScript builders use Zod; any other language works too — the spec is just JSON.',
         },
         {
-          summary: 'Can I use it without a Java or Node server?',
+          summary: 'Can I use it without a Node server?',
           body: 'Yes — the SPA is fully standalone. Point your endpoints at any HTTP API that returns the spec contract.',
         },
       ],

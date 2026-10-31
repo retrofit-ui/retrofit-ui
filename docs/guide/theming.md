@@ -143,7 +143,3 @@ Any valid `max-width` value works (`1200px`, `90ch`, `none`, …) — the proper
              .retrofit-th { color: #fff7ed; }`,
 }
 ```
-
-## Java
-
-In Java, `RetrofitUiProperties` currently exposes `theme` as a Shoelace theme name (`"light"` or `"dark"`). Custom CSS variable injection is done by extending `RetrofitUiController` or adding a `WebMvcConfigurer` that serves a custom stylesheet alongside the SPA.

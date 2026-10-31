@@ -362,8 +362,7 @@ $([ -n "$fix_context" ] && printf "## Problems to fix\n\n${fix_context}")
     changed_pkgs_wip=$(git -C "$worktree" status --porcelain -- 'packages/' 2>/dev/null \
       | awk '{print $2}' | awk -F/ '/^packages\// {print $2}' | sort -u)
     all_changed_pkgs=$(printf "%s\n%s\n" "$changed_pkgs" "$changed_pkgs_wip" | grep -v '^$' | sort -u)
-    # Filter out Java packages (published via Gradle, not changesets)
-    publishable_pkgs=$(echo "$all_changed_pkgs" | grep -vE '^retrofit-ui-spring-boot' || true)
+    publishable_pkgs=$all_changed_pkgs
 
     if [ -n "$publishable_pkgs" ]; then
       existing_changeset=$(git -C "$worktree" status --porcelain -- '.changeset/*.md' 2>/dev/null \

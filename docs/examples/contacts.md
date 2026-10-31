@@ -12,8 +12,7 @@ The demo above is live — try editing a contact's type, adding a new contact, o
 
 Run it locally:
 ```bash
-just example js contacts   # Node.js / Express
-just example java contacts # Spring Boot
+just example contacts
 ```
 
 ## What it demonstrates

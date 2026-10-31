@@ -11,7 +11,7 @@ Everything in retrofit-ui meets at one place: the spec. A spec is a declarative 
 `@retrofit-ui/core` defines that contract — the shape of every spec a backend may emit and every renderer may consume. It is the only thing the two sides share.
 
 <figure class="rf-diagram">
-  <img src="../diagrams/spec-contract.svg" alt="Spec contract: builder-zod (TypeScript) and builder-java (Spring Boot) both produce a central spec JSON; spa-solid-shoelace consumes it and reconciles the DOM. All three sit on the @retrofit-ui/core foundation — producers and renderer never talk directly." />
+  <img src="../diagrams/spec-contract.svg" alt="Spec contract: builder-zod (TypeScript) and any server writing plain JSON both produce a central spec JSON; spa-solid-shoelace consumes it and reconciles the DOM. All three sit on the @retrofit-ui/core foundation — producers and renderer never talk directly." />
   <figcaption class="rf-diagram__caption">
     A Python or Go builder would slot into the left-hand side and get the same UI — as long as it emits <code>@retrofit-ui/core</code>-shaped specs.
   </figcaption>
@@ -35,7 +35,7 @@ TableView.schema(ExpenseSchema)
 
 **Frontend pattern — render the spec.** The renderer reads a spec and mounts the matching component. It never imports your schema, your endpoints, or your builder. A `kind` discriminator on every spec tells it which view to draw.
 
-Neither side needs to know the other exists. Swap the JS builder for a Java one and the renderer doesn't change; swap the Shoelace renderer for another and the builder doesn't change.
+Neither side needs to know the other exists. Swap the JS builder for hand-written JSON from a Python server and the renderer doesn't change; swap the Shoelace renderer for another and the builder doesn't change.
 
 ## What stays on the frontend
 
@@ -90,7 +90,7 @@ type Cell = { value: unknown; formatted?: string }
 The client renders `cell.formatted` when present, otherwise `String(cell.value)`. It applies no `Intl` logic of its own. Why:
 
 - **Consistency.** Client-side `Intl` varies by user locale — a user in Germany sees `1.234,56 €`, a US user `$1,234.56`. For business tools, the server should decide what users see.
-- **Language parity.** Date and timezone formatting differs across Java, Python, Go, and JavaScript. Formatting server-side makes the output identical regardless of backend language.
+- **Language parity.** Date and timezone formatting differs across Python, Go, and JavaScript. Formatting server-side makes the output identical regardless of backend language.
 - **No renderer lock-in.** A pre-formatted string works in SSR, emails, PDFs, and CLI output — not just a Shoelace SPA. Delegating to `<sl-format-number>` ties you to one renderer.
 - **No enum proliferation.** A developer-supplied format function produces any string; encoding format intent as a wire-format enum needs a schema change for every new format type.
 

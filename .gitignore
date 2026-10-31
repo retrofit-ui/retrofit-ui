@@ -58,6 +58,4 @@ Temporary Items
 .claude/
 .playwright-mcp/
 
-# gradle build cache and compiled output
-.gradle/
 build/

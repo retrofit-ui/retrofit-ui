@@ -12,7 +12,7 @@ The demo above is live — everything is embedded in a single spec, so no networ
 
 Run it locally:
 ```bash
-just example js interactive-chat
+just example interactive-chat
 ```
 
 ## What it demonstrates

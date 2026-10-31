@@ -11,4 +11,3 @@ The hosted app's screens come from the server. **Breaking.**
 - Built-in views dispatch `refresh` after every successful write; a page reloads its tables and passes it on, so the route's spec is refetched.
 - `createShell({ kits, actions })` (from `./components`) is the hosted app as a function; the prebuilt SPA is `createShell()`. Apps with custom kinds keep the hosted app by building it with their kit.
 - `apiBase` is removed from `SpecRenderer`, `Root`, `Scope` and islands `init()`, and `ApiBaseContext` is gone.
-- Known gap: the Spring Boot starter's `/retrofit.json` has no `routes` yet, so Java apps render nothing until it is updated.

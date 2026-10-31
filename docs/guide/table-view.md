@@ -481,26 +481,3 @@ TableView.forRows(PostSchema, posts)
 Inline save and delete are the one place the client fills a url from a row: `{id}` in the `update`/`delete` url is replaced with the row's id field (`idField`, derived from the url) when the user clicks. Write the placeholder as `{id}`. A `list` url inside a [page](/guide/layouts) also gets `{param}`s from the page's filters, and `{page}`/`{pageSize}` when the table is paginated. Everything else — row links, row actions, toolbar actions — arrives finished.
 
 There is no `find` endpoint: opening a record is a row link to a route whose spec is that record's form.
-
-## Java
-
-```java
-TableSpec.builder()
-    .column("title", "Title", "string")
-    .column(Column.builder("status", "Status", "enum")
-        .filterable(true)
-        .options(List.of(
-            new FieldOption("draft",     "draft"),
-            new FieldOption("published", "published")
-        )).build())
-    .list(EndpointDirective.get("/posts"))
-    .find(EndpointDirective.get("/posts/{id}"))
-    .create(EndpointDirective.post("/posts"))
-    .build();
-```
-
-::: warning
-The Java starter hasn't caught up: it emits no `kind`, row links, toolbars or route table (its `find` is ignored by the SPA), so its specs don't drive the current hosted SPA. See the [Java Quickstart](/guide/java-quickstart).
-:::
-
-In Java you specify column types and enum options explicitly since there is no schema reflection layer.

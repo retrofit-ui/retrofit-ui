@@ -14,9 +14,11 @@ import { createSignal, For, type JSX } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useActions, useHttp } from '../actions';
+import { eventsForCalendar, saveEvent } from '../CalendarView';
 import { defineKind, defineKit, RenderSpec } from '../kinds';
 import { createRenderer } from '../renderer';
 import { SpecRenderer } from '../SpecRenderer';
+import { showToast } from '../toast';
 
 // Test kinds and actions, registered the way an app registers its own.
 interface BadgeSpec extends SpecNode<'test.badge'> {
@@ -59,6 +61,11 @@ declare module '@retrofit-ui/core' {
     >;
   }
 }
+
+vi.mock('../toast', async (orig) => ({
+  ...(await orig<typeof import('../toast')>()),
+  showToast: vi.fn(),
+}));
 
 let dispose: (() => void) | undefined;
 afterEach(() => {
@@ -702,5 +709,134 @@ describe('table columns', () => {
         '/items?page=1&pageSize=1&sort=name&order=asc',
       ),
     );
+  });
+});
+
+describe('small behavior fixes', () => {
+  it('shows the Add button on a new row with no row actions', async () => {
+    const { SpecRenderer: R } = createRenderer({
+      actions: { http: vi.fn(async () => new Response('{}')) },
+    });
+    const table: TableSpec = {
+      kind: 'table',
+      columns: [{ key: 'name', label: 'Name', type: 'string', editable: true }],
+      endpoints: { create: { method: 'POST', url: '/c' } },
+      rows: [{ name: { value: 'Bo' } }],
+    };
+    const root = mount(() => <R spec={table} />);
+    await vi.waitFor(() =>
+      expect(
+        [...root.querySelectorAll('tr.retrofit-tr--new sl-button')].map((b) =>
+          b.textContent?.trim(),
+        ),
+      ).toEqual(['Add']),
+    );
+  });
+
+  it('dispatches refresh once after an ok calendar save, none after a failure', async () => {
+    const update = { method: 'PUT', url: '/e/1' } as const;
+    const info = (revert: () => void) =>
+      ({
+        revert,
+        event: {
+          extendedProps: { actions: { update } },
+          startStr: 's',
+          endStr: 'e',
+        },
+      }) as never;
+    for (const ok of [true, false]) {
+      const send = vi.fn(
+        async () => new Response('{}', { status: ok ? 200 : 500 }),
+      );
+      const dispatch = vi.fn(async () => undefined);
+      const revert = vi.fn();
+      await saveEvent(info(revert), send as never, dispatch as never);
+      expect(send).toHaveBeenCalledWith(
+        '/e/1',
+        expect.objectContaining({ method: 'PUT' }),
+      );
+      expect(dispatch).toHaveBeenCalledTimes(ok ? 1 : 0);
+      if (ok) expect(dispatch).toHaveBeenCalledWith({ type: 'refresh' });
+      expect(revert).toHaveBeenCalledTimes(ok ? 0 : 1);
+    }
+  });
+
+  it('maps an event without actions.update to editable: false', () => {
+    const [a, b] = eventsForCalendar([
+      {
+        title: 'A',
+        start: 'x',
+        actions: { update: { method: 'PUT', url: '/a' } },
+      },
+      { title: 'B', start: 'y' },
+    ] as never);
+    expect(a).not.toHaveProperty('editable');
+    expect(b).toMatchObject({ editable: false });
+  });
+
+  it('keeps deleting after a failure, names the failed id and refreshes', async () => {
+    // jsdom lacks these; sl-dialog calls them on open.
+    Element.prototype.getAnimations = () => [];
+    Element.prototype.animate = (() => ({
+      addEventListener() {},
+      cancel() {},
+    })) as never;
+    window.matchMedia = (() => ({ matches: false })) as never;
+    const del = (id: number) => ({ method: 'DELETE', url: `/n/${id}` });
+    const nodes = [1, 2, 3].map((id) => ({
+      id,
+      parent: null,
+      name: `n${id}`,
+      _actions: { delete: del(id) },
+    }));
+    const http = vi.fn(async (a: { url: string; method: string }) =>
+      a.method === 'DELETE'
+        ? new Response('{}', { status: a.url === '/n/2' ? 500 : 200 })
+        : new Response(JSON.stringify(nodes)),
+    );
+    const refresh = vi.fn();
+    const { SpecRenderer: R } = createRenderer({
+      actions: { http: http as never, refresh },
+    });
+    const root = mount(() => (
+      <R
+        spec={
+          {
+            kind: 'tree',
+            idField: 'id',
+            parentField: 'parent',
+            labelField: 'name',
+            selection: 'multiple',
+            endpoint: { method: 'GET', url: '/nodes' },
+          } as Spec
+        }
+      />
+    ));
+    await vi.waitFor(() =>
+      expect(root.querySelectorAll('sl-tree-item').length).toBe(3),
+    );
+    const items = [...root.querySelectorAll('sl-tree-item')] as HTMLElement[];
+    root.querySelector('sl-tree')?.dispatchEvent(
+      new CustomEvent('sl-selection-change', {
+        detail: { selection: items },
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(
+        root
+          .querySelector('sl-button[variant="danger"]')
+          ?.hasAttribute('disabled'),
+      ).toBe(false),
+    );
+    (root.querySelector('sl-button[variant="danger"]') as HTMLElement).click();
+    (
+      root.querySelector('sl-dialog sl-button[variant="danger"]') as HTMLElement
+    ).click();
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    const urls = http.mock.calls
+      .filter(([a]) => a.method === 'DELETE')
+      .map(([a]) => a.url);
+    expect(urls).toEqual(['/n/1', '/n/2', '/n/3']);
+    expect(showToast).toHaveBeenCalledWith('danger', 'Delete failed for: 2');
   });
 });

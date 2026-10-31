@@ -65,6 +65,8 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
   async function handleDelete() {
     setDeleting(true);
     const skipped: string[] = [];
+    const failed: string[] = [];
+    let deleted = 0;
     try {
       for (const id of selectedIds()) {
         const ep = deleteOf(nodeById(id));
@@ -73,20 +75,23 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
           continue;
         }
         const res = await send(ep.url, { method: ep.method });
-        if (!res.ok) {
-          showToast('danger', `Delete failed for id ${id}`);
-          return;
-        }
+        if (res.ok) deleted++;
+        else failed.push(id);
       }
       setShowDeleteDialog(false);
       setSelectedIds([]);
+      if (failed.length > 0) {
+        showToast('danger', `Delete failed for: ${failed.join(', ')}`);
+      }
       if (skipped.length > 0) {
         showToast('warning', `Cannot delete: ${skipped.join(', ')}`);
-      } else {
+      } else if (failed.length === 0) {
         showToast('success', 'Deleted successfully');
       }
-      void refetch();
-      void dispatch({ type: 'refresh' });
+      if (deleted > 0) {
+        void refetch();
+        void dispatch({ type: 'refresh' });
+      }
     } finally {
       setDeleting(false);
     }

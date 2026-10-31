@@ -22,6 +22,35 @@ function viewNameToFullCalendar(view: CalendarSpec['defaultView']): string {
   }
 }
 
+/** An event without its own update can't be dragged or resized. */
+export function eventsForCalendar(events: CalendarSpec['events']) {
+  return events.map((e) => (e.actions?.update ? e : { ...e, editable: false }));
+}
+
+/** Saves a drag or resize through the event's own update; reverts on failure, else refreshes. */
+export async function saveEvent(
+  info: EventDropArg | EventResizeDoneArg,
+  send: ReturnType<typeof useHttp>,
+  dispatch: ReturnType<typeof useActions>['dispatch'],
+) {
+  const ep = (info.event.extendedProps.actions as RowActions | undefined)
+    ?.update;
+  if (!ep) {
+    info.revert();
+    return;
+  }
+  const res = await send(ep.url, {
+    method: ep.method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      start: info.event.startStr,
+      end: info.event.endStr,
+    }),
+  });
+  if (res.ok) void dispatch({ type: 'refresh' });
+  else info.revert();
+}
+
 function CalendarStandalone(props: { spec: CalendarSpec }) {
   const send = useHttp();
   const { dispatch } = useActions();
@@ -30,24 +59,6 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
 
   onMount(() => {
     const spec = props.spec;
-    async function save(info: EventDropArg | EventResizeDoneArg) {
-      const ep = (info.event.extendedProps.actions as RowActions | undefined)
-        ?.update;
-      if (!ep) {
-        info.revert();
-        return;
-      }
-      const res = await send(ep.url, {
-        method: ep.method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          start: info.event.startStr,
-          end: info.event.endStr,
-        }),
-      });
-      if (!res.ok) info.revert();
-    }
-
     cal = new Calendar(el, {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
       initialView: viewNameToFullCalendar(spec.defaultView),
@@ -57,10 +68,7 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
         right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
       },
       editable: !!spec.editable,
-      // An event without its own update can't be dragged or resized.
-      events: spec.events.map((e) =>
-        e.actions?.update ? e : { ...e, editable: false },
-      ),
+      events: eventsForCalendar(spec.events),
       // An event's `link` (kept in extendedProps by FullCalendar) opens it.
       eventClick: (info) => {
         const link: unknown = info.event.extendedProps.link;
@@ -70,8 +78,8 @@ function CalendarStandalone(props: { spec: CalendarSpec }) {
         }
       },
       // Each event saves through its own finished `actions.update`.
-      eventDrop: (info) => void save(info),
-      eventResize: (info) => void save(info),
+      eventDrop: (info) => void saveEvent(info, send, dispatch),
+      eventResize: (info) => void saveEvent(info, send, dispatch),
     });
     cal.render();
   });

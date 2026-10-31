@@ -6,7 +6,15 @@ import type { Cell, Column } from './table';
 /** A `{ method, url }` pair. Every endpoint directive is also an http action. */
 export type EndpointDirective = HttpAction;
 
-/** The writes one row supports, each a finished http action, e.g. `{ method: 'PUT', url: '/contacts/7' }`. */
+/**
+ * The writes one row supports, each a finished http action, e.g.
+ * `{ method: 'PUT', url: '/contacts/7' }`. What each built-in view sends:
+ * - table: `update` when a column is editable, body the row's raw values
+ *   minus `_actions` and link fields; `delete` with no body.
+ * - tree: `delete` only, with no body.
+ * - calendar (`CalendarEvent.actions`): `update` only, body `{ start, end }`
+ *   (`end` omitted when the event has none).
+ */
 export interface RowActions {
   update?: HttpAction;
   delete?: HttpAction;
@@ -179,8 +187,8 @@ export interface CalendarEvent {
   allDay?: boolean;
   /** Finished link opened when the event is clicked, e.g. `#/events/3`. */
   link?: string;
-  /** This event's finished writes; `update` receives a drag or resize. */
-  actions?: RowActions;
+  /** This event's finished save; `update` receives a drag or resize as `{ start, end? }`. */
+  actions?: Pick<RowActions, 'update'>;
 }
 
 /** Drives the calendar view. */

@@ -31,7 +31,6 @@ describe('CalendarViewBuilder', () => {
       .title('My Agenda')
       .toolbar('New', { type: 'navigate', to: '#/events/new' })
       .update({ method: 'PUT', url: '/events/{id}' })
-      .delete({ method: 'DELETE', url: '/events/{id}' })
       .build();
     expect(spec.defaultView).toBe('week');
     expect(spec.editable).toBe(true);
@@ -41,9 +40,12 @@ describe('CalendarViewBuilder', () => {
     ]);
     expect(spec.events[0]?.actions).toEqual({
       update: { method: 'PUT', url: '/events/1' },
-      delete: { method: 'DELETE', url: '/events/1' },
     });
     expect('endpoints' in spec).toBe(false);
+  });
+
+  it('has no delete(): the built-in calendar only sends update', () => {
+    expect('delete' in CalendarViewBuilder.prototype).toBe(false);
   });
 
   it('defaultView maps all four valid values', () => {

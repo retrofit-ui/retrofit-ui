@@ -11,8 +11,7 @@ export class CalendarViewBuilder {
   private _events: CalendarEvent[] = [];
   private _defaultView?: CalendarSpec['defaultView'];
   private _editable?: boolean;
-  private _writes: { update?: EndpointDirective; delete?: EndpointDirective } =
-    {};
+  private _update?: EndpointDirective;
   private _title?: string;
   private _toolbar: ToolbarButton[] = [];
 
@@ -46,22 +45,16 @@ export class CalendarViewBuilder {
   }
   /** Each event's drag/resize save, its `{name}`s filled from the event. */
   update(directive: EndpointDirective): this {
-    this._writes = { ...this._writes, update: directive };
-    return this;
-  }
-  /** Each event's delete, its `{name}`s filled from the event. */
-  delete(directive: EndpointDirective): this {
-    this._writes = { ...this._writes, delete: directive };
+    this._update = directive;
     return this;
   }
 
   build(): CalendarSpec {
-    const events =
-      Object.keys(this._writes).length > 0
-        ? withRowActions(this._events, this._writes).map(
-            ({ _actions, ...event }) => ({ ...event, actions: _actions }),
-          )
-        : this._events;
+    const events = this._update
+      ? withRowActions(this._events, { update: this._update }).map(
+          ({ _actions, ...event }) => ({ ...event, actions: _actions }),
+        )
+      : this._events;
     return {
       kind: 'calendar',
       events,

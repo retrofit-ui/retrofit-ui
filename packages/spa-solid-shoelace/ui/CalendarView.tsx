@@ -4,7 +4,7 @@ import type { EventResizeDoneArg } from '@fullcalendar/interaction';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import type { CalendarSpec, RowActions } from '@retrofit-ui/core';
+import type { CalendarEvent, CalendarSpec } from '@retrofit-ui/core';
 import { onCleanup, onMount, Show } from 'solid-js';
 import { useActions, useHttp } from './actions';
 import { Toolbar } from './TableView';
@@ -33,7 +33,7 @@ export async function saveEvent(
   send: ReturnType<typeof useHttp>,
   dispatch: ReturnType<typeof useActions>['dispatch'],
 ) {
-  const ep = (info.event.extendedProps.actions as RowActions | undefined)
+  const ep = (info.event.extendedProps.actions as CalendarEvent['actions'])
     ?.update;
   if (!ep) {
     info.revert();
@@ -44,9 +44,10 @@ export async function saveEvent(
     res = await send(ep.url, {
       method: ep.method,
       headers: { 'Content-Type': 'application/json' },
+      // An event without an end has endStr ''; send no end rather than ''.
       body: JSON.stringify({
         start: info.event.startStr,
-        end: info.event.endStr,
+        ...(info.event.endStr && { end: info.event.endStr }),
       }),
     });
   } catch {

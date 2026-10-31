@@ -641,23 +641,31 @@ describe('row writes', () => {
     );
   });
 
-  it("saves an inline edit through the row's own update, without _actions in the body", async () => {
+  it("saves an inline edit through the row's own update, without _actions or link fields in the body", async () => {
     const spy = vi.fn(async () => new Response('{}'));
     const { SpecRenderer: R } = createRenderer({ actions: { http: spy } });
     const table: TableSpec = {
       kind: 'table',
       columns: [{ key: 'name', label: 'Name', type: 'string', editable: true }],
       endpoints: {},
+      rowLinkField: '_link',
+      rowActions: [{ label: 'Open', linkField: '_action0' }],
       rows: [
         {
           name: { value: 'Bo' },
+          _link: { value: '#/c/7' },
+          _action0: { value: '#/c/7/open' },
           _actions: { value: { update: { method: 'PUT', url: '/c/7' } } },
         },
       ],
     };
     const root = mount(() => <R spec={table} />);
-    await vi.waitFor(() => expect(buttons(root)).toEqual(['Edit']));
-    (root.querySelector('tbody tr sl-button') as HTMLElement).click();
+    await vi.waitFor(() => expect(buttons(root)).toEqual(['Edit', 'Open']));
+    (
+      [...root.querySelectorAll('tbody tr sl-button')].find(
+        (b) => b.textContent?.trim() === 'Edit',
+      ) as HTMLElement
+    ).click();
     await vi.waitFor(() => expect(buttons(root)).toContain('Save'));
     (
       [...root.querySelectorAll('tbody tr sl-button')].find(
@@ -816,6 +824,23 @@ describe('small behavior fixes', () => {
       if (ok) expect(dispatch).toHaveBeenCalledWith({ type: 'refresh' });
       expect(revert).toHaveBeenCalledTimes(ok ? 0 : 1);
     }
+  });
+
+  it('omits end from the calendar save body when the event has none', async () => {
+    const send = vi.fn(async () => new Response('{}'));
+    const info = {
+      revert: vi.fn(),
+      event: {
+        extendedProps: { actions: { update: { method: 'PUT', url: '/e/1' } } },
+        startStr: '2026-06-15',
+        endStr: '',
+      },
+    } as never;
+    await saveEvent(info, send as never, vi.fn() as never);
+    expect(send).toHaveBeenCalledWith(
+      '/e/1',
+      expect.objectContaining({ body: '{"start":"2026-06-15"}' }),
+    );
   });
 
   it('maps an event without actions.update to editable: false', () => {

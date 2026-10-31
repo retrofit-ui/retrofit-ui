@@ -71,6 +71,31 @@ function writesOf(row: Record<string, unknown>): RowActions | undefined {
   return cellValue(row._actions) as RowActions | undefined;
 }
 
+/**
+ * The row's record for a save: its raw values minus spec data (`_actions`,
+ * the row and row-action link fields, and, when no column key starts with
+ * `_`, every `_` field the builder adds). Column keys are always kept.
+ */
+function recordOf(
+  values: Record<string, unknown>,
+  spec: TableSpec,
+): Record<string, unknown> {
+  const columns = new Set(spec.columns.map((c) => c.key));
+  const underscoreColumns = spec.columns.some((c) => c.key.startsWith('_'));
+  const specFields = new Set([
+    '_actions',
+    ...(spec.rowLinkField ? [spec.rowLinkField] : []),
+    ...(spec.rowActions ?? []).map((a) => a.linkField),
+  ]);
+  return Object.fromEntries(
+    Object.entries(values).filter(
+      ([k]) =>
+        columns.has(k) ||
+        !(specFields.has(k) || (!underscoreColumns && k.startsWith('_'))),
+    ),
+  );
+}
+
 /** Whether the table needs an actions column. */
 function tableHasActions(
   spec: TableSpec,
@@ -330,8 +355,7 @@ function DataRow(props: {
     const ep = writes()?.update;
     if (!ep) return;
     setSaving(true);
-    // The row's writes are spec data, not part of the record.
-    const { _actions, ...body } = values();
+    const body = recordOf(values(), props.spec);
     try {
       const res = await send(ep.url, {
         method: ep.method,

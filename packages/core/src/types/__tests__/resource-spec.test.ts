@@ -142,10 +142,7 @@ describe('CalendarSpec', () => {
           title: 'Meeting',
           start: '2026-06-15T09:00:00',
           link: '#/events/1',
-          actions: {
-            update: { method: 'PUT', url: '/events/1' },
-            delete: { method: 'DELETE', url: '/events/1' },
-          },
+          actions: { update: { method: 'PUT', url: '/events/1' } },
         },
       ],
       defaultView: 'month',

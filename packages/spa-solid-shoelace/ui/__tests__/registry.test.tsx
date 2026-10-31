@@ -376,7 +376,7 @@ describe('pages', () => {
   const listTable: TableSpec = {
     kind: 'table',
     columns: [{ key: 'name', label: 'Name', type: 'string' }],
-    endpoints: { list: { method: 'GET', url: '/items?status={status}' } },
+    endpoints: { list: { method: 'GET', url: '/items' } },
   };
 
   it('fills page filters into a table list url and refetches when they change', async () => {
@@ -407,7 +407,7 @@ describe('pages', () => {
     // Only the table's requests: Shoelace fetches its icons too.
     const items = () => fetched.filter((url) => url.startsWith('/items'));
     await vi.waitFor(() =>
-      expect(items()).toEqual(['/items?status=open', '/items?status=a%20b']),
+      expect(items()).toEqual(['/items?status=open', '/items?status=a+b']),
     );
   });
 
@@ -430,15 +430,15 @@ describe('pages', () => {
       ],
     };
     const root = mount(() => <SpecRenderer spec={page} />);
-    const items = () => fetched.filter((url) => url.startsWith('/items?'));
-    await vi.waitFor(() => expect(items()).toEqual(['/items?status=']));
+    const items = () => fetched.filter((url) => url.startsWith('/items'));
+    await vi.waitFor(() => expect(items()).toEqual(['/items']));
     // autoSubmit writes the field to the page's filters, and the table follows.
     const input = root.querySelector('sl-input');
     if (!input) throw new Error('the form has no input');
     input.value = 'done';
     input.dispatchEvent(new Event('sl-input'));
     await vi.waitFor(() =>
-      expect(items()).toEqual(['/items?status=', '/items?status=done']),
+      expect(items()).toEqual(['/items', '/items?status=done']),
     );
   });
 
@@ -468,7 +468,7 @@ describe('pages', () => {
       <R spec={{ kind: 'page', children: [form, listTable] }} />
     ));
     // The table's list requests, not the form's POST.
-    const items = () => fetched.filter((url) => url.startsWith('/items?'));
+    const items = () => fetched.filter((url) => url.startsWith('/items'));
     await vi.waitFor(() => expect(items()).toHaveLength(1));
     // Inside a page a form draws its own title and label, without routed chrome.
     expect(root.querySelector('.retrofit-form-title')?.textContent).toBe(
@@ -609,5 +609,67 @@ describe('row writes', () => {
         expect.any(Function),
       ),
     );
+  });
+});
+
+describe('table columns', () => {
+  const table: TableSpec = {
+    kind: 'table',
+    columns: [
+      { key: 'name', label: 'Name', type: 'string', sortable: true },
+      { key: 'age', label: 'Age', type: 'number', sortable: true },
+      { key: 'note', label: 'Note', type: 'string', width: '12rem' },
+    ],
+    endpoints: { list: { method: 'GET', url: '/items' } },
+  };
+  const th = (root: HTMLElement, label: string) => {
+    const el = [...root.querySelectorAll('th')].find((h) =>
+      h.textContent?.includes(label),
+    );
+    if (!el) throw new Error(`no ${label} header`);
+    return el;
+  };
+
+  it('sorts by a sortable column through query params', async () => {
+    const fetched: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      fetched.push(String(input));
+      return new Response('[{"name":"a"}]');
+    });
+    const root = mount(() => <SpecRenderer spec={table} />);
+    const items = () => fetched.filter((url) => url.startsWith('/items'));
+    await vi.waitFor(() => expect(items()).toEqual(['/items']));
+    await vi.waitFor(() => expect(root.querySelector('th')).not.toBeNull());
+    expect(th(root, 'Name').getAttribute('aria-sort')).toBe('none');
+    th(root, 'Name').click();
+    await vi.waitFor(() =>
+      expect(items().at(-1)).toBe('/items?sort=name&order=asc'),
+    );
+    await vi.waitFor(() =>
+      expect(th(root, 'Name').getAttribute('aria-sort')).toBe('ascending'),
+    );
+    expect(th(root, 'Age').getAttribute('aria-sort')).toBe('none');
+    // Space and Enter operate the header too.
+    th(root, 'Name').dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', bubbles: true }),
+    );
+    await vi.waitFor(() =>
+      expect(items().at(-1)).toBe('/items?sort=name&order=desc'),
+    );
+    th(root, 'Age').dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
+    await vi.waitFor(() =>
+      expect(items().at(-1)).toBe('/items?sort=age&order=asc'),
+    );
+  });
+
+  it('applies a column width to its header', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () => new Response('[{"name":"a"}]'),
+    );
+    const root = mount(() => <SpecRenderer spec={table} />);
+    await vi.waitFor(() => expect(root.querySelector('th')).not.toBeNull());
+    expect(th(root, 'Note').style.width).toBe('12rem');
   });
 });

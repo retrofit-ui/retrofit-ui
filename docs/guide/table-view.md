@@ -154,7 +154,6 @@ Customise individual columns without losing the auto-derived type:
 ```typescript
 TableView.schema(PostSchema)
   .columnOverride('title', { sortable: true })
-  .columnOverride('status', { filterable: true })
   .columnOverride('author', { width: '120px', alignment: 'right' })
   .list({ method: 'GET', url: '/posts' })
   .build();
@@ -163,7 +162,6 @@ TableView.schema(PostSchema)
 | Override field | Type | Effect |
 |----------------|------|--------|
 | `sortable` | `boolean` | Shows sort indicator (visual only — sorting is done server-side) |
-| `filterable` | `boolean` | Shows filter indicator |
 | `width` | `string` | CSS width, e.g. `'120px'` |
 | `alignment` | `'left' \| 'center' \| 'right'` | Cell alignment |
 | `label` | `string` | Override the auto-derived column header |
@@ -208,7 +206,6 @@ TableView.schema(PostSchema)
 ```typescript
 TableView.schema(PostSchema)
   .columnOverride('title',  { sortable: true })
-  .columnOverride('status', { filterable: true })
   .columnOverride('author', { width: '100px', alignment: 'right' })
   .list({ method: 'GET', url: '/posts' })
   .build()
@@ -478,6 +475,6 @@ TableView.forRows(PostSchema, posts)
 | `update` | Enables inline save (requires `updateSchema`). |
 | `delete` | Shows a "Delete" button per row. |
 
-Inline save and delete are the one place the client fills a url from a row: `{id}` in the `update`/`delete` url is replaced with the row's id field (`idField`, derived from the url) when the user clicks. Write the placeholder as `{id}`. A `list` url inside a [page](/guide/layouts) also gets `{param}`s from the page's filters, and `{page}`/`{pageSize}` when the table is paginated. Everything else — row links, row actions, toolbar actions — arrives finished.
+Inline save and delete are the one place the client fills a url from a row: `{id}` in the `update`/`delete` url is replaced with the row's id field (`idField`, derived from the url) when the user clicks. Write the placeholder as `{id}`. The `list` url gets query params from the client: `page` and `pageSize` when the table is paginated, `sort` and `order` for a sortable column, and each [page](/guide/layouts) filter by name. Empty values are omitted. Everything else — row links, row actions, toolbar actions — arrives finished.
 
 There is no `find` endpoint: opening a record is a row link to a route whose spec is that record's form.

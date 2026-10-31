@@ -31,7 +31,6 @@ const bundle = TableFormWorkflowBundle.schema(ContactSchema)
   .table((t) =>
     t
       .columnOverride('name', { sortable: true })
-      .columnOverride('email', { filterable: true }),
   )
   .form((f) =>
     f

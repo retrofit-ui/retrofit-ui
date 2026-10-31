@@ -50,13 +50,12 @@ const UpdatePostSchema = z.object({
 ## Three spec endpoints
 
 ```typescript
-// 1. Table view — sortable title, filterable status, Preview row action
+// 1. Table view — sortable title, Preview row action
 app.get('/api/ui/posts', (_req, res) => {
   res.json(
     retrofit(
       TableView.schema(PostSchema)
         .columnOverride('title', { sortable: true })
-        .columnOverride('status', { filterable: true })
         .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
         .find({ method: 'GET', url: '/posts/{id}' })
         .list({ method: 'GET', url: '/posts' })

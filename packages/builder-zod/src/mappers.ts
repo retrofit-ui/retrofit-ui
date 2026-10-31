@@ -143,7 +143,6 @@ export function zodFieldToColumn(key: string, schema: ZodTypeAny): Column {
     label: toLabel(key),
     type: toColumnType(def),
     sortable: false,
-    filterable: false,
     editable: false,
     alignment: 'left',
   };

@@ -22,9 +22,10 @@ export interface Column {
   key: string;
   label: string;
   type: ColumnType;
+  /** Clicking the header sorts through the `sort` and `order` query params. */
   sortable?: boolean;
-  filterable?: boolean;
   editable?: boolean;
+  /** A CSS width for the column, e.g. `12rem`. */
   width?: string;
   alignment?: 'left' | 'center' | 'right';
   options?: FieldOption[];

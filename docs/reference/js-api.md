@@ -339,7 +339,6 @@ interface Column {
   label: string;
   type: 'string' | 'number' | 'date' | 'datetime' | 'time' | 'boolean' | 'enum' | 'custom';
   sortable?: boolean;   // default false
-  filterable?: boolean; // default false
   editable?: boolean;   // default false
   width?: string;
   alignment?: 'left' | 'center' | 'right'; // default 'left'

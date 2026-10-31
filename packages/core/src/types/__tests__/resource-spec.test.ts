@@ -13,7 +13,6 @@ const idColumn = {
   label: 'ID',
   type: 'number' as const,
   sortable: false,
-  filterable: false,
   editable: false,
   alignment: 'left' as const,
 };

@@ -179,7 +179,7 @@ app.get('/api/ui/expenses-filtered', (_req, res) => {
           ])
           .list({
             method: 'GET',
-            url: '/expenses?category={category}&status={status}',
+            url: '/expenses',
           })
           .build(),
       )

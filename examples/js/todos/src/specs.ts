@@ -87,7 +87,7 @@ export function buildTodosByPrioritySpec() {
     )
     .table(
       TableView.schema(TodoSchema)
-        .list({ method: 'GET', url: '/todos?priority={priority}' })
+        .list({ method: 'GET', url: '/todos' })
         .build(),
     )
     .build();

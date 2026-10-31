@@ -26,6 +26,12 @@ app.get('/contacts', (req, res) => {
     update: { method: 'PUT', url: '/contacts/{id}' },
     delete: { method: 'DELETE', url: '/contacts/{id}' },
   });
+  const { sort, order } = req.query;
+  if (sort === 'name') {
+    all.sort(
+      (a, b) => a.name.localeCompare(b.name) * (order === 'desc' ? -1 : 1),
+    );
+  }
   const page = Number(req.query.page);
   const pageSize = Number(req.query.pageSize);
   if (page > 0 && pageSize > 0) {

@@ -168,7 +168,7 @@ app.get('/api/ui/events-by-category', (_req, res) => {
       .table(
         TableView.schema(EventSchema)
           .visibleColumns(['title', 'start', 'end', 'category'])
-          .list({ method: 'GET', url: '/events?category={category}' })
+          .list({ method: 'GET', url: '/events' })
           .build(),
       )
       .build(),

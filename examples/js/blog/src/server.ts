@@ -29,7 +29,14 @@ app.use(express.json());
 
 app.get('/posts', (req, res) => {
   const status = req.query.status as string | undefined;
-  res.json(status ? store.byStatus(status) : store.all());
+  const posts = [...(status ? store.byStatus(status) : store.all())];
+  const { sort, order } = req.query;
+  if (sort === 'title') {
+    posts.sort(
+      (a, b) => a.title.localeCompare(b.title) * (order === 'desc' ? -1 : 1),
+    );
+  }
+  res.json(posts);
 });
 app.get('/posts/:id', (req, res) => res.json(store.find(req.params.id)));
 app.post('/posts', (req, res) =>

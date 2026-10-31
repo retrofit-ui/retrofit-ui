@@ -63,7 +63,7 @@ import {
 import { useActions, useHttp } from './actions';
 import { usePage } from './page-context';
 import { showToast } from './toast';
-import { cellFormatted, cellValue, rawRow, substitutePattern } from './utils';
+import { cellFormatted, cellValue, listUrl, rawRow } from './utils';
 
 /** A row's own finished writes, if it has any. */
 function writesOf(row: Record<string, unknown>): RowActions | undefined {
@@ -478,6 +478,17 @@ export function TableViewComponent(props: { spec: TableSpec }) {
     null,
   );
 
+  const [sort, setSort] = createSignal<{
+    key: string;
+    order: 'asc' | 'desc';
+  }>();
+  const toggleSort = (key: string) =>
+    setSort((s) =>
+      s?.key === key && s.order === 'asc'
+        ? { key, order: 'desc' }
+        : { key, order: 'asc' },
+    );
+
   const page = usePage();
 
   // Refetches when the page, page size, inline rows, the surrounding page's
@@ -490,23 +501,26 @@ export function TableViewComponent(props: { spec: TableSpec }) {
         props.spec.rows,
         page?.filters(),
         page?.version(),
+        sort(),
       ] as const,
-    async ([pageNumber, pageSizeOverride, inlineRows, filters]) => {
+    async ([
+      pageNumber,
+      pageSizeOverride,
+      inlineRows,
+      filters,
+      ,
+      activeSort,
+    ]) => {
       if (inlineRows) return inlineRows;
       const ep = props.spec.endpoints?.list;
       if (!ep) return [];
       const pagination = props.spec.metadata?.pagination;
       const pageSize = pageSizeOverride ?? pagination?.pageSize;
-      const params: Record<string, string> = {};
-      for (const [name, value] of Object.entries(filters ?? {})) {
-        params[name] = encodeURIComponent(value);
-      }
-      const url = substitutePattern(ep.url, {
-        ...params,
-        ...(pagination && {
-          page: encodeURIComponent(String(pageNumber)),
-          pageSize: encodeURIComponent(String(pageSize)),
-        }),
+      const url = listUrl(ep.url, {
+        ...filters,
+        ...(pagination && { page: pageNumber, pageSize }),
+        sort: activeSort?.key,
+        order: activeSort?.order,
       });
       const res = await send(url);
       if (!res.ok) throw new Error('Failed to fetch table data');
@@ -564,9 +578,33 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                     {(col) => (
                       <th
                         class="retrofit-th"
-                        style={{ 'text-align': col.alignment }}
+                        style={{
+                          'text-align': col.alignment,
+                          width: col.width,
+                        }}
+                        {...(col.sortable && !props.spec.rows
+                          ? {
+                              role: 'button',
+                              tabindex: 0,
+                              'aria-sort':
+                                sort()?.key !== col.key
+                                  ? 'none'
+                                  : sort()?.order === 'asc'
+                                    ? 'ascending'
+                                    : 'descending',
+                              onClick: () => toggleSort(col.key),
+                              onKeyDown: (e: KeyboardEvent) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  toggleSort(col.key);
+                                }
+                              },
+                            }
+                          : {})}
                       >
                         {col.label}
+                        {sort()?.key === col.key &&
+                          (sort()?.order === 'asc' ? ' ▲' : ' ▼')}
                       </th>
                     )}
                   </For>

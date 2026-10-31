@@ -1,25 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { substitutePattern } from '../utils';
+import { listUrl } from '../utils';
 
-describe('substitutePattern', () => {
-  it('substitutes page and pageSize placeholders', () => {
-    expect(
-      substitutePattern('/items?page={page}&limit={pageSize}', {
-        page: '2',
-        pageSize: '20',
-      }),
-    ).toBe('/items?page=2&limit=20');
+describe('listUrl', () => {
+  it('appends non-empty values and omits empty ones', () => {
+    expect(listUrl('/c', { page: 2, pageSize: 20, type: '' })).toBe(
+      '/c?page=2&pageSize=20',
+    );
   });
 
-  it('returns URL unchanged when no placeholders match', () => {
-    expect(
-      substitutePattern('/items?sort=name', { page: '2', pageSize: '20' }),
-    ).toBe('/items?sort=name');
+  it('keeps the query already on the url', () => {
+    expect(listUrl('/c?x=1', { sort: 'name' })).toBe('/c?x=1&sort=name');
   });
 
-  it('substitutes only the matching placeholder when only one is present', () => {
-    expect(
-      substitutePattern('/items?page={page}', { page: '3', pageSize: '10' }),
-    ).toBe('/items?page=3');
+  it('returns the url unchanged when nothing is set', () => {
+    expect(listUrl('/c', { sort: undefined })).toBe('/c');
   });
 });

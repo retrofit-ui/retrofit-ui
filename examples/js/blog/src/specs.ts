@@ -39,7 +39,6 @@ export function buildPostsTableSpec(rows: Post[]) {
   return TableView.forRows(PostSchema, rows)
     .columnOverride('title', { sortable: true })
     .columnOverride('status', {
-      filterable: true,
       badgeVariants: {
         draft: 'neutral',
         published: 'success',
@@ -140,7 +139,7 @@ export function buildPostsByStatusSpec() {
     .table(
       TableView.schema(PostSchema)
         .visibleColumns(['title', 'author', 'status', 'updatedAt'])
-        .list({ method: 'GET', url: '/posts?status={status}' })
+        .list({ method: 'GET', url: '/posts' })
         .build(),
     )
     .build();

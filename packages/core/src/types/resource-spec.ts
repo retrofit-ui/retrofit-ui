@@ -43,7 +43,12 @@ export interface TableSpec extends SpecNode<'table'> {
   /** Buttons above the table, e.g. "New". */
   toolbar?: ToolbarButton[];
   endpoints: {
-    /** Fetches rows. Inside a page, `{param}`s are filled from the page's filters. */
+    /**
+     * Fetches rows as a raw row array. The client adds query params to `url`:
+     * `page` and `pageSize` (with `metadata.pagination`), `sort` and
+     * `order=asc|desc` (a sortable column is active), and each page filter by
+     * name. Empty values are omitted.
+     */
     list?: EndpointDirective;
     /** With editable columns, adds an inline "new row". */
     create?: EndpointDirective;

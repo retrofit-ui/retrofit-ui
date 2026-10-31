@@ -41,7 +41,6 @@ export function buildContactsBundle(totalRows: number) {
       .table((t) =>
         t
           .columnOverride('name', { sortable: true })
-          .columnOverride('email', { filterable: true })
           .metadata({ pagination: { pageSize: 2, totalRows } }),
       )
       .form((f) =>
@@ -56,7 +55,7 @@ export function buildContactsBundle(totalRows: number) {
       // The hash route the bundle's screens live under (see crudRoutes in
       // server.ts): adds the table's "New" button and sends forms back here.
       .route('/contacts')
-      .list({ method: 'GET', url: '/contacts?page={page}&pageSize={pageSize}' })
+      .list({ method: 'GET', url: '/contacts' })
       .create({ method: 'POST', url: '/contacts' })
       .update({ method: 'PUT', url: '/contacts/{id}' })
       .delete({ method: 'DELETE', url: '/contacts/{id}' })
@@ -113,7 +112,7 @@ export function buildContactsByTypeSpec() {
     .table(
       TableView.schema(ContactSchema)
         .visibleColumns(['name', 'email', 'phone', 'type'])
-        .list({ method: 'GET', url: '/contacts?type={type}' })
+        .list({ method: 'GET', url: '/contacts' })
         .build(),
     )
     .build();

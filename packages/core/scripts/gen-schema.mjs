@@ -1,8 +1,9 @@
 // Generates schema/retrofit-ui.schema.json from the TS types (the source of truth).
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createGenerator } from 'ts-json-schema-generator';
 
-const pkg = (rel) => new URL(`../${rel}`, import.meta.url).pathname;
+const pkg = (rel) => fileURLToPath(new URL(`../${rel}`, import.meta.url));
 
 const schema = createGenerator({
   path: pkg('src/types/schema-root.ts'),

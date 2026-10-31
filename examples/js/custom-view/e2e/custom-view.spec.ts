@@ -155,12 +155,16 @@ test.describe('Theming', () => {
   test('theme CSS variables are applied at :root', async ({ page }) => {
     await page.goto('/');
 
-    const primary700 = await page.evaluate(() =>
-      getComputedStyle(document.documentElement)
-        .getPropertyValue('--sl-color-primary-700')
-        .trim(),
-    );
-    expect(primary700).toBe('#6d28d9');
+    // The theme arrives with /retrofit.json after load, so wait for it.
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          getComputedStyle(document.documentElement)
+            .getPropertyValue('--sl-color-primary-700')
+            .trim(),
+        ),
+      )
+      .toBe('#6d28d9');
   });
 
   test('theme extraCss is injected as a <style> tag', async ({ page }) => {

@@ -1,96 +1,64 @@
 # Interactive Chat Example
 
-**Pattern: `pageSpec()` — composing multiple view kinds into a single page**
+**Pattern: one `page` spec that composes cards, stats, a timeline and a table into a conversation**
 
-The interactive-chat example demonstrates how retrofit-ui's layout system can represent a richly structured conversation. Each user question and assistant reply is a child of a single `PageSpec`, laid out in a vertical flex column. User messages render as markdown; assistant replies are composed from `stat`, `timeline`, and `table` components arranged with `col()` and `grid()`.
+A model or backend can answer with whole layouts, not text. This example builds three question and answer turns from built-in kinds.
 
 <InteractiveChatDemo />
 
-::: tip
-The demo above is live — everything is embedded in a single spec, so no network calls are needed to render it.
-:::
+Run it locally (serves on port 3006, or `PORT`):
 
-Run it locally:
 ```bash
 just example interactive-chat
+# or: pnpm --filter @retrofit-ui-examples/interactive-chat dev
 ```
 
 ## What it demonstrates
 
-- Nesting `col()` and `grid()` layout containers inside a `pageSpec()` to build multi-section pages
-- Embedding `StatViewBuilder`, `TimelineView`, and `TableView.forRows` as inline children (no route needed)
-- Using `MarkdownViewSpec` with inline `content` to render user message text
-- A 3-column `grid()` for side-by-side stat comparison cards
+- Containers nest specs directly: `page` holds `card`s, and each card holds `markdown`, `stat`, `timeline`, `table` or `grid` children
+- Layout helpers: `col(gap)` and `grid(columns, gap)`
+- Builders: `CardViewBuilder`, `StatViewBuilder`, `TimelineView`, `TableView`
+- A static page: the content is inline, with no list endpoints
 
-## Server
+## Routes
 
-```typescript
-app.get('/api/ui/chat', (_req, res) => {
-  const spec = pageSpec()
-    .title('Agenda Assistant')
-    .layout(col('2rem'))
-    // user question
-    .add(userMessage('1'))
-    // assistant reply: stat cards + timeline
-    .add(
-      col('1rem')
-        .add(new StatViewBuilder().stat({ label: 'Meetings Today', value: 4 }).build())
-        .add(TimelineView.events([...events]).build())
-        .build(),
-    )
-    // user question
-    .add(userMessage('2'))
-    // assistant reply: deadline stats + table
-    .add(
-      col('1rem')
-        .add(new StatViewBuilder().stat({ label: 'Overdue', value: 1 }).build())
-        .add({ kind: 'table', spec: TableView.forRows(DeadlineSchema, rows).build() })
-        .build(),
-    )
-    // user question
-    .add(userMessage('3'))
-    // assistant reply: 3-column comparison grid
-    .add(
-      grid(3, '1rem')
-        .add(new StatViewBuilder().stat({ label: 'This Week', value: '14h' }).build())
-        .add(new StatViewBuilder().stat({ label: 'Last Week', value: '11h' }).build())
-        .add(new StatViewBuilder().stat({ label: 'Change', value: '+27%' }).build())
-        .build(),
-    )
-    .build();
+From `src/server.ts`. The server has one route and no data endpoints.
 
-  res.json(spec);
-});
-```
-
-`userMessage()` embeds the markdown text directly in the spec, so no follow-up fetch is needed:
+| Route | Spec endpoint | Kind |
+| --- | --- | --- |
+| `/chat` | `/api/ui/chat` | `page` |
 
 ```typescript
-const MESSAGES: Record<string, string> = {
-  '1': 'What does my schedule look like for **today**?',
-  '2': 'Are there any **upcoming deadlines** I should know about?',
-  '3': 'How does my workload this week **compare to last week**?',
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  theme: chatTheme,
+  routes: [route('/chat')],
 };
-
-function userMessage(id: string): ViewSpec {
-  return {
-    kind: 'markdown',
-    spec: { kind: 'markdown', content: MESSAGES[id] ?? '' },
-  };
-}
 ```
 
-## Spec structure
+## The conversation
 
-| Child | Kind | Contents |
-|-------|------|----------|
-| User turn 1 | `markdown` | Inline `content` — "What does my schedule look like today?" |
-| Assistant turn 1 | `flex` column | `stat` (3 KPIs) + `timeline` (6 events) |
-| User turn 2 | `markdown` | Inline `content` — "Are there any upcoming deadlines?" |
-| Assistant turn 2 | `flex` column | `stat` (deadline counts) + `table` (5 rows) |
-| User turn 3 | `markdown` | Inline `content` — "How does my workload compare?" |
-| Assistant turn 3 | `grid` (3 cols) | Three single-stat comparison cards |
+From `src/spec.ts`. A user turn is a card with a `markdown` child. An assistant turn is a card that wraps any spec.
 
-## Key takeaway
+```typescript
+function assistantReply(content: Spec): Spec {
+  return new CardViewBuilder()
+    .header('Assistant')
+    .add(content)
+    .footer(DOWNLOAD_FOOTER)
+    .build();
+}
 
-`pageSpec().add(viewSpec)` accepts any `ViewSpec` — including nested `flex`/`grid` containers — so you can describe arbitrarily deep layouts without leaving the builder chain. `StatSpec`, `TimelineSpec`, and `TableSpec` with inline `rows` all embed their data directly in the spec; no additional fetch routes are needed for the assistant reply components.
+pageSpec()
+  .title('Agenda Assistant')
+  .layout(col('2rem'))
+  .add(userMessage('1'))
+  .add(assistantReply(col('1rem').add(todayStats).add(todayTimeline).build()))
+  .add(userMessage('2'))
+  .add(assistantReply(col('1rem').add(deadlineStats).add(deadlineTable).build()))
+  .add(userMessage('3'))
+  .add(assistantReply(grid(3, '1rem').add(thisWeekStat).add(lastWeekStat).add(changeStat).build()))
+  .build();
+```
+
+`DOWNLOAD_FOOTER` is a `form` spec with no fields and a create endpoint. The example uses it as a card footer.

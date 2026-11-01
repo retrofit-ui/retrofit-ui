@@ -1,81 +1,87 @@
 # Contacts Example
 
-**Pattern: `TableFormWorkflowBundle` — separate table and form views**
+**Pattern: `TableFormWorkflowBundle` with a paginated, sortable list**
 
-The contacts example shows the most common CRUD pattern: a table listing all records, clicking a row opens an edit form, a "New" button opens a create form.
+A table lists contacts and a form edits them. The bundle builds the matching table and form specs from one schema.
 
 <ContactsDemo />
 
 ::: tip
-The demo above is live — try editing a contact's type, adding a new contact, or deleting one. All data is mocked in the browser with MSW.
+The demo above is live. Edit a contact, add one or delete one. All data is mocked in the browser with MSW.
 :::
 
-Run it locally:
+Run it locally (serves on port 3000, or `PORT`):
+
 ```bash
 just example contacts
+# or: pnpm --filter @retrofit-ui-examples/contacts dev
 ```
 
 ## What it demonstrates
 
-- `TableFormWorkflowBundle` for zero-boilerplate table+form registration
-- Column and field customisation via the `table()` and `form()` callbacks
-- Custom field validation (`pattern`) and display overrides (`placeholder`, `helpText`)
-- `updateSchema` to keep `id` read-only on the edit form
-- Using `pageSpec().layout(col())` to plug a table component into a column layout container
+- `TableFormWorkflowBundle`: one schema yields `tableSpec`, `createForm` and `editForm(entity, params)`
+- A list-backed `table` with `sortable` columns and `metadata.pagination`
+- Per-row writes with `withRowActions`
+- Field validation (`pattern`) and `placeholder` on a form
+- A `stat` view and a `page` with `filter-form` + `form` + `table`
 
-## Server
+## Routes
+
+From `src/server.ts`:
+
+| Route | Spec endpoint | Kind |
+| --- | --- | --- |
+| `/contacts` | `/api/ui/contacts` | `page` with a `table` |
+| `/contacts/new` | `/api/ui/contacts/new` | `form` (create) |
+| `/contacts/:id` | `/api/ui/contacts/{id}` | `form` (edit) |
+| `/contacts-by-type` | `/api/ui/contacts-by-type` | `page`: `filter-form`, `form`, `table` |
+| `/dashboard/stats` | `/api/ui/dashboard/stats` | `stat` |
 
 ```typescript
-const bundle = TableFormWorkflowBundle.schema(ContactSchema)
+routes: [
+  ...crudRoutes('contacts'),
+  route('/contacts-by-type'),
+  route('/dashboard/stats'),
+],
+```
+
+## The bundle
+
+From `src/specs.ts`:
+
+```typescript
+TableFormWorkflowBundle.schema(ContactSchema)
   .updateSchema(UpdateContactSchema)
   .table((t) =>
     t
       .columnOverride('name', { sortable: true })
+      .metadata({ pagination: { pageSize: 2, totalRows } }),
   )
   .form((f) =>
-    f
-      .fieldOverride('notes', { type: 'textarea' })
-      .fieldOverride('phone', {
-        placeholder: '+1 555 000 0000',
-        validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
-      }),
+    f.title('Contact').fieldOverride('phone', {
+      placeholder: '+1 555 000 0000',
+      validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
+    }),
   )
+  .route('/contacts')
   .list({ method: 'GET', url: '/contacts' })
-  .find({ method: 'GET', url: '/contacts/{id}' })
   .create({ method: 'POST', url: '/contacts' })
   .update({ method: 'PUT', url: '/contacts/{id}' })
   .delete({ method: 'DELETE', url: '/contacts/{id}' })
   .build();
+```
 
-// Collection: PageSpec with col() layout wrapping the table
-app.get('/api/ui/contacts', (_req, res) =>
-  res.json(
-    pageSpec()
-      .title('Contacts')
-      .layout(col())
-      .table(bundle.tableSpec)
-      .build(),
-  ),
-);
-app.get('/api/ui/contacts/:id', (req, res) => {
-  const { id } = req.params;
-  const entity = id !== 'new' ? store.find(id) : undefined;
-  const fields = entity
-    ? bundle.formSpec.fields.map((f) =>
-        entity[f.name] !== undefined ? { ...f, value: entity[f.name] } : f,
-      )
-    : bundle.formSpec.fields;
-  res.json({ ...bundle.formSpec, fields });
+`.route('/contacts')` adds the table's "New" button and sends the forms back to the list. The `page` spec wraps `bundle.tableSpec`.
+
+## The list endpoint
+
+The client calls `GET /contacts` with `page`, `pageSize`, `sort` and `order`. The server slices and sorts, and adds the per-row writes with `withRowActions`:
+
+```typescript
+const all = withRowActions(type ? store.byType(type) : store.all(), {
+  update: { method: 'PUT', url: '/contacts/{id}' },
+  delete: { method: 'DELETE', url: '/contacts/{id}' },
 });
 ```
 
-## What the two routes serve
-
-| Route | Spec | Behaviour |
-|-------|------|-----------|
-| `GET /api/ui/contacts` | `PageSpec` (`layout: col`, child: table) | Column layout wrapping a contacts table. Rows fetched client-side from `/contacts`. |
-| `GET /api/ui/contacts/:id` | `FormSpec` | Edit form when id is a number. Create form when id is `"new"`. Delete button present (delete is wired). |
-
-## Key takeaway
-
-`TableFormWorkflowBundle` builds two complementary specs in one builder call. The `table()` and `form()` callbacks let you customise each independently without leaving the chain; your server serves `bundle.tableSpec` and `bundle.formSpec` on the two routes.
+The response is a raw row array. See [the contract](/guide/contract) for the query parameters and [Actions](/guide/actions) for the write bodies.

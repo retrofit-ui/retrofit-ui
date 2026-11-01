@@ -1,109 +1,91 @@
 # Blog Example
 
-**Pattern: manual `TableView` + `formSpec` + `MarkdownViewSpec` — full three-view setup**
+**Pattern: hand-built `table`, `form`, `markdown` and `timeline` specs linked by navigation data**
 
-The blog example is the most complete example in the repo. It uses all three view types and demonstrates the key server-driven advantage: status enum values live exclusively on the server.
+The blog admin serves four screens for posts and links them with server-resolved navigation. The server also serves a second resource, reviews, with its own table and form.
 
 <BlogDemo />
 
 ::: tip
-The demo above shows the posts table live — try adding a new post or filtering by status. All data is mocked in the browser with MSW.
+The demo above shows the posts table live. Add a post or filter by status. All data is mocked in the browser with MSW.
 :::
 
-Run it locally:
+Run it locally (serves on port 3000, or `PORT`):
+
 ```bash
 just example blog
+# or: pnpm --filter @retrofit-ui-examples/blog dev
 ```
 
 ## What it demonstrates
 
-- Separate `TableView` and `formSpec` endpoints (not using `WorkflowBundle`)
-- A `rowAction` linking from the table to the markdown render view
-- `fieldOverride` for markdown textarea, custom slug validation, and max-length
-- Server-driven enums: `status` options come from `UpdatePostSchema` on the server
-- The three-endpoint pattern: list table, edit form, markdown render
+- Navigation as data: `rowLink`, `rowAction`, a toolbar action, `onDone` and `back`
+- Server-driven enums: the `status` options come from `UpdatePostSchema` on the server
+- `columnOverride` with `sortable` and `badgeVariants`
+- `fieldOverride` for `markdown`, `tags`, `select` and `radio-group` fields, plus `pattern` and a length bound
+- `markdown` and `timeline` views, and a `nav` menu in `/retrofit.json`
 
-## Schemas
+## Routes
 
-```typescript
-const PostSchema = z.object({
-  id: z.number(),
-  title: z.string(),
-  slug: z.string(),
-  body: z.string(),
-  status: z.enum(['draft', 'published', 'archived']),
-  tags: z.string().optional(),
-  author: z.string(),    // server-controlled
-  updatedAt: z.string(), // server-controlled
-});
+From `src/server.ts`:
 
-// author and updatedAt excluded → read-only on the edit form
-const UpdatePostSchema = z.object({
-  title: z.string(),
-  slug: z.string(),
-  body: z.string(),
-  status: z.enum(['draft', 'published', 'archived']),
-  tags: z.string().optional(),
-});
-```
+| Route | Spec endpoint | Kind |
+| --- | --- | --- |
+| `/posts` | `/api/ui/posts` | `table` |
+| `/posts/new` | `/api/ui/posts/new` | `form` (create) |
+| `/posts/:id` | `/api/ui/posts/{id}` | `form` (edit) |
+| `/posts/:id/render` | `/api/ui/posts/{id}/render` | `markdown` |
+| `/posts/:id/timeline` | `/api/ui/posts/{id}/timeline` | `timeline` |
+| `/posts-by-status` | `/api/ui/posts-by-status` | `page`: `filter-form` + `table` |
+| `/reviews`, `/reviews/new`, `/reviews/:id` | `/api/ui/reviews...` | `table` and `form` |
 
-## Three spec endpoints
+Static paths come before `/:id`, so "new" is never read as an id.
+
+## The posts table
+
+From `src/specs.ts`. Each link is a finished hash route; the client does not build URLs.
 
 ```typescript
-// 1. Table view — sortable title, Preview row action
-app.get('/api/ui/posts', (_req, res) => {
-  res.json(
-    retrofit(
-      TableView.schema(PostSchema)
-        .columnOverride('title', { sortable: true })
-        .rowAction({ label: 'Preview', routePattern: '/{id}/render' })
-        .find({ method: 'GET', url: '/posts/{id}' })
-        .list({ method: 'GET', url: '/posts' })
-        .create({ method: 'POST', url: '/posts' })
-        .build(),
-    ),
-  );
-});
-
-// 2. Form view — markdown body, slug validation, handles both /new and /:id
-app.get('/api/ui/posts/:id', (_req, res) => {
-  res.json(
-    retrofit(
-      formSpec(PostSchema, UpdatePostSchema)
-        .fieldOverride('body', { type: 'markdown' })
-        .fieldOverride('slug', {
-          helpText: 'lowercase, hyphens only',
-          validation: { pattern: '^[a-z0-9-]+$' },
-        })
-        .fieldOverride('tags', { helpText: 'comma-separated' })
-        .fieldOverride('title', { validation: { max: 200 } })
-        .find({ method: 'GET', url: '/posts/{id}' })
-        .create({ method: 'POST', url: '/posts' })
-        .update({ method: 'PUT', url: '/posts/{id}' })
-        .delete({ method: 'DELETE', url: '/posts/{id}' })
-        .build(),
-    ),
-  );
-});
-
-// 3. Markdown render spec
-app.get('/api/ui/posts/:id/render', (_req, res) => {
-  res.json(
-    retrofit({
-      entityEndpoint: { method: 'GET', url: '/posts/{id}' },
-      field: 'body',
-      metadata: { title: 'Preview' },
-    } satisfies MarkdownViewSpec),
-  );
-});
+TableView.forRows(PostSchema, rows)
+  .columnOverride('title', { sortable: true })
+  .columnOverride('status', {
+    badgeVariants: { draft: 'neutral', published: 'success', archived: 'warning' },
+  })
+  .rowLink((row) => `#/posts/${String(row.id)}`)
+  .rowAction('Preview', (row) => `#/posts/${String(row.id)}/render`)
+  .rowAction('History', (row) => `#/posts/${String(row.id)}/timeline`)
+  .toolbar('New', { type: 'navigate', to: '#/posts/new' })
+  .metadata({ title: 'Posts' })
+  .build();
 ```
 
-## The server-driven enum story
+## The form
 
-`author` and `updatedAt` are absent from `UpdatePostSchema` — the server sets them. Users see them on the edit form as read-only, and they are hidden on the create form.
+```typescript
+formSpec(PostSchema, UpdatePostSchema)
+  .title('Post')
+  .fieldOverride('body', { type: 'markdown' })
+  .fieldOverride('slug', {
+    helpText: 'lowercase, hyphens only',
+    validation: { pattern: '^[a-z0-9-]+$' },
+  })
+  .fieldOverride('title', { validation: { max: 200 } })
+  .fieldOverride('status', { type: 'radio-group' })
+  .onDone({ type: 'navigate', to: '#/posts' });
+```
 
-`status` is in `UpdatePostSchema`. The SPA derives the `<sl-select>` options directly from the Zod enum: `['draft', 'published', 'archived']`. To add a new status like `'review'`, change the enum in `UpdatePostSchema`. The form updates on the next request — zero frontend work.
+Add `'review'` to the `status` enum in `src/schemas.ts` and the form shows the new option. No frontend change is needed.
 
-## Why not `WorkflowBundle` here?
+## Markdown and timeline
 
-`WorkflowBundle` works when the table and form share the same schema and endpoints. The blog needs `rowAction` on the table (for the Preview button) and a separate markdown render endpoint. Using separate `TableView` and `formSpec` calls is more explicit and more flexible for these cases.
+The preview is a plain spec. `metadata.back` is a `navigate` action.
+
+```typescript
+{
+  kind: 'markdown',
+  content: String(post.body ?? ''),
+  metadata: { title: 'Preview', back: { type: 'navigate', to: `#/posts/${String(post.id)}` } },
+}
+```
+
+The history screen uses `TimelineView.events([...]).title('Post History').back(...)`. Markdown is sanitized before it renders.

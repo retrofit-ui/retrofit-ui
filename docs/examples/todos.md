@@ -2,76 +2,73 @@
 
 **Pattern: inline table editing with `updateSchema`**
 
-The todos example shows how to build a single-page CRUD interface entirely within the table — no separate form view, no page navigation.
+One table edits, creates and deletes rows in place. A separate form pair exists for the `/todos/new` and `/todos/:id` routes.
 
 <TodosDemo />
 
 ::: tip
-The demo above is live — try editing a row, adding a new todo, or deleting one. All data is mocked in the browser with MSW.
+The demo above is live. Edit a row, add a todo or delete one. All data is mocked in the browser with MSW.
 :::
 
-Run it locally:
+Run it locally (serves on port 3000, or `PORT`):
+
 ```bash
 just example todos
+# or: pnpm --filter @retrofit-ui-examples/todos dev
 ```
 
 ## What it demonstrates
 
-- `updateSchema` to mark specific columns as inline-editable
-- A "new row" form appended at the bottom of the table for creates
-- Per-row Edit/Save/Cancel and Delete buttons
+- `table` with inline rows: `TableView.forRows(...)` plus `updateSchema`, `create`, `update` and `delete`
+- Per-row Edit/Save/Cancel and Delete buttons, and a new-row form at the bottom of the table
+- `form` with `onDone` navigation and `fieldOverride` (`switch`, `tooltip`, `helpText`)
+- `page` with a `filter-form` over a list-backed `table`
 
-## Schemas
+## Routes
 
-```typescript
-// Full schema — all fields including server-controlled id
-const TodoSchema = z.object({
-  id: z.number(),
-  title: z.string(),
-  done: z.boolean(),
-  priority: z.enum(['low', 'medium', 'high']),
-});
+`/retrofit.json` lists the routes (`src/server.ts`). Each route's spec comes from `apiBase` + the route's `spec` path.
 
-// Update schema — excludes id (users cannot change it)
-const CreateTodoSchema = z.object({
-  title: z.string(),
-  done: z.boolean(),
-  priority: z.enum(['low', 'medium', 'high']),
-});
-```
-
-## Server
+| Route | Spec endpoint | Kind |
+| --- | --- | --- |
+| `/todos` | `/api/ui/todos` | `table` (inline rows) |
+| `/todos/new` | `/api/ui/todos/new` | `form` (create) |
+| `/todos/:id` | `/api/ui/todos/{id}` | `form` (edit) |
+| `/todos-by-priority` | `/api/ui/todos-by-priority` | `page`: `filter-form` + `table` |
 
 ```typescript
-// Serve the SPA bundle + config (theme is optional)
-app.get('/retrofit.json', (_req, res) =>
-  res.json({ apiBase: '/api/ui', theme: { /* purple */ } }),
-);
-app.use(express.static(distPath));
-
-app.get('/api/ui/todos', (_req, res) => {
-  res.json(
-    TableView.schema(TodoSchema)
-      .updateSchema(CreateTodoSchema) // title/done/priority become editable cells
-      .list({ method: 'GET', url: '/todos' })
-      .create({ method: 'POST', url: '/todos' })
-      .update({ method: 'PUT', url: '/todos/{id}' })
-      .delete({ method: 'DELETE', url: '/todos/{id}' })
-      .build(),
-  );
-});
+// src/server.ts
+const config: RetrofitConfig = {
+  apiBase: '/api/ui',
+  theme: todosTheme,
+  routes: [...crudRoutes('todos'), route('/todos-by-priority')],
+};
 ```
 
-Because `find` is not wired, clicking a row does nothing — all interaction stays in the table.
+`crudRoutes('todos')` expands to `/todos`, `/todos/new` and `/todos/:id`. The `:id` in the route path fills the `{id}` in the spec path.
 
-## How inline editing works
+## The inline table
 
-1. Columns in `updateSchema` (`title`, `done`, `priority`) render as editable cells when a row is in edit mode.
-2. The `id` column is absent from `updateSchema`, so it stays read-only.
-3. `priority` is a `z.enum(...)` — retrofit-ui derives the `<sl-select>` options automatically.
-4. `done` is `z.boolean()` — renders as a `<sl-checkbox>`.
-5. The last table row is always an empty "new row" form because `create` is wired.
+From `src/specs.ts`. The column set in `updateSchema` is the editable set; `id` is absent, so it stays read-only.
 
-## Key takeaway
+```typescript
+const builder = TableView.forRows(TodoSchema, rows)
+  .updateSchema(CreateTodoSchema)
+  .create({ method: 'POST', url: '/todos' })
+  .update({ method: 'PUT', url: '/todos/{id}' })
+  .delete({ method: 'DELETE', url: '/todos/{id}' });
+```
 
-`updateSchema` is the toggle for inline editing. Include a field → editable cell. Exclude it → read-only. The server owns that decision entirely.
+The builder fills `{id}` in each row's write actions on the server. No `rowLink` is set, so a click on a row does nothing: all interaction stays in the table.
+
+## The form
+
+```typescript
+formSpec(TodoSchema, CreateTodoSchema)
+  .title('Todo')
+  .fieldOverride('done', { type: 'switch' })
+  .onDone({ type: 'navigate', to: '#/todos' });
+```
+
+## The filtered page
+
+`/todos-by-priority` sends `priority` as a query parameter to `GET /todos`. The `filter-form` declares the field name (`buildTodosByPrioritySpec` in `src/specs.ts`). See [the contract](/guide/contract) for the list query parameters.

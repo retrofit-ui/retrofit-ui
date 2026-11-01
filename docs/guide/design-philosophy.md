@@ -1,163 +1,110 @@
 # Design philosophy
 
-The goal is to decouple a backend and frontend using a compact and powerful contract between the two. The hypothesis of this project is that a compact and powerful contract will be sufficient to cover most needs of backend developers, and can even show sophisticated UI components and layouts. The separation of concerns should also allow both sides of a software application to evolve gracefully without the unnecessary type of coupling that slows everyone down
+> **Producers decide *what*, renderers decide *how*.**
 
-The spec defines what can be shown and what actions can be performed with the component. The frontend renders what it's told.
+A producer is a backend or a model. It decides which rows a table shows, which fields a form has, which writes a row allows and where a click goes. A renderer is the frontend. It decides which component draws a table, how it looks, how it handles a click, and which requests it sends with which headers. The two meet only at the spec.
 
-## The spec is the contract
+Every decision below follows from that split.
 
-Everything in retrofit-ui meets at one place: the spec. A spec is a declarative JSON object that describes a piece of UI — a table, a form, a timeline — and nothing about how to draw it. Think of it the way Kubernetes thinks of a resource: one side declares the desired state, the other reconciles reality to match. Here the backend declares the spec; the renderer reconciles it into DOM.
+## The Kubernetes analogy
 
-`@retrofit-ui/core` defines that contract — the shape of every spec a backend may emit and every renderer may consume. It is the only thing the two sides share.
+The Kubernetes API decouples app developers from infra operators: developers declare resources, controllers make them real, and neither needs the other's code. retrofit-ui applies the same split to UI.
+
+| Kubernetes | retrofit-ui |
+|---|---|
+| API resource (`Deployment`, `Service`) | A spec kind (`table`, `form`, `page`, …) |
+| App developer declaring desired state | Producer (backend or model) emitting a spec |
+| Controller reconciling a resource | Renderer, or the kit component for that kind |
+| CRD plus its operator | `SpecKinds` augmentation plus a kit that renders the kind |
+| Go structs for the API types | `@retrofit-ui/core` TypeScript types |
+| Generated OpenAPI schema | `@retrofit-ui/core/schema.json` (generated JSON Schema) |
 
 <figure class="rf-diagram">
-  <img src="../diagrams/spec-contract.svg" alt="Spec contract: builder-zod (TypeScript) and any server writing plain JSON both produce a central spec JSON; spa-solid-shoelace consumes it and reconciles the DOM. All three sit on the @retrofit-ui/core foundation — producers and renderer never talk directly." />
+  <img src="../diagrams/spec-contract.svg" alt="Spec contract: builder-zod (TypeScript) and any server writing plain JSON both produce a central spec JSON; spa-solid-shoelace consumes it and renders the DOM. Producers and renderer never talk directly." />
   <figcaption class="rf-diagram__caption">
-    A Python or Go builder would slot into the left-hand side and get the same UI — as long as it emits <code>@retrofit-ui/core</code>-shaped specs.
+    A Python or Go producer slots into the left-hand side and gets the same UI, as long as it emits specs that match <code>@retrofit-ui/core</code>.
   </figcaption>
 </figure>
 
-The goal is for the spec to carry enough information that a backend library can make real guarantees to its users — correct pagination shape, valid column types, predictable cell structure — with no runtime knowledge of which renderer will consume the output. A Python or Go builder implements the same contract and gets the same UI.
+### What Kubernetes has that we don't yet
 
-> *Open problem: there is no mechanism yet for the backend to send renderer-specific configuration — e.g. hints that only make sense for a Shoelace SPA. For now the spec is deliberately renderer-agnostic.*
+- **Versioning.** Kubernetes resources carry an `apiVersion`, so a resource can change shape while old clients keep working. Specs have no version field. The packages are pre-1.0, and a breaking change to a kind breaks producers that emit the old shape.
+- **Server-side validation.** The Kubernetes API server rejects an invalid resource before any controller sees it. Nothing validates a spec on its way to the renderer. A producer can validate its own output against `schema.json`; otherwise a bad spec shows up as a rendering error in the browser.
 
-## Two implementations, one contract
+## Finished data, not templates
 
-Because both sides only depend on the contract, each can be built and tested on its own.
+A spec arrives finished. The client does not fill placeholders, evaluate expressions or build URLs from row fields:
 
-**Backend pattern — declare the spec.** A builder turns your schema into a spec. The work is declarative: name the resource, point it at your endpoints, override what needs overriding.
+- **Row links** are a field on each row, named by `rowLinkField` (tables) or `linkField` (trees). Calendar events carry `link`.
+- **Row writes** travel with the row in `_actions: { update?, delete? }`, each a complete `{ method, url }`. A row without `_actions` has no writes. Calendar events carry `actions: { update? }`.
+- **Form targets** are complete: an edit form's `endpoints.update` is `/contacts/7`, not `/contacts/{id}`.
 
-```typescript
-TableView.schema(ExpenseSchema)
-  .list({ method: 'GET', url: '/expenses' })
-  .build()   // → a TableSpec that satisfies @retrofit-ui/core
-```
-
-**Frontend pattern — render the spec.** The renderer reads a spec and mounts the matching component. It never imports your schema, your endpoints, or your builder. A `kind` discriminator on every spec tells it which view to draw.
-
-Neither side needs to know the other exists. Swap the JS builder for hand-written JSON from a Python server and the renderer doesn't change; swap the Shoelace renderer for another and the builder doesn't change.
-
-## What stays on the frontend
-
-The renderer owns what is inherently a client concern:
-
-- **Event handling** — clicks, keyboard input, drag and drop
-- **Style and layout** — which CSS class to apply, column widths, responsive breakpoints
-- **HTML element selection** — whether a value renders as a `<span>` or an `<sl-badge>`, which Shoelace component to mount
-
-Everything else is a candidate for the server. The two decisions below are the most consequential applications of that rule.
-
-## Decision: fully populated server responses
-
-A table or form response is a single, complete JSON payload. The SPA does not make a second request to fetch row data.
-
-```text
-GET /api/ui/expenses
-→ {
-    columns: [...],
-    data: [
-      { "id": { "value": 1 }, "amount": { "value": 1234.56 }, ... },
-      ...
-    ],
-    metadata: { totalRows: 42, pageSize: 25, ... }
+```json
+[
+  {
+    "id": 7,
+    "name": "Ada",
+    "link": "#/contacts/7",
+    "_actions": { "delete": { "method": "DELETE", "url": "/contacts/7" } }
   }
+]
 ```
 
-The server decides which rows to include, in what order, with what pagination. The SPA renders exactly what it receives. So:
+In TypeScript, `withRowActions(rows, { delete: { method: 'DELETE', url: '/contacts/{id}' } })` from `@retrofit-ui/builder-zod` fills `{id}` on the server and throws if a row has no `id`.
 
-- **Access control is enforced at the source.** Filter rows or hide columns without touching frontend code.
-- **The SPA has no opinion about your data model.** It doesn't know or care where your data "really" comes from.
-- **Caching is simple.** One URL, one response, one cache entry.
+Two runtime inputs do reach the server, and both go as query params on a table's list request, not into the spec: paging and sorting (`page`, `pageSize`, `sort`, `order`), and the values of the page's `filter-form` fields by name. The [contract](/guide/contract) lists them.
 
-The alternative — shipping a spec and letting the SPA fetch from your existing REST endpoint — couples the frontend to your API shape and pushes filtering, sorting, and access logic into client code.
+The one fill the client does is the **router's**: a route `{ "path": "/contacts/:id", "spec": "/contacts/{id}" }` fills `{id}` from the URL to find the spec endpoint. That happens before any spec exists, so no spec is ever templated.
 
-## Decision: server-side display formatting
+Why: a producer in any language can send the same JSON, a model never has to learn a template syntax, and access control stays at the source — a row the user may not delete simply has no `delete`.
 
-Any value needing locale- or language-specific display is formatted on the server before it's sent. The cell carries the raw value (for sorting and filtering) and the pre-computed display string.
+## Actions are data; handlers are code
 
-```typescript
-type Cell = { value: unknown; formatted?: string }
-```
+An action in a spec is a descriptor: what should happen, not how. Three types are built in:
 
-```json
-{
-  "amount":    { "value": 1234.56, "formatted": "$1,234.56" },
-  "createdAt": { "value": "2026-06-14T12:00:00Z", "formatted": "Jun 14, 2026" },
-  "name":      { "value": "Acme Corp" }
-}
-```
+| Type | Descriptor | Default handler |
+|---|---|---|
+| `http` | `{ "method": "PUT", "url": "/contacts/7" }` (`type` optional) | `fetch` |
+| `navigate` | `{ "type": "navigate", "to": "#/contacts" }` | A `#` target sets the hash; anything else loads the URL |
+| `refresh` | `{ "type": "refresh" }` | A `page` reloads its tables; a hosted-app route fetches its spec again; with no owner, nothing |
 
-The client renders `cell.formatted` when present, otherwise `String(cell.value)`. It applies no `Intl` logic of its own. Why:
+The renderer owns the handlers. You override one with `ActionHandlers` (or the `actions` option of `createRenderer`, `createShell`, `createIslands` and `init`); the innermost handler wins and can call `next()` to wrap the default instead of replacing it. Built-in views dispatch `refresh` after every write, and send every request through `http`, so one `http` handler covers reads and writes alike. Custom action types are added by augmenting `ActionKinds` and should be namespaced, e.g. `acme.add-to-cart`. See [Actions](/guide/actions).
 
-- **Consistency.** Client-side `Intl` varies by user locale — a user in Germany sees `1.234,56 €`, a US user `$1,234.56`. For business tools, the server should decide what users see.
-- **Language parity.** Date and timezone formatting differs across Python, Go, and JavaScript. Formatting server-side makes the output identical regardless of backend language.
-- **No renderer lock-in.** A pre-formatted string works in SSR, emails, PDFs, and CLI output — not just a Shoelace SPA. Delegating to `<sl-format-number>` ties you to one renderer.
-- **No enum proliferation.** A developer-supplied format function produces any string; encoding format intent as a wire-format enum needs a schema change for every new format type.
+## Formatting: server string or client enum
 
-The format function runs server-side only — it is never serialised to JSON:
+A value can be formatted on either side.
 
-```typescript
-TableView.schema(ExpenseSchema)
-  .columnOverride('amount', {
-    format: (v) =>
-      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v)),
-  })
-  .columnOverride('createdAt', {
-    format: (v) =>
-      new Date(String(v)).toLocaleDateString('en-US', { dateStyle: 'medium' }),
-  })
-```
+- **Client enums.** `Column.format` (`currency`, `bytes`, `percent`, `decimal`) renders through Shoelace's `<sl-format-number>` / `<sl-format-bytes>`. `Stat.format` (`number`, `currency`, `percent`, `bytes`) renders through `Intl.NumberFormat`. Both use the browser's locale.
+- **Server strings.** An inline table cell can carry `{ "value": 1234.56, "formatted": "$1,234.56" }`; the table shows `formatted` when the column has no `format` enum. A stat whose `value` is a string is shown as-is.
 
-The same pattern covers any future formatting concern — ordinals, file sizes, relative timestamps, custom units.
+Use the client enum when the user's locale should decide (a German user sees `1.234,56 €`). Use a server string when the producer must decide — one fixed locale for a business report, dates in a business timezone, or a format the enums do not cover (ordinals, relative times, custom units). In builder-zod, `columnOverride(key, { format: (v) => … })` with a function fills `formatted` for inline rows; with an enum it sets `Column.format`.
 
-## Decision: the spec renderer as a generalization of server-driven rendering
+## Extension by negotiation
 
-Server-driven rendering and spec-driven (static) rendering look like separate modes, but they are the same model with a different action backend.
+When the built-in kinds are not enough, add a kind. It takes three parts, and the producer and the frontend agree on them the way an API team and its clients agree on a new endpoint:
 
-In server-driven mode, every action in a spec — load rows, submit a form, delete a row — is an `EndpointDirective`: an HTTP method and a URL. The renderer calls the server. The server owns the behavior.
+1. **Augment** `SpecKinds` with the kind's type, so both sides type-check it:
+   ```ts
+   declare module '@retrofit-ui/core' {
+     interface SpecKinds {
+       'acme.rating': RatingSpec;
+     }
+   }
+   ```
+2. **Emit** it from the producer: `{ "kind": "acme.rating", "items": [ … ] }`.
+3. **Render** it in a kit: `defineKit({ name: 'acme', kinds: [defineKind({ kind: 'acme.rating', component: RatingView })] })`, passed to `createShell`, `createIslands` or `createRenderer` as `kits`.
 
-```json
-{ "list": { "method": "GET", "url": "/contacts" },
-  "delete": { "method": "DELETE", "url": "/contacts/{id}" } }
-```
+Once registered, the kind nests in any container like a built-in. A kit kind registered under a built-in name replaces the built-in. See [Extending](/guide/extending).
 
-The spec-driven renderer lifts that constraint. A spec can be served from a static file, inlined into HTML via `data-retrofit`, or patched client-side — no server required. The natural consequence is that the "action" concept needs to generalize too: not every action has a server to call.
+This is also the answer to "can the spec do X?": the spec has no scripting. If a screen needs behaviour the built-in kinds cannot express, that behaviour belongs in a kind.
 
-Actions in spec-driven rendering can also be:
+## Trust boundary
 
-- **Plain JS functions** — called directly by the renderer with the current row or form values as arguments, with access to anything in the host page's scope.
-- **Scoped event handlers** — the renderer dispatches a DOM event on the container element; the host page listens and handles it however it likes.
+Producers are trusted for structure: a spec decides which URLs the client calls and where links go, so serve specs only from producers you trust, and treat model output like any other input your backend checks before it forwards it. Within that:
 
-This matters for two reasons:
+- The `markdown` kind's content is rendered with `marked` and sanitized with DOMPurify before it reaches the DOM. Output of extensions added with `configureMarked()` passes through the same sanitizer.
+- `theme.extraCss` is injected as a `<style>` element as-is. Only trusted producers should set it.
 
-1. **Portability.** A spec with function-backed actions renders correctly in a static site, a Storybook, or a prototype — environments where there is nothing listening on the other end of a URL.
-2. **Client-side interception.** A host page can intercept any action — confirm before delete, redirect to a custom flow, update local state — without the renderer needing to know about it.
+## The contract is published
 
-The renderer code doesn't change between modes. The spec is still the contract. The only thing that varies is what is wired to the action — an HTTP endpoint, a function, or a DOM event. This keeps the server-driven and spec-driven paths on the same abstraction, rather than forking them into separate products.
-
-> *The function and event-handler action bindings are a work in progress. Today all actions are `EndpointDirective` (HTTP). The generalization described here is the intended direction.*
-
-## Decision: three-tier spec model
-
-Specs fall into three tiers based on how much they coordinate with other specs. The tiers are a backend authoring concept — a way to reason about what you are declaring — not a runtime distinction.
-
-### Components
-
-A component spec is the atomic unit: one spec, one route, one rendered view. `TableSpec`, `FormSpec`, `TimelineSpec`, `StatSpec` are all components. The backend declares it; the renderer mounts it. Nothing else is involved.
-
-### Layouts
-
-Layouts (`flex`, `grid`) are composable containers that carry only positional intent. They have no data, no endpoints, and no `kind` of their own that maps to a business-domain view. Their only job is to arrange what is placed inside them.
-
-Layouts are arbitrarily nestable: `flex > grid > flex` is valid. The renderer does not need to know what is inside a layout to render it — it just allocates space and recurses.
-
-### Higher-order components
-
-Higher-order components are orchestrators: named specs that compose layouts and component specs into a larger, reusable unit.
-
-- **`PageSpec`** composes layouts and component specs into a named page. A single `PageSpec` can place a stat bar, a table, and a filter form in a grid — the backend declares the arrangement once; the renderer mounts the whole page from one spec.
-- **`TableFormWorkflowBundle`** pairs a `TableSpec` and a `FormSpec` for a CRUD route pair. The bundle coordinates the two specs so that selecting a table row populates the form, and submitting the form refreshes the table — behavior that would otherwise require repetitive boilerplate wiring.
-
-### The runtime view
-
-The renderer dispatches on `kind` identically for all three tiers. A `TableSpec` component and a `PageSpec` higher-order component are both just specs with a `kind` field; the renderer does not consult a tier label. Tiers are a vocabulary for backend authors, not a runtime concern.
+`@retrofit-ui/core` is types only. Its build also generates `@retrofit-ui/core/schema.json`, a draft-07 JSON Schema of the wire format: every built-in spec (a `oneOf` keyed on `kind`), the `/retrofit.json` config and the rows a list endpoint returns. Producers in other languages can generate types from it or validate their output against it. It covers the built-in kinds only; an app with custom kinds adds its own definitions for them.

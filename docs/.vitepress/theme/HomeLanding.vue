@@ -33,22 +33,22 @@ onBeforeUnmount(() => observer?.disconnect());
     <section class="rf-hero">
       <div class="rf-hero__inner">
         <p class="rf-eyebrow rf-load" style="--d: 0ms">
-          <span class="rf-tick" />Open source · Declarative UI · TypeScript
+          <span class="rf-tick" />Open source · Typed spec contract · MIT
         </p>
 
         <h1 class="rf-title">
-          <span class="rf-load" style="--d: 60ms">Your server</span>{{ ' ' }}<span
-            class="rf-load"
-            style="--d: 140ms"
-            >describes</span
-          >{{ ' ' }}<span class="rf-load rf-title__accent" style="--d: 220ms">the UI.</span>
+          <span class="rf-load" style="--d: 60ms">Frontend, backend, and AI teams keep</span>{{ ' ' }}<span
+            class="rf-load rf-title__accent"
+            style="--d: 160ms"
+            >blocking each other:</span
+          >{{ ' ' }}<span class="rf-load" style="--d: 240ms">every new screen needs all three.</span>
         </h1>
 
         <p class="rf-lede rf-load" style="--d: 320ms">
-          A framework for declarative, server-driven components. Return a JSON
-          spec from your backend&thinsp;&mdash;&thinsp;tables, forms, timelines,
-          and more&thinsp;&mdash;&thinsp;and the browser renders it. No frontend
-          code to write, no frontend to deploy.
+          retrofit-ui puts a typed spec between them. The backend or a model
+          says what to show. The frontend owns how it looks and behaves. They
+          meet only at the spec &mdash; so each side can change
+          without waiting on the others.
         </p>
 
         <div class="rf-cta rf-load" style="--d: 400ms">
@@ -58,25 +58,25 @@ onBeforeUnmount(() => observer?.disconnect());
               <path d="M3 7h8M7.5 3.5 11 7l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </a>
-          <a class="rf-btn rf-btn--ghost" href="/guide/js-quickstart">JS Quickstart</a>
+          <a class="rf-btn rf-btn--ghost" href="/guide/what-is-retrofit-ui">What is retrofit-ui?</a>
         </div>
 
-        <!-- pipeline: schema → spec → ui -->
+        <!-- pipeline: producer → spec → renderer -->
         <div class="rf-pipe rf-load" style="--d: 520ms">
           <figure class="rf-stage">
-            <figcaption class="rf-stage__cap"><i>01</i> Schema</figcaption>
+            <figcaption class="rf-stage__cap"><i>01</i> Producer</figcaption>
             <div class="rf-stage__body rf-stage__body--code">
-              <pre><code><span class="t-key">z</span>.object({
-  title: <span class="t-key">z</span>.string(),
-  done:  <span class="t-key">z</span>.boolean(),
-})</code></pre>
+              <pre><code><span class="t-key">TableView</span>
+  .schema(Task)
+  .list(&hellip;)
+  .build()</code></pre>
             </div>
-            <span class="rf-stage__note">you write</span>
+            <span class="rf-stage__note">backend or model: what</span>
           </figure>
 
           <div class="rf-flow" aria-hidden="true">
             <span class="rf-flow__line"><span class="rf-flow__pulse" /></span>
-            <span class="rf-flow__verb">build()</span>
+            <span class="rf-flow__verb">emits</span>
           </div>
 
           <figure class="rf-stage">
@@ -88,16 +88,16 @@ onBeforeUnmount(() => observer?.disconnect());
   <span class="t-str">"endpoints"</span>: { &hellip; }
 }</code></pre>
             </div>
-            <span class="rf-stage__note">server emits</span>
+            <span class="rf-stage__note">the typed contract</span>
           </figure>
 
           <div class="rf-flow" aria-hidden="true">
             <span class="rf-flow__line"><span class="rf-flow__pulse" style="animation-delay: .9s" /></span>
-            <span class="rf-flow__verb">mount()</span>
+            <span class="rf-flow__verb">renders</span>
           </div>
 
           <figure class="rf-stage rf-stage--ui">
-            <figcaption class="rf-stage__cap"><i>03</i> UI</figcaption>
+            <figcaption class="rf-stage__cap"><i>03</i> Renderer</figcaption>
             <div class="rf-stage__body">
               <div class="rf-mini">
                 <span class="rf-mini__row rf-mini__row--head"><b /><b /><b /></span>
@@ -106,7 +106,7 @@ onBeforeUnmount(() => observer?.disconnect());
                 <span class="rf-mini__row"><b /><b /><b /></span>
               </div>
             </div>
-            <span class="rf-stage__note rf-stage__note--warm">browser renders</span>
+            <span class="rf-stage__note rf-stage__note--warm">frontend: how</span>
           </figure>
         </div>
       </div>
@@ -119,8 +119,9 @@ onBeforeUnmount(() => observer?.disconnect());
         <h2>Dogfooding the spec</h2>
         <p>
           Everything below — the stat cards, feature grid, tabbed demos, and
-          FAQ — is driven by a single <code>page</code> spec mounted via
-          <code>controller.mount()</code>. No hand-written HTML.
+          FAQ — is one <code>page</code> spec mounted with the islands
+          renderer's <code>controller.mount()</code>. The table talks to a
+          mock API in your browser; the stats and timeline are demo data.
         </p>
       </header>
       <div class="rf-showcase__body">
@@ -131,13 +132,13 @@ onBeforeUnmount(() => observer?.disconnect());
     <!-- ── CTA ─────────────────────────────────────────────────────── -->
     <section class="rf-final" data-reveal>
       <div class="rf-final__inner">
-        <h2>Wire up your first view<br />in five minutes.</h2>
+        <h2>Producers decide <em>what</em>.<br />Renderers decide <em>how</em>.</h2>
         <div class="rf-cta">
           <a class="rf-btn rf-btn--warm" href="/guide/js-quickstart">JS Quickstart</a>
         </div>
         <p class="rf-final__alt">
-          Prefer to read first? Start with
-          <a href="/guide/what-is-retrofit-ui">What is retrofit-ui?</a>
+          Want the reasoning first? Read the
+          <a href="/guide/design-philosophy">design philosophy</a>.
         </p>
       </div>
     </section>
@@ -239,11 +240,11 @@ onBeforeUnmount(() => observer?.disconnect());
 .rf-title {
   font-family: var(--display);
   font-weight: 450;
-  font-size: clamp(3rem, 7.4vw, 5.8rem);
-  line-height: 0.97;
-  letter-spacing: -0.028em;
+  font-size: clamp(2.2rem, 4.8vw, 3.9rem);
+  line-height: 1.04;
+  letter-spacing: -0.024em;
   margin: 24px 0 0;
-  max-width: 16ch;
+  max-width: 22ch;
   color: var(--ink);
 }
 .rf-title span { display: inline; }
@@ -253,7 +254,6 @@ onBeforeUnmount(() => observer?.disconnect());
   background: linear-gradient(110deg, var(--warm-2), var(--warm));
   -webkit-background-clip: text;
   background-clip: text;
-  white-space: nowrap;
 }
 
 .rf-lede {

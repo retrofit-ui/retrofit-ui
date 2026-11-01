@@ -33,9 +33,9 @@ const spec = {
     {
       kind: 'stat',
       stats: [
-        { label: 'View types', value: 8 },
-        { label: 'Lines of frontend to write', value: 0 },
-        { label: 'Minutes to first view', value: 5 },
+        { label: 'Built-in kinds', value: 15 },
+        { label: 'Built-in action types', value: 3 },
+        { label: 'Delivery modes', value: 3 },
       ],
     },
 
@@ -47,72 +47,72 @@ const spec = {
       children: [
         {
           kind: 'card',
-          header: 'Schema-driven',
+          header: 'Typed contract',
           children: [
             {
               kind: 'text',
               content:
-                'One Zod schema. Columns, fields, and validation are derived — never duplicated.',
+                '@retrofit-ui/core types every spec, and ships a generated JSON Schema for producers in other languages.',
               variant: 'muted',
             },
           ],
         },
         {
           kind: 'card',
-          header: 'Server-owned',
+          header: 'Producers decide what',
           children: [
             {
               kind: 'text',
               content:
-                'Your endpoint returns specs. Change the schema; the UI updates on the next request — no redeploy.',
+                'A backend or a model returns the spec: rows, fields, links, and the writes each row allows.',
               variant: 'muted',
             },
           ],
         },
         {
           kind: 'card',
-          header: 'Polyglot',
+          header: 'Renderers decide how',
           children: [
             {
               kind: 'text',
               content:
-                'Any language that can emit the JSON contract gets the full UI — the spec is just JSON.',
+                'The frontend owns components, styling, and action handlers, e.g. one http handler that adds auth headers.',
               variant: 'muted',
             },
           ],
         },
         {
           kind: 'card',
-          header: 'Themeable',
+          header: 'Finished data',
           children: [
             {
               kind: 'text',
               content:
-                'Built on Shoelace web components. Override CSS custom properties — no framework conflicts.',
+                'Links and per-row writes arrive resolved. The spec has no templates or expressions to evaluate.',
               variant: 'muted',
             },
           ],
         },
         {
           kind: 'card',
-          header: 'Incremental adoption',
+          header: 'Extend with kits',
           children: [
             {
               kind: 'text',
               content:
-                'SPA, script island, or SolidJS component — take as much or as little as you need.',
+                'A new kind is a type augmentation, a producer that emits it, and a kit that renders it.',
               variant: 'muted',
             },
           ],
         },
         {
           kind: 'card',
-          header: 'Composable layouts',
+          header: 'Three delivery modes',
           children: [
             {
               kind: 'text',
               content:
-                'Nest views inside page specs. Grid, flex, tabs, cards — all driven from JSON.',
+                'Hosted SPA, script islands in pages you own, or SolidJS components.',
               variant: 'muted',
             },
           ],
@@ -213,8 +213,10 @@ const spec = {
                   placeholder: 'What are you building?',
                 },
               ],
-              endpoints: {},
-              metadata: { title: 'Get in touch', submitLabel: 'Send' },
+              endpoints: {
+                create: { method: 'POST', url: '/landing/contact' },
+              },
+              metadata: { title: 'Get in touch (demo)', submitLabel: 'Send' },
             },
           ],
         },
@@ -225,32 +227,29 @@ const spec = {
               kind: 'timeline',
               events: [
                 {
-                  timestamp: '2025-01-15T09:00:00Z',
-                  title: 'Project kickoff',
-                  description: 'Initial schema design and architecture',
+                  timestamp: '2026-03-02T09:00:00Z',
+                  title: 'Order placed',
+                  description: 'Order #1042, 3 items',
                   variant: 'primary',
                 },
                 {
-                  timestamp: '2025-03-01T14:00:00Z',
-                  title: 'Table view shipped',
-                  description:
-                    'First production view type — full CRUD with inline edit',
+                  timestamp: '2026-03-02T15:30:00Z',
+                  title: 'Payment confirmed',
                   variant: 'success',
                 },
                 {
-                  timestamp: '2025-08-10T11:00:00Z',
-                  title: 'Composite layouts',
-                  description: 'Page, flex, grid, and filter-form nesting',
-                  variant: 'primary',
+                  timestamp: '2026-03-03T11:00:00Z',
+                  title: 'Shipped',
+                  description: 'Carrier delayed pickup by one day',
+                  variant: 'warning',
                 },
                 {
-                  timestamp: '2025-11-04T09:00:00Z',
-                  title: 'Card component',
-                  description:
-                    'Container cards with header, children, and footer actions',
-                  variant: 'primary',
+                  timestamp: '2026-03-05T10:15:00Z',
+                  title: 'Delivered',
+                  variant: 'success',
                 },
               ],
+              metadata: { title: 'Order #1042 (demo data)' },
             },
           ],
         },
@@ -260,11 +259,21 @@ const spec = {
             {
               kind: 'stat',
               stats: [
-                { label: 'Weekly active apps', value: 1240, format: 'number' },
-                { label: 'Spec renders / day', value: 48500, format: 'number' },
-                { label: 'Avg time to first view', value: '4.8m' },
-                { label: 'Uptime', value: 99.97, format: 'percent' },
+                { label: 'Orders', value: 1240, format: 'number' },
+                {
+                  label: 'Revenue',
+                  value: 48500,
+                  format: 'currency',
+                  currency: 'EUR',
+                },
+                { label: 'Refund rate', value: 0.021, format: 'percent' },
+                {
+                  label: 'Avg delivery',
+                  value: '2.4 days',
+                  description: 'Pre-formatted by the server',
+                },
               ],
+              metadata: { title: 'Store overview (demo data)' },
             },
           ],
         },
@@ -276,20 +285,20 @@ const spec = {
       kind: 'details',
       items: [
         {
-          summary: 'Do I need to learn a new templating language?',
-          body: 'No. You return plain JSON from any endpoint. The spec format is documented and stays stable across versions.',
+          summary: 'Is there a templating language?',
+          body: 'No. A spec is plain JSON with finished values: links and per-row writes arrive resolved. If a screen needs behaviour a spec cannot express, add a new kind.',
+        },
+        {
+          summary: 'Is the spec format stable?',
+          body: 'Not yet. The packages are pre-1.0 and specs carry no version field, so a breaking change to a kind breaks producers that emit the old shape.',
+        },
+        {
+          summary: 'Which backends are supported?',
+          body: 'Any that can emit JSON. TypeScript producers can use @retrofit-ui/builder-zod; other languages write the JSON against the generated JSON Schema in @retrofit-ui/core.',
         },
         {
           summary: 'Can I customize the appearance?',
-          body: 'Yes. retrofit-ui is built on Shoelace web components — override any CSS custom property to match your design system. You can also supply a custom stylesheet.',
-        },
-        {
-          summary: 'What backends are supported?',
-          body: 'Any backend that can emit JSON. The TypeScript builders use Zod; any other language works too — the spec is just JSON.',
-        },
-        {
-          summary: 'Can I use it without a Node server?',
-          body: 'Yes — the SPA is fully standalone. Point your endpoints at any HTTP API that returns the spec contract.',
+          body: 'Yes. Set Shoelace CSS custom properties through the theme, target the retrofit-* classes, or replace a built-in kind with your own component in a kit.',
         },
       ],
     },
@@ -349,6 +358,9 @@ onMounted(async () => {
         _tasks.push(task as (typeof _tasks)[0]);
         return HttpResponse.json(task, { status: 201 });
       }),
+      http.post('/landing/contact', () =>
+        HttpResponse.json({ ok: true }, { status: 201 }),
+      ),
       http.put('/landing/tasks/:id', async ({ params, request }) => {
         const body = (await request.json()) as Record<string, unknown>;
         const idx = _tasks.findIndex((t) => t.id === Number(params.id));

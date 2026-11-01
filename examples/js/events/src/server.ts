@@ -100,7 +100,7 @@ app.get('/api/ui/events/calendar', (_req, res) => {
 });
 
 // Table view: start/end columns are auto-typed as 'datetime' and rendered as
-// localised strings — demonstrates the PR 102 datetime column formatting
+// localised strings
 app.get('/api/ui/events', (_req, res) => {
   res.json(
     TableView.forRows(EventSchema, store.all())

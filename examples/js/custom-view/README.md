@@ -19,8 +19,9 @@ The example ships two endpoints:
 - `client/RatingView.tsx` + `client/rating-view.css` — custom view. Styles
   read Shoelace tokens (`--sl-color-primary-*`, `--sl-spacing-*`), so the
   same theme drives both built-in and custom surfaces.
-- `client/ExtendedRenderer.tsx` — `<Switch fallback={<SpecRenderer .../>}>`
-  that handles `rating` locally and delegates everything else.
+- `client/ExtendedRenderer.tsx` — a `defineKit` kit that holds the `rating`
+  kind, passed to `createRenderer({ kits })`. The built-in kinds stay in the
+  same registry.
 - `client/main.tsx` — imports `@retrofit-ui/spa-solid-shoelace/renderer.css`
   (retrofit layout + Shoelace tokens), fetches `/retrofit.json`, applies the
   theme at `:root`, then mounts.
@@ -43,14 +44,15 @@ pnpm install
 pnpm dev
 ```
 
-Vite serves the client on `:5173` and proxies `/api` to Express on `:3000`.
+Vite serves the client on `:5173` and proxies `/api` and `/retrofit.json` to Express on `:3000`.
 
 ## Why this shape?
 
-`SpecRenderer` is a hardcoded `<Switch>` in `spa-solid-shoelace` — there is no
-runtime plugin registry. The extension seam is **composition**: import
-`SpecRenderer` from `@retrofit-ui/spa-solid-shoelace/components` and wrap it.
-Custom kinds match first; the fallback delegates unchanged.
+A kind is a component plus a name. `defineKind` binds them, `defineKit` groups
+kinds, and `createRenderer({ kits })` from
+`@retrofit-ui/spa-solid-shoelace/components` builds a renderer whose registry
+holds the built-in kinds and yours. Built-in containers render custom kinds as
+children too.
 
 See [Extending retrofit-ui](../../../docs/guide/extending.md) for the full
 walkthrough.

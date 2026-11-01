@@ -124,7 +124,7 @@ app.get('/api/ui/posts-by-status', (_req, res) =>
   res.json(buildPostsByStatusSpec()),
 );
 
-// ── Reviews (used by the custom-view example, not the blog docs demo) ────────
+// ── Reviews ──────────────────────────────────────────────────────────────────
 
 let reviewNextId = 1;
 const reviews: Review[] = [];

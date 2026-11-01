@@ -1,7 +1,7 @@
 ---
-'@retrofit-ui/core': major
-'@retrofit-ui/builder-zod': major
-'@retrofit-ui/spa-solid-shoelace': major
+'@retrofit-ui/core': minor
+'@retrofit-ui/builder-zod': minor
+'@retrofit-ui/spa-solid-shoelace': minor
 ---
 
 Rows carry their own finished writes; the client no longer fills `{id}`.

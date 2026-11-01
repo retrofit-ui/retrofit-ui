@@ -1,6 +1,6 @@
 ---
-'@retrofit-ui/core': major
-'@retrofit-ui/builder-zod': major
+'@retrofit-ui/core': minor
+'@retrofit-ui/builder-zod': minor
 '@retrofit-ui/spa-solid-shoelace': patch
 ---
 

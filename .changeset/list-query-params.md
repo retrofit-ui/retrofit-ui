@@ -1,5 +1,5 @@
 ---
-'@retrofit-ui/core': major
+'@retrofit-ui/core': minor
 '@retrofit-ui/spa-solid-shoelace': minor
 '@retrofit-ui/builder-zod': patch
 ---

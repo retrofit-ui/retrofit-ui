@@ -1,29 +1,22 @@
 # Stat View
 
-The stat view renders a responsive grid of KPI cards. Values are computed server-side and embedded in the spec — the UI only formats and displays them.
+The stat view (`kind: 'stat'`) draws a grid of KPI cards. The producer computes each value and puts it in the spec. The client formats the value and shows it.
 
-<PreviewBlock>
+<PreviewBlock title="Stat cards">
 
-<div style="padding: 20px; background: var(--vp-c-bg-soft);">
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">$48,290</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Revenue</div>
-      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px;">+12% vs last month</div>
-    </div>
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">1,204</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Active Users</div>
-      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px;">active this month</div>
-    </div>
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">3.1%</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Conversion</div>
-    </div>
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">5 GB</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Storage Used</div>
-    </div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; padding: 16px; font-family: var(--vp-font-family-base, system-ui, sans-serif); background: var(--vp-c-bg);">
+  <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px;">
+    <div style="font-size: 28px; font-weight: 700; line-height: 1.1;">$48,290.50</div>
+    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vp-c-text-2);">Revenue</div>
+  </div>
+  <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px;">
+    <div style="font-size: 28px; font-weight: 700; line-height: 1.1;">1,204</div>
+    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vp-c-text-2);">Active Users</div>
+    <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px;">active this month</div>
+  </div>
+  <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px;">
+    <div style="font-size: 28px; font-weight: 700; line-height: 1.1;">3.1%</div>
+    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vp-c-text-2);">Conversion</div>
   </div>
 </div>
 
@@ -31,194 +24,66 @@ The stat view renders a responsive grid of KPI cards. Values are computed server
 
 ::: details Spec
 
-```typescript
-const spec = new StatView()
-  .stat({ label: 'Revenue', value: 48290.50, format: 'currency' })
-  .stat({ label: 'Active Users', value: 1204, description: 'active this month' })
-  .stat({ label: 'Conversion', value: 0.0312, format: 'percent' })
-  .stat({ label: 'Storage Used', value: 5368709120, format: 'bytes' })
-  .title('Dashboard Overview')
-  .build();
+```json
+{
+  "kind": "stat",
+  "stats": [
+    { "label": "Revenue", "value": 48290.5, "format": "currency" },
+    { "label": "Active Users", "value": 1204, "description": "active this month" },
+    { "label": "Conversion", "value": 0.0312, "format": "percent" }
+  ]
+}
 ```
 
 :::
 
-## How it works
+## Spec fields
 
-In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/dashboard/stats')` — points at the endpoint serving the `StatSpec`. Each `Stat` object carries a pre-computed value — there is no client-side data fetching for individual metrics.
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `stats` | `Stat[]` | yes | The cards, in order. |
+| `metadata.title` | `string` | no | Heading above the grid. |
 
-## Basic setup (JS)
+| `Stat` field | Type | Required | Meaning |
+|--------------|------|----------|---------|
+| `label` | `string` | yes | Card label. |
+| `value` | `number \| string` | yes | The value. A string is shown as it is. |
+| `format` | `'number' \| 'currency' \| 'percent' \| 'bytes'` | no | How to show a numeric value. Default `number`. |
+| `currency` | `string` | no | Currency code for `currency`. Default `USD`. |
+| `description` | `string` | no | Muted text under the label, for example "vs last month". |
+
+## Formats
+
+The client formats numbers with `Intl.NumberFormat` and the browser locale. The producer may instead send a string, which is shown unchanged.
+
+| `format` | Value | Shown (en-US) |
+|----------|-------|---------------|
+| `number` (default) | `1204` | `1,204` |
+| `currency` | `48290.5` | `$48,290.50` |
+| `percent` | `0.0312` | `3.1%` (a fraction, at most one decimal) |
+| `bytes` | `5368709120` | `5 GB` (units B, KB, MB, GB, TB; base 1024) |
+
+```json
+{ "label": "Revenue", "value": 48290.5, "format": "currency", "currency": "EUR" }
+```
+
+The card has no trend or color option. To show a trend, put it in `description`, for example `"▲ 12% vs last month"`, or send a pre-formatted string `value`.
+
+## Building the spec
 
 ```typescript
 import { StatView } from '@retrofit-ui/builder-zod';
 
-const spec = new StatView()
-  .stat({ label: 'Revenue', value: 48290.50, format: 'currency' })
-  .stat({ label: 'Active Users', value: 1204, description: 'active this month' })
-  .stat({ label: 'Conversion', value: 0.0312, format: 'percent' })
-  .stat({ label: 'Storage Used', value: 5368709120, format: 'bytes' })
-  .title('Dashboard Overview')
-  .build();
-
-// Route in /retrofit.json: route('/dashboard/stats'), here with apiBase '/'.
-// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
-app.get('/dashboard/stats', (_req, res) => {
-  res.json(spec);
+app.get('/api/ui/dashboard', (_req, res) => {
+  res.json(
+    new StatView()
+      .stat({ label: 'Revenue', value: 48290.5, format: 'currency' })
+      .stat({ label: 'Active Users', value: 1204, description: 'active this month' })
+      .stat({ label: 'Uptime', value: '99.98%' })
+      .title('Dashboard Overview')
+      .build(),
+  );
 });
 ```
 
-## Value formats
-
-The `format` field controls how numeric values are displayed. String values are always rendered as-is.
-
-| `format` | Input | Output |
-|---------|-------|--------|
-| `'number'` (default) | `1204` | `1,204` |
-| `'currency'` | `48290.50` | `$48,290.50` |
-| `'percent'` | `0.0312` | `3.1%` |
-| `'bytes'` | `5368709120` | `5 GB` |
-
-Currency defaults to USD. Override with the `currency` field:
-
-```typescript
-.stat({ label: 'Revenue', value: 48290.50, format: 'currency', currency: 'EUR' })
-// → €48,290.50
-```
-
-Locale formatting uses `Intl.NumberFormat` with the browser's locale — numbers, currency symbols, and decimal separators adapt automatically.
-
-## Description text
-
-Each card accepts an optional `description` rendered below the label in muted text — useful for context like "vs last month" or units.
-
-<PreviewBlock title="Description text">
-
-<div style="padding: 20px; background: var(--vp-c-bg-soft);">
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">$9,800.50</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Revenue</div>
-      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px;">vs last month</div>
-    </div>
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">42</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Open Issues</div>
-      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px;">↑ 3 since yesterday</div>
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-new StatView()
-  .stat({ label: 'Revenue', value: 9800.50, format: 'currency', description: 'vs last month' })
-  .stat({ label: 'Open Issues', value: 42, description: '↑ 3 since yesterday' })
-  .build();
-```
-
-:::
-
-## Stat with trend
-
-Include a trend indicator in the `description` string to give at-a-glance context alongside the main value.
-
-<PreviewBlock title="Stat with trend">
-
-<div style="padding: 20px; background: var(--vp-c-bg-soft);">
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;">
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1;">$48,290</div>
-      <div style="display: flex; align-items: center; gap: 6px; margin: 4px 0;">
-        <span style="font-size: 11px; color: var(--vp-c-green-1, #16a34a); font-weight: 600;">▲ 12%</span>
-        <span style="font-size: 11px; color: var(--vp-c-text-3);">vs last month</span>
-      </div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Revenue</div>
-    </div>
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1;">3.1%</div>
-      <div style="display: flex; align-items: center; gap: 6px; margin: 4px 0;">
-        <span style="font-size: 11px; color: var(--vp-c-red-1, #ef4444); font-weight: 600;">▼ 0.4%</span>
-        <span style="font-size: 11px; color: var(--vp-c-text-3);">vs last week</span>
-      </div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Conversion</div>
-    </div>
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.75rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1;">1,204</div>
-      <div style="display: flex; align-items: center; gap: 6px; margin: 4px 0;">
-        <span style="font-size: 11px; color: var(--vp-c-green-1, #16a34a); font-weight: 600;">▲ 48</span>
-        <span style="font-size: 11px; color: var(--vp-c-text-3);">since yesterday</span>
-      </div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Active Users</div>
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-// The description field renders as muted plain text below the label.
-// Include the arrow symbol in the string to convey trend direction.
-new StatView()
-  .stat({ label: 'Revenue',      value: 48290, format: 'currency',
-          description: '▲ 12% vs last month' })
-  .stat({ label: 'Conversion',   value: 0.031, format: 'percent',
-          description: '▼ 0.4% vs last week' })
-  .stat({ label: 'Active Users', value: 1204,
-          description: '▲ 48 since yesterday' })
-  .build()
-```
-
-:::
-
-## Page title
-
-Use `.title()` to render a heading above the grid:
-
-```typescript
-new StatView()
-  .stat({ label: 'Revenue', value: 48290.50, format: 'currency' })
-  .title('Dashboard Overview')
-  .build();
-```
-
-## String values
-
-If your metric is already formatted (e.g. from an external service), pass a string — it renders as-is:
-
-```typescript
-.stat({ label: 'Uptime', value: '99.98%' })
-.stat({ label: 'Build', value: 'Passing' })
-```
-
-## Using the standalone renderer
-
-The stat view can be embedded outside the SPA using the [renderer bundle](/guide/what-is-retrofit-ui#standalone-renderer):
-
-```html
-<script src="retrofit-ui.iife.js"></script>
-
-<!-- declarative island — auto-mounted by init() -->
-<div data-retrofit='{"kind":"stat","stats":[{"label":"Revenue","value":48290.50,"format":"currency"},{"label":"Users","value":1204}],"metadata":{"title":"Overview"}}'></div>
-
-<!-- or mount explicitly in JS -->
-<div id="dashboard"></div>
-<script>
-  const ui = RetrofitUI.init({ rootElement: document.body });
-  ui.mount(
-    {
-      kind: 'stat',
-      stats: [
-        { label: 'Revenue', value: 48290.50, format: 'currency' },
-        { label: 'Users', value: 1204 },
-      ],
-      metadata: { title: 'Overview' },
-    },
-    document.getElementById('dashboard'),
-  );
-</script>
-```
+`stat(stat)` adds one card. `title(t)` sets `metadata.title`. To embed the view in an existing page without the hosted app, see [Script Islands](/guide/script-islands).

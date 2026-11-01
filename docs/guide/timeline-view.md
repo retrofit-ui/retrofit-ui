@@ -1,167 +1,83 @@
 # Timeline View
 
-The timeline view renders a vertical event log — useful for audit trails, activity feeds, deployment histories, or any ordered sequence of events.
+The timeline view (`kind: 'timeline'`) draws a vertical list of events. Use it for audit trails, activity feeds and deployment histories. The producer puts the events in the spec. The view makes no request.
 
-<PreviewBlock>
+<PreviewBlock title="A timeline with two variants">
 
-<div style="padding: 20px; background: var(--vp-c-bg);">
-  <ul style="list-style: none; margin: 0; padding: 0 0 0 7px; border-left: 2px solid var(--vp-c-divider);">
-    <li style="position: relative; padding: 0 0 20px 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #22c55e; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="font-weight: 600; font-size: 13px; color: var(--vp-c-text-1);">PR #42 merged</span>
-        <span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 1px 7px; border-radius: 9999px; font-size: 11px; font-weight: 500;">success</span>
-        <span style="font-size: 11px; color: var(--vp-c-text-3);">2 hours ago</span>
-      </div>
-      <p style="margin: 4px 0 0; font-size: 12px; color: var(--vp-c-text-2);">Merged feature/auth-refactor into main after CI passed</p>
-    </li>
-    <li style="position: relative; padding: 0 0 20px 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #f59e0b; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="font-weight: 600; font-size: 13px; color: var(--vp-c-text-1);">Deploy to staging</span>
-        <span style="background: var(--vp-c-yellow-soft, rgba(245,158,11,0.12)); color: var(--vp-c-yellow-1, #d97706); padding: 1px 7px; border-radius: 9999px; font-size: 11px; font-weight: 500;">warning</span>
-        <span style="font-size: 11px; color: var(--vp-c-text-3);">5 hours ago</span>
-      </div>
-      <p style="margin: 4px 0 0; font-size: 12px; color: var(--vp-c-text-2);">Deployed v2.3.1-rc1 — smoke tests pending</p>
-    </li>
-    <li style="position: relative; padding: 0 0 0 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #6b7280; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span style="font-weight: 600; font-size: 13px; color: var(--vp-c-text-1);">Review requested</span>
-        <span style="font-size: 11px; color: var(--vp-c-text-3);">yesterday</span>
-      </div>
-      <p style="margin: 4px 0 0; font-size: 12px; color: var(--vp-c-text-2);">Alice requested review from Bob and Carol</p>
-    </li>
-  </ul>
+<div style="padding: 16px; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
+  <div style="font-size: 22px; font-weight: 700; margin-bottom: 12px;">Deployment History</div>
+  <div style="display: flex; gap: 10px; margin-bottom: 14px;">
+    <span style="width: 12px; height: 12px; border-radius: 50%; background: #16a34a; margin-top: 3px; flex: none;"></span>
+    <div>
+      <div><strong>Deploy succeeded</strong> <span style="background: rgba(34,197,94,0.15); color: #16a34a; padding: 1px 8px; border-radius: 9999px; font-size: 11px;">success</span> <span style="color: var(--vp-c-text-3); font-size: 11px;">2 hours ago</span></div>
+      <div style="color: var(--vp-c-text-2);">Version 1.4.0 is live.</div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 10px;">
+    <span style="width: 12px; height: 12px; border-radius: 50%; background: #dc2626; margin-top: 3px; flex: none;"></span>
+    <div>
+      <div><strong>Build failed</strong> <span style="background: rgba(239,68,68,0.15); color: #dc2626; padding: 1px 8px; border-radius: 9999px; font-size: 11px;">danger</span> <span style="color: var(--vp-c-text-3); font-size: 11px;">3 hours ago</span></div>
+    </div>
+  </div>
 </div>
 
 </PreviewBlock>
 
 ::: details Spec
 
-```typescript
-TimelineView.events(events).title('Deployment History').build()
+```json
+{
+  "kind": "timeline",
+  "events": [
+    { "title": "Deploy succeeded", "timestamp": "2026-06-27T10:00:00Z", "variant": "success", "description": "Version 1.4.0 is live." },
+    { "title": "Build failed", "timestamp": "2026-06-27T09:00:00Z", "variant": "danger" }
+  ],
+  "metadata": { "title": "Deployment History" }
+}
 ```
 
 :::
 
-## How it works
+## Spec fields
 
-In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/deployments/timeline')`, or `route('/orders/:id/timeline')` for entity-specific histories — points at the endpoint serving the `TimelineSpec`. Events are embedded in the spec in display order — sort them on the server before building.
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `events` | `TimelineEvent[]` | yes | The events, shown in the order given. The client does not sort them. |
+| `metadata.title` | `string` | no | Heading above the list. |
+| `metadata.back` | action | no | Adds a "Back" button that dispatches this action, for example a `navigate` to the record. |
 
-## Basic setup (JS)
+| Event field | Type | Required | Meaning |
+|-------------|------|----------|---------|
+| `title` | `string` | yes | Short label in bold. |
+| `timestamp` | `string` | yes | ISO 8601 date-time. Shown as relative time, for example "2 hours ago". |
+| `description` | `string` | no | Text under the title. |
+| `variant` | `'success' \| 'warning' \| 'danger' \| 'neutral' \| 'primary'` | no | Sets the color of the dot and shows a badge with the variant name. |
+| `icon` | `string` | no | A [Shoelace icon name](https://shoelace.style/components/icon), shown before the title. |
+
+An event with no `variant` has the default (primary) dot and no badge. `primary` shows the badge with the default dot color. A spec with no events shows "No events.".
+
+## Building the spec
 
 ```typescript
 import { TimelineView } from '@retrofit-ui/builder-zod';
 
-// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
-app.get('/ops/deployments/timeline', async (_req, res) => {
-  const events = await db.query(
-    `SELECT title, description, created_at AS timestamp, status AS variant
-     FROM deploy_events ORDER BY created_at DESC`,
-  );
-
+app.get('/api/ui/orders/:id/timeline', async (req, res) => {
+  const events = await db.orderEvents(req.params.id); // sort them here
   res.json(
-    TimelineView.events(events).title('Deployment History').build(),
+    TimelineView.events(events)
+      .title('Order history')
+      .back({ type: 'navigate', to: `#/orders/${req.params.id}` })
+      .build(),
   );
 });
 ```
 
-`TimelineView.events(...)` is the entry point — pass an array of event objects and chain `.title()` if you want a heading above the list.
+`TimelineView.events(events)` starts the builder. `title(t)` sets `metadata.title`. `back(action)` sets `metadata.back`.
 
-## Event fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `title` | `string` | ✓ | Short label shown in bold |
-| `timestamp` | `string` | ✓ | ISO 8601 datetime; rendered as relative time ("2 hours ago") |
-| `description` | `string` | — | Longer text shown below the title |
-| `variant` | `'success' \| 'warning' \| 'danger' \| 'neutral' \| 'primary'` | — | Changes the timeline dot colour |
-| `icon` | `string` | — | [Shoelace icon name](https://shoelace.style/components/icon) shown next to the title |
-
-## Variants
-
-The `variant` field colours the timeline dot for at-a-glance status scanning:
-
-<PreviewBlock title="Variants">
-
-<div style="padding: 20px; background: var(--vp-c-bg);">
-  <ul style="list-style: none; margin: 0; padding: 0 0 0 7px; border-left: 2px solid var(--vp-c-divider);">
-    <li style="position: relative; padding: 0 0 14px 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #3b82f6; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <span style="font-size: 13px; color: var(--vp-c-text-1); font-weight: 500;">primary — default blue dot</span>
-    </li>
-    <li style="position: relative; padding: 0 0 14px 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #22c55e; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <span style="font-size: 13px; color: var(--vp-c-text-1); font-weight: 500;">success — green dot</span>
-    </li>
-    <li style="position: relative; padding: 0 0 14px 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #f59e0b; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <span style="font-size: 13px; color: var(--vp-c-text-1); font-weight: 500;">warning — amber dot</span>
-    </li>
-    <li style="position: relative; padding: 0 0 14px 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #ef4444; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <span style="font-size: 13px; color: var(--vp-c-text-1); font-weight: 500;">danger — red dot</span>
-    </li>
-    <li style="position: relative; padding: 0 0 0 20px;">
-      <div style="position: absolute; left: -9px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #9ca3af; border: 2px solid var(--vp-c-bg); box-shadow: 0 0 0 2px var(--vp-c-divider);"></div>
-      <span style="font-size: 13px; color: var(--vp-c-text-1); font-weight: 500;">neutral — grey dot</span>
-    </li>
-  </ul>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-TimelineView.events([
-  { title: 'Deploy succeeded', timestamp: '2026-06-27T10:00:00Z', variant: 'success' },
-  { title: 'Tests ran with warnings', timestamp: '2026-06-27T09:45:00Z', variant: 'warning' },
-  { title: 'Build failed', timestamp: '2026-06-27T09:30:00Z', variant: 'danger' },
-]).build();
-```
-
-:::
-
-## Icons
-
-Pass any [Shoelace icon name](https://shoelace.style/components/icon) as `icon` to render it inline next to the title:
-
-```typescript
-TimelineView.events([
-  { title: 'PR merged', timestamp: '...', icon: 'git-merge', variant: 'success' },
-  { title: 'Review requested', timestamp: '...', icon: 'person-check' },
-  { title: 'Comment added', timestamp: '...', icon: 'chat-left' },
-]).build();
-```
-
-## Entity timeline vs. resource timeline
-
-Both are just routes you declare; whether one includes an entity ID is up to you:
-
-| Route in `/retrofit.json` | URL hash | Server endpoint (`apiBase` `/api/ui`) | Use for |
-|---------------------------|----------|----------------------------------------|---------|
-| `route('/orders/timeline')` | `#/orders/timeline` | `GET /api/ui/orders/timeline` | Global activity log for a resource |
-| `route('/orders/:id/timeline')` | `#/orders/42/timeline` | `GET /api/ui/orders/42/timeline` | History of a single record |
-
-(Declare `/orders/timeline` before an `/orders/:id` route, so `timeline` isn't read as an id.)
-
-Link from a table's row actions to the entity timeline — the server resolves each row's link:
+A timeline is a normal route. `route('/orders/:id/timeline')` serves one record's history. Declare a static route such as `/orders/timeline` before an `/orders/:id` route. Link to it from a table row with `rowAction`:
 
 ```typescript
 TableView.forRows(OrderSchema, orders)
   .rowAction('History', (row) => `#/orders/${String(row.id)}/timeline`)
-  .build();
-```
-
-## Back button
-
-A "← Back" button is shown only when the spec asks for one: `.back(action)` sets `metadata.back`, which the button dispatches — typically a `navigate` to the record or list:
-
-```typescript
-TimelineView.events(events)
-  .title('Order history')
-  .back({ type: 'navigate', to: `#/orders/${order.id}` })
   .build();
 ```

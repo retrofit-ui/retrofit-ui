@@ -1,177 +1,100 @@
 # Tree View
 
-The tree view renders a hierarchical structure from a flat list of records. It uses an `id`/`parentId` approach — you return all nodes as a flat array and the UI assembles the tree client-side.
-
-<PreviewBlock>
-
-<div style="padding: 16px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; color: var(--vp-c-text-1);">
-  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0;">
-    <span style="color: var(--vp-c-text-3); font-size: 10px;">▼</span>
-    <span>Engineering</span>
-  </div>
-  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0 4px 20px;">
-    <span style="color: var(--vp-c-text-3); font-size: 10px;">▼</span>
-    <span>Frontend</span>
-  </div>
-  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0 4px 40px; background: var(--vp-c-brand-soft, rgba(59,130,246,0.1)); border-radius: 4px;">
-    <span style="color: var(--vp-c-text-3); font-size: 10px;">◉</span>
-    <span style="color: var(--vp-c-brand-1, #3b82f6); font-weight: 500;">Alice Johnson</span>
-  </div>
-  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0 4px 40px;">
-    <span style="color: var(--vp-c-text-3); font-size: 10px;">◉</span>
-    <span>Bob Martinez</span>
-  </div>
-  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0 4px 20px;">
-    <span style="color: var(--vp-c-text-3); font-size: 10px;">▶</span>
-    <span>Backend</span>
-  </div>
-  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0;">
-    <span style="color: var(--vp-c-text-3); font-size: 10px;">▶</span>
-    <span>Design</span>
-  </div>
-  <div style="display: flex; gap: 8px; margin-top: 12px;">
-    <button style="padding: 5px 14px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 12px; cursor: default;">Edit</button>
-    <button style="padding: 5px 14px; border: 1px solid var(--vp-c-red-1, #ef4444); border-radius: 4px; background: transparent; color: var(--vp-c-red-1, #ef4444); font-size: 12px; cursor: default;">Delete</button>
-  </div>
-</div>
-
-</PreviewBlock>
+The tree view (`kind: 'tree'`) shows a hierarchy. The endpoint returns a flat list of nodes, and the client builds the tree from an id field and a parent field.
 
 ::: details Spec
 
-```typescript
-new TreeView()
-  .endpoint({ method: 'GET', url: '/departments' })
-  .idField('id')
-  .parentField('parentId')
-  .labelField('name')
-  .metadata({ title: 'Department Structure' })
-  .build()
+```json
+{
+  "kind": "tree",
+  "endpoint": { "method": "GET", "url": "/departments" },
+  "idField": "id",
+  "parentField": "parentId",
+  "labelField": "name",
+  "linkField": "link",
+  "toolbar": [{ "label": "New", "action": { "type": "navigate", "to": "#/departments/new" } }],
+  "selection": "single",
+  "metadata": { "title": "Department Structure" }
+}
 ```
 
 :::
 
-## How it works
+## Spec fields
 
-In the hosted SPA, a route in `/retrofit.json` — e.g. `route('/departments/tree')` — points at the endpoint serving the `TreeSpec`. The spec describes how to fetch the flat node list and which fields to use for assembling the hierarchy.
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `endpoint` | `{ method, url }` | yes | Returns the flat node array (`ListRow[]`). |
+| `idField` | `string` | yes | Field that identifies a node. |
+| `parentField` | `string` | yes | Field with the parent's id. |
+| `labelField` | `string` | yes | Field shown as the node label. |
+| `linkField` | `string` | no | Field with the node's finished link. Adds an **Edit** button. |
+| `toolbar` | `{ label, action, variant? }[]` | no | Buttons above the tree. `variant` is `primary` (default) or `default`. |
+| `selection` | `'single' \| 'multiple' \| 'leaf'` | no | Default `single`. `leaf` lets the user select only leaf nodes. |
+| `metadata.title` | `string` | no | Heading above the tree. |
 
-Then the SPA fetches all nodes from `spec.endpoint` and builds the tree by matching each node's `parentField` value to another node's `idField` value. Root nodes are those with a `null` or missing parent.
+There is no `actions` field on the spec. Writes belong to the nodes.
 
-## Basic setup (JS)
+## Nodes
+
+`endpoint` returns a raw array. The client loads it through the `http` action:
+
+```json
+[
+  { "id": 1, "name": "Engineering", "parentId": null, "link": "#/departments/1",
+    "_actions": { "delete": { "method": "DELETE", "url": "/departments/1" } } },
+  { "id": 2, "name": "Frontend", "parentId": 1, "link": "#/departments/2",
+    "_actions": { "delete": { "method": "DELETE", "url": "/departments/2" } } }
+]
+```
+
+- A node is a **root** when its `parentField` is `null`, missing, or names an id that is not in the list. A node with a missing parent (an orphan) is shown at the top level, not hidden.
+- Each node may carry `_actions.delete`, a finished HTTP action. Only `delete` is used by the tree. A node with no `_actions.delete` cannot be deleted.
+- A spec with no nodes shows "No data.".
+
+## Buttons
+
+| Button | Shows when | Behavior |
+|--------|------------|----------|
+| Toolbar buttons | `toolbar` is set | Dispatch their action, for example a `navigate` to a create form. |
+| **Edit** | `linkField` is set | Enabled when exactly one node with a link is selected. Navigates to that node's link. |
+| **Delete** | At least one node has `_actions.delete` | Enabled when any node is selected. A dialog asks to confirm. |
+
+Delete sends each selected node's own `delete` action, one after the other, with no body. It does not stop at the first failure: it tries every selected node. Then it shows one toast per problem class:
+
+- nodes that failed, with their ids (error toast);
+- nodes with no `delete` action, with their ids (warning toast);
+- a success toast, only if there were no failures and no skipped nodes.
+
+The selection clears. If at least one node was deleted, the client reloads the tree and dispatches `refresh`. The client does not delete a node's children. If the server should delete them, the server must do it.
+
+## Building the spec
 
 ```typescript
-import { TreeView } from '@retrofit-ui/builder-zod';
+import { TreeView, withRowActions } from '@retrofit-ui/builder-zod';
 
-// Each row must have: id, parentId (or null for roots), name
-// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
-app.get('/files/departments/tree', (_req, res) => {
+app.get('/api/ui/departments/tree', (_req, res) => {
   res.json(
     new TreeView()
       .endpoint({ method: 'GET', url: '/departments' })
       .idField('id')
       .parentField('parentId')
       .labelField('name')
+      .linkField('link')
+      .selection('multiple')
+      .toolbar('New', { type: 'navigate', to: '#/departments/new' })
       .metadata({ title: 'Department Structure' })
       .build(),
   );
 });
+
+// The node endpoint adds each node's link and its finished delete.
+app.get('/departments', (_req, res) => {
+  const nodes = store.all().map((d) => ({ ...d, link: `#/departments/${d.id}` }));
+  res.json(withRowActions(nodes, { delete: { method: 'DELETE', url: '/departments/{id}' } }));
+});
 ```
 
-Your `/departments` endpoint returns a flat array:
+The builder defaults are `idField: 'id'`, `parentField: 'parentId'` and `labelField: 'name'`. `endpoint()` is required: `build()` throws without it. The builder has no `delete()` method, because the builder never sees the nodes. Use `withRowActions` in the node endpoint, as above.
 
-```json
-[
-  { "id": 1, "name": "Engineering", "parentId": null },
-  { "id": 2, "name": "Frontend", "parentId": 1 },
-  { "id": 3, "name": "Alice Johnson", "parentId": 2 },
-  { "id": 4, "name": "Bob Martinez", "parentId": 2 },
-  { "id": 5, "name": "Backend", "parentId": 1 },
-  { "id": 6, "name": "Design", "parentId": null }
-]
-```
-
-## Spec fields
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `endpoint` | `EndpointDirective` | ✓ | Fetches the flat node array |
-| `idField` | `string` | ✓ | Field on each node that uniquely identifies it (default: `'id'`) |
-| `parentField` | `string` | ✓ | Field referencing the parent's ID; `null`/missing = root (default: `'parentId'`) |
-| `labelField` | `string` | ✓ | Field to display as the node label (default: `'name'`) |
-| `selection` | `'single' \| 'multiple' \| 'leaf'` | — | Selection mode (default: `'single'`) |
-| `linkField` | `string` | — | Field on each node holding its finished link; adds an **Edit** button opening the selected node's |
-| `toolbar` | `ToolbarButton[]` | — | Buttons above the tree, e.g. "New" |
-| `actions` | `{ create?, update?, delete? }` | — | `delete` adds a **Delete** button; `create` and `update` are carried in the spec but no built-in button uses them |
-| `metadata.title` | `string` | — | Heading above the tree |
-
-## Selection modes
-
-<PreviewBlock title="Selection modes">
-
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-  <div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 12px; background: var(--vp-c-bg);">
-    <div style="font-size: 12px; font-weight: 600; color: var(--vp-c-text-1); margin-bottom: 6px;"><code>'single'</code></div>
-    <div style="font-size: 11px; color: var(--vp-c-text-2);">One node at a time. Edit and Delete buttons require exactly one selection.</div>
-  </div>
-  <div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 12px; background: var(--vp-c-bg);">
-    <div style="font-size: 12px; font-weight: 600; color: var(--vp-c-text-1); margin-bottom: 6px;"><code>'multiple'</code></div>
-    <div style="font-size: 11px; color: var(--vp-c-text-2);">Multiple nodes. Useful for bulk delete. Edit is disabled when more than one node is selected.</div>
-  </div>
-  <div style="border: 1px solid var(--vp-c-divider); border-radius: 8px; padding: 12px; background: var(--vp-c-bg);">
-    <div style="font-size: 12px; font-weight: 600; color: var(--vp-c-text-1); margin-bottom: 6px;"><code>'leaf'</code></div>
-    <div style="font-size: 11px; color: var(--vp-c-text-2);">Only leaf nodes (no children) can be selected — enforced by the Shoelace tree component.</div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-new TreeView()
-  .endpoint({ method: 'GET', url: '/employees' })
-  .idField('id')
-  .parentField('managerId')
-  .labelField('name')
-  .selection('multiple')
-  .build();
-```
-
-:::
-
-## CRUD actions
-
-Navigation is data in the spec: a `toolbar` button for "New", and a `linkField` naming the field in each node that holds its finished link. Add `.delete()` for deletion:
-
-```typescript
-new TreeView()
-  .endpoint({ method: 'GET', url: '/departments' }) // nodes carry `link: '#/departments/3'`
-  .idField('id')
-  .parentField('parentId')
-  .labelField('name')
-  .linkField('link')
-  .toolbar('New', { type: 'navigate', to: '#/departments/new' })
-  .delete({ method: 'DELETE', url: '/departments/{id}' })
-  .build();
-```
-
-| Builder method | Button | Behaviour |
-|----------------|--------|-----------|
-| `toolbar(label, action)` | Above the tree (top-right) | Dispatches `action`, e.g. a `navigate` to a create form |
-| `linkField(field)` | **Edit** | Opens the selected node's link; disabled unless exactly one node with a link is selected |
-| `delete(directive)` | **Delete** | Opens a confirmation dialog, then calls the endpoint for each selected ID |
-
-The nodes come from `endpoint`, which the builder never sees, so your node endpoint returns each node's link itself. Delete is the only action handled inline — it prompts with a confirmation dialog, fills `{id}` in the url with each selected node's id, calls the endpoint, then shows a success or error toast.
-
-## Linking from a table
-
-Use a table toolbar button to send users to the tree view's route:
-
-```typescript
-TableView.schema(ProjectSchema)
-  .toolbar('Structure', { type: 'navigate', to: '#/departments/tree' })
-  .list({ method: 'GET', url: '/projects' })
-  .build();
-```
-
-For a per-row link — e.g. one tree per project — use `rowAction('Structure', (row) => …)` with a route such as `/projects/:id/tree`; see [Row actions](/guide/table-view#row-actions).
+To open a tree from a table, use a toolbar button or a row action. See [Table view](/guide/table-view#row-links-and-row-actions).

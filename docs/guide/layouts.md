@@ -1,25 +1,19 @@
 # Layouts
 
-Layouts are positional containers — `row()`, `col()`, and `grid()` — that arrange other views spatially. They carry no data of their own and expose no endpoints; only the leaf specs they contain (`table`, `form`, `stat`, etc.) handle data fetching.
+Layouts are specs that hold other specs. Every container has a `children: Spec[]` array that nests specs directly, in the same flat `{ kind, ... }` shape they have at the top level. A container has no data and no endpoint of its own. Only the specs inside it load data.
 
-::: info
-Layouts carry no data of their own and have no endpoints. They are positional containers only — the leaf specs they contain (`table`, `form`, `stat`, etc.) handle their own data fetching via their own endpoint config.
-:::
+The container kinds are `page`, `card`, `flex`, `grid` and `tabs`. The small leaf kinds `text`, `details` and `filter-form` complete the layout toolbox.
 
-## Flex layout
+<PreviewBlock title="A grid with two columns">
 
-`row()` and `col()` create flex containers. `row()` lays children out horizontally; `col()` stacks them vertically.
-
-### col() — stacked layout
-
-The most common real-world pattern: a filter bar on top, a data table below.
-
-<PreviewBlock>
-
-<div style="padding: 20px; background: var(--vp-c-bg-soft);">
-  <div style="display: flex; flex-direction: column; gap: 16px;">
-    <div style="padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg); font-size: 13px; color: var(--vp-c-text-2);">Filter form</div>
-    <div style="padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg); font-size: 13px; color: var(--vp-c-text-2); min-height: 64px; display: flex; align-items: center;">Table</div>
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 16px; font-family: var(--vp-font-family-base, system-ui, sans-serif); background: var(--vp-c-bg);">
+  <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px;">
+    <div style="font-size: 28px; font-weight: 700;">1,204</div>
+    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--vp-c-text-2);">Active Users</div>
+  </div>
+  <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 8px;">
+    <div style="font-size: 28px; font-weight: 700;">3.1%</div>
+    <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--vp-c-text-2);">Conversion</div>
   </div>
 </div>
 
@@ -27,167 +21,122 @@ The most common real-world pattern: a filter bar on top, a data table below.
 
 ::: details Spec
 
-```typescript
-import { col, pageSpec } from '@retrofit-ui/builder-zod';
-
-pageSpec()
-  .add(
-    col('16px')
-      .filterForm(filterSpec)
-      .table(tableSpec)
-      .build()
-  )
-  .build();
+```json
+{
+  "kind": "grid",
+  "columns": 2,
+  "gap": "16px",
+  "children": [
+    { "kind": "stat", "stats": [{ "label": "Active Users", "value": 1204 }] },
+    { "kind": "stat", "stats": [{ "label": "Conversion", "value": 0.031, "format": "percent" }] }
+  ]
+}
 ```
 
 :::
 
-### row() — side-by-side layout
+## Flex
 
-<PreviewBlock>
+`flex` lays children in a row or a column.
 
-<div style="padding: 20px; background: var(--vp-c-bg-soft); overflow-x: auto;">
-  <div style="display: flex; flex-direction: row; gap: 16px; min-width: 280px;">
-    <div style="flex: 1; padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg); font-size: 13px; color: var(--vp-c-text-2);">Left panel</div>
-    <div style="flex: 1; padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg); font-size: 13px; color: var(--vp-c-text-2);">Right panel</div>
-  </div>
-</div>
+| Field | Type | Default | Meaning |
+|-------|------|---------|---------|
+| `direction` | `'row' \| 'column'` | `column` | Main axis. |
+| `gap` | `string` | Shoelace `2x-large` spacing | Any CSS gap value. |
+| `wrap` | `boolean` | `false` | Wrap children onto new lines. |
+| `align` | `start \| center \| end \| stretch` | none | CSS `align-items`. |
+| `justify` | `start \| center \| end \| space-between \| space-around` | none | CSS `justify-content`. |
 
-</PreviewBlock>
+## Grid
 
-::: details Spec
+`grid` lays children in a CSS grid.
+
+| Field | Type | Default | Meaning |
+|-------|------|---------|---------|
+| `columns` | `number` | `1` | `n` equal columns: `repeat(n, 1fr)`. |
+| `columnTemplate` | `string` | none | A full `grid-template-columns` value, for example `200px 1fr 2fr`. It wins over `columns`. |
+| `gap` | `string` | Shoelace `2x-large` spacing | Any CSS gap value. |
+| `align`, `justify` | as in flex | none | `align-items` and `justify-content`. |
+
+## Other containers and leaves
+
+| Kind | Fields |
+|------|--------|
+| `card` | `header?: string`, `children`, `footer?: Spec` (one spec). |
+| `tabs` | `placement?: 'top' \| 'bottom' \| 'start' \| 'end'` (default `top`), `tabs: { label, children }[]`. The first tab is active. |
+| `text` | `content: string`, `variant?: 'body' \| 'muted' \| 'small'`. Plain text, not markdown. |
+| `details` | `items: { summary, body, open? }[]`. Collapsible text sections. |
+
+## Pages
+
+`page` is the top-level container for a screen with several views.
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `title` | `string` | Heading above the children. |
+| `layout` | `LayoutConfig` | Layout of the root container. Default: a column with the `2x-large` gap. |
+| `children` | `Spec[]` | The content. |
+
+`LayoutConfig` has `direction`, `wrap`, `gap`, `align`, `justify`, `columns` and `columnTemplate`. It becomes a grid when `columns` or `columnTemplate` is set, and a flex box otherwise.
+
+## Pages and filters
+
+A page shares filter values with the specs inside it.
+
+- A `filter-form` has `fields` of type `select`, `text`, `date`, `datetime` or `time`. Each change writes the field's value to the page filters. A `select` filter shows an "All &lt;label&gt;" choice, or its `placeholder`, for empty.
+- A form with `metadata.autoSubmit` writes its changes to the page filters too.
+- Under the router the filters live in the URL search params, so a filtered view can be linked and survives a reload. Without a router they live in memory.
+- A table on the page adds each filter to its `list` request by field name. Only names from the page's `filter-form` and `autoSubmit` forms are sent. Nested pages have their own filters.
+- `page`, `pageSize`, `sort` and `order` are reserved for the table. The client warns in the console if a filter uses one.
+- When a form on the page writes, the page dispatches `refresh` to its tables, then passes it on to whatever owns the page spec.
+
+For the list request rules, see the [spec contract](/guide/contract).
+
+A `filter-form` outside a page does nothing and logs a console warning.
+
+## Builders
+
+`row(gap?)`, `col(gap?)` and `grid(columns, gap?)` return a `LayoutContainerBuilder`. `pageSpec()` returns a `PageSpecBuilder`. `filterForm()` returns a `FilterFormSpecBuilder`.
 
 ```typescript
-import { row, pageSpec } from '@retrofit-ui/builder-zod';
+import { col, filterForm, grid, pageSpec, row } from '@retrofit-ui/builder-zod';
 
-pageSpec()
-  .add(
-    row('16px')
-      .form(formSpec)
-      .table(tableSpec)
-      .build()
-  )
+const filters = filterForm()
+  .field('status', {
+    label: 'Status',
+    type: 'select',
+    options: [{ label: 'Open', value: 'open' }, { label: 'Closed', value: 'closed' }],
+  })
   .build();
-```
 
-:::
-
-## Flex props
-
-| Prop | Type | Default | Notes |
-|---|---|---|---|
-| `direction` | `'row' \| 'column'` | `'row'` / `'column'` | Set by `row()` / `col()` |
-| `gap` | `string` | (none) | Any CSS gap value, e.g. `'16px'` |
-| `wrap` | `boolean` | `false` | Whether flex children wrap to the next line |
-| `align` | `'start' \| 'center' \| 'end' \| 'stretch'` | (none) | CSS `align-items` |
-| `justify` | `'start' \| 'center' \| 'end' \| 'space-between' \| 'space-around'` | (none) | CSS `justify-content` |
-
-`wrap`, `align`, and `justify` exist on the underlying `FlexSpec` type but are not currently exposed as arguments on `row()` / `col()` — only `gap` is available as a builder shorthand.
-
-## Grid layout
-
-`grid(columns, gap?)` creates a CSS grid with `n` equal-width columns (`repeat(n, 1fr)`).
-
-<PreviewBlock>
-
-<div style="padding: 20px; background: var(--vp-c-bg-soft); overflow-x: auto;">
-  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; min-width: 260px;">
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.5rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">$48,290</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Revenue</div>
-    </div>
-    <div style="padding: 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg);">
-      <div style="font-size: 1.5rem; font-weight: 700; color: var(--vp-c-text-1); line-height: 1.1; margin-bottom: 4px;">1,204</div>
-      <div style="font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); text-transform: uppercase; letter-spacing: 0.05em;">Active Users</div>
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-import { grid, pageSpec } from '@retrofit-ui/builder-zod';
-
-pageSpec()
-  .add(
-    grid(2, '16px')
-      .add(statSpec1)
-      .add(statSpec2)
-      .build()
-  )
-  .build();
-```
-
-:::
-
-## Grid props
-
-| Prop | Type | Default | Notes |
-|---|---|---|---|
-| `columns` | `number` | — | Number of equal-width columns (`repeat(n, 1fr)`) |
-| `columnTemplate` | `string` | — | Raw `grid-template-columns` value; overrides `columns` |
-| `gap` | `string` | (none) | Any CSS gap value |
-
-`columns` and `columnTemplate` are mutually exclusive — when both are set, `columnTemplate` takes precedence as it is used directly as the `grid-template-columns` CSS value.
-
-## Nesting
-
-Flex and grid containers can be composed to arbitrary depth. A common pattern is a `col()` outer container with a `row()` inner container for a side-by-side pair:
-
-<PreviewBlock>
-
-<div style="padding: 20px; background: var(--vp-c-bg-soft); overflow-x: auto;">
-  <div style="display: flex; flex-direction: column; gap: 24px; min-width: 280px;">
-    <div style="padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg); font-size: 13px; color: var(--vp-c-text-2);">Filter form</div>
-    <div style="display: flex; flex-direction: row; gap: 16px;">
-      <div style="flex: 1; padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg); font-size: 13px; color: var(--vp-c-text-2);">Form</div>
-      <div style="flex: 1; padding: 14px 16px; border: 1px solid var(--vp-c-divider); border-radius: 6px; background: var(--vp-c-bg); font-size: 13px; color: var(--vp-c-text-2);">Table</div>
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-import { col, row, pageSpec } from '@retrofit-ui/builder-zod';
-
-pageSpec()
+const spec = pageSpec()
+  .title('Tickets')
   .add(
     col('24px')
-      .filterForm(filterSpec)      // stacked above
-      .add(
-        row('16px')
-          .form(formSpec)          // side-by-side
-          .table(tableSpec)
-          .build()
-      )
-      .build()
+      .filterForm(filters)
+      .add(row('16px').form(createTicketForm, 'New Ticket').table(ticketTable).build())
+      .add(grid(3, '16px').add(statA).add(statB).add(statC).build())
+      .build(),
   )
   .build();
 ```
 
-:::
+| Builder | Output |
+|---------|--------|
+| `row(gap?)` | `flex` with `direction: 'row'` |
+| `col(gap?)` | `flex` with `direction: 'column'` |
+| `grid(columns, gap?)` | `grid` with `columns` |
 
-## Quick reference
+A `LayoutContainerBuilder` has `add(spec)` for any spec, and the shortcuts `form(spec, title?)`, `table(spec)`, `filterForm(spec)` and `markdown(spec)`. Call `build()` to get the `FlexSpec` or `GridSpec`.
 
-| Builder | Kind | Description |
-|---|---|---|
-| `row(gap?)` | `flex` | Horizontal flex container (`direction: 'row'`) |
-| `col(gap?)` | `flex` | Vertical flex container (`direction: 'column'`) |
-| `grid(columns, gap?)` | `grid` | CSS grid with `n` equal columns |
+The shorthands set only direction, columns and gap. For `wrap`, `align`, `justify` or `columnTemplate`, create the container with `new LayoutContainerBuilder('flex', { wrap: true, align: 'center' })` (or `'grid'`), or spread extra fields into the built spec.
 
-All three return a `LayoutContainerBuilder` with these chainable methods:
+`PageSpecBuilder` has `title(t)`, `layout(config | container)`, `add(spec)`, `filterForm`, `form`, `table`, `markdown` and `build()`. Pass a container builder to `layout()` to reuse its settings (`layoutConfig()`) as the page layout.
 
-- `.add(spec)` — append any `Spec` (leaf or nested layout)
-- `.form(spec, title?)` — append a form; `title`, if given, becomes its `metadata.title`
-- `.table(spec)`, `.filterForm(spec)`, `.markdown(spec)` — append that spec as-is
+There are no builders for `tabs`, `text` or `details`: write those specs as objects. `CardView` builds a `card`:
 
-Children are always the specs themselves — the same shape a spec has at the top level. Call `.build()` to produce the `FlexSpec` / `GridSpec` to pass to `pageSpec().add(...)`.
+```typescript
+import { CardView } from '@retrofit-ui/builder-zod';
 
-### Inside a page
-
-A page shares its filters with the specs inside it. A `filter-form` writes them (into the url's search params, so a filtered view can be linked to); a table fills them into the `{param}`s of its `list` url and refetches when they change; a form seeds matching fields from them, writes them back when `metadata.autoSubmit` is set, and after a successful write refreshes the page so sibling tables reload. Outside a page, a form is a standalone editor: with `metadata.onDone` it shows a back button, and dispatches `onDone` after a successful write.
+new CardView().header('Revenue').add(revenueStat).footer({ kind: 'text', content: 'Updated daily', variant: 'muted' }).build();
+```

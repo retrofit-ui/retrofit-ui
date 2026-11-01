@@ -1,54 +1,125 @@
 # Form View
 
-The form view is driven by a `FormSpec` — in the hosted SPA, the spec served for a route such as `#/posts/new` or `#/posts/:id`. It renders a create or edit form with validation, and optionally a delete button.
+The form view is driven by a `FormSpec` (`kind: 'form'`). It draws a create or edit form, checks the input on the client, and sends the values to the endpoint the spec names. An edit form can also delete the record.
 
-<PreviewBlock>
+<PreviewBlock title="A create form">
 
-<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
-  <button style="background: none; border: none; font-size: 12px; color: var(--vp-c-text-3); cursor: default; padding: 0; margin-bottom: 12px;">← Back</button>
-  <h2 style="margin: 0 0 20px; font-size: 20px; font-weight: 700; color: var(--vp-c-text-1);">Edit Post</h2>
-  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Title</label>
-      <input readonly value="Getting started with Vite" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Body</label>
-      <textarea readonly rows="3" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); resize: vertical; box-sizing: border-box;">Vite is a modern build tool...</textarea>
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Status</label>
-      <select style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);">
-        <option>draft</option>
-        <option selected>published</option>
-        <option>archived</option>
-      </select>
-    </div>
-    <div style="display: flex; gap: 8px; margin-top: 4px;">
-      <button style="padding: 7px 16px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-radius: 4px; font-size: 13px; cursor: default;">Save</button>
-      <button style="padding: 7px 16px; background: transparent; color: var(--vp-c-red-1, #ef4444); border: 1px solid var(--vp-c-red-1, #ef4444); border-radius: 4px; font-size: 13px; cursor: default;">Delete</button>
-    </div>
+<div style="padding: 16px; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 14px; background: var(--vp-c-bg);">
+  <div style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">New Post</div>
+  <div style="margin-bottom: 12px;">
+    <div style="font-size: 13px; margin-bottom: 4px;">Title *</div>
+    <input value="" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg); color: var(--vp-c-text-1);" />
   </div>
+  <div style="margin-bottom: 16px;">
+    <div style="font-size: 13px; margin-bottom: 4px;">Status *</div>
+    <select style="width: 100%; padding: 6px 8px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg); color: var(--vp-c-text-1);"><option>-- select --</option><option>draft</option><option>published</option></select>
+  </div>
+  <button style="padding: 6px 16px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-radius: 4px; cursor: default;">Create</button>
 </div>
 
 </PreviewBlock>
 
 ::: details Spec
 
-```typescript
-formSpec(PostSchema, UpdatePostSchema)
-  .title('Post')
-  .edit()
-  .values(post)
-  .params({ id: post.id })
-  .update({ method: 'PUT', url: '/posts/{id}' })
-  .delete({ method: 'DELETE', url: '/posts/{id}' })
-  .build()
+```json
+{
+  "kind": "form",
+  "fields": [
+    { "name": "title", "label": "Title", "type": "text", "required": true },
+    {
+      "name": "status", "label": "Status", "type": "select", "required": true,
+      "options": [{ "label": "draft", "value": "draft" }, { "label": "published", "value": "published" }]
+    }
+  ],
+  "endpoints": { "create": { "method": "POST", "url": "/posts" } },
+  "metadata": { "title": "Post" }
+}
 ```
 
 :::
 
-## Basic setup (JS)
+## Spec fields
+
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `fields` | `Field[]` | yes | The inputs, in order. |
+| `endpoints.create` | `{ method, url }` | no | Where a create form submits. |
+| `endpoints.update` | `{ method, url }` | no | Where an edit form submits. |
+| `endpoints.delete` | `{ method, url }` | no | Used by the **Delete** button of an edit form. |
+| `metadata.mode` | `'create' \| 'edit'` | no | Default `create`. `edit` submits to `update` and offers delete. |
+| `metadata.title` | `string` | no | The record name. See [Headings](#headings-and-buttons). |
+| `metadata.onDone` | action | no | Dispatched after a successful submit or delete, and by the Back button. |
+| `metadata.submitLabel` | `string` | no | Submit button text. Default `Create`, or `Save` in edit mode. |
+| `metadata.autoSubmit` | `boolean` | no | Inside a page: write each change to the page filters instead of submitting. |
+| `metadata.layout` | `FormLayoutConfig` | no | See [Layout](#layout). |
+
+Endpoints arrive finished. The client calls each URL exactly as the spec gives it, for example `/posts/7`. It never fills `{id}` in a form URL. Fill it on the producer side.
+
+## Fields
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `name` | `string` | Key in the submitted JSON. Required. |
+| `label` | `string` | Label text. Required. |
+| `type` | `FieldType` | The input. Required. See the table below. |
+| `required` | `boolean` | Adds ` *` to the label and blocks an empty value. |
+| `readOnly` | `boolean` | Disables the input in an edit form, and hides it in a create form. |
+| `validation` | `{ required?, min?, max?, pattern? }` | See [Validation](#validation). |
+| `placeholder`, `helpText` | `string` | Hint text in and below the input. |
+| `tooltip` | `string` | A `?` button next to the label that shows this text. |
+| `options` | `{ label, value }[]` | Choices for `select`, `multiselect` and `radio-group`. |
+| `value` | any | The starting value. An edit form carries the record's current values here. |
+| `colorFormat`, `colorSwatches` | `hex \| rgb \| hsl`, `string[]` | For `color`. Default format `hex`. |
+| `ratingMax`, `ratingPrecision` | `number` | For `rating`. Default 5 and 1. |
+
+| `type` | Input |
+|--------|-------|
+| `text`, `email`, `password`, `number`, `date`, `time` | Shoelace input of that type. |
+| `datetime` | Date-time input. The value is sent as an ISO string. |
+| `textarea` | Text area, 4 rows. |
+| `markdown` | Text area, 12 rows, with the default help text "Markdown supported". The value is the markdown source. |
+| `select` | Select with a "-- select --" choice for empty. |
+| `multiselect` | Select that allows many choices. The value is an array. |
+| `radio-group` | Segmented radio buttons. |
+| `checkbox`, `switch` | Boolean control. The label is the field label. |
+| `color` | Color picker. |
+| `tags` | Free-text tags. Enter or comma adds a tag. Backspace on empty input removes the last. The value is a string array. |
+| `rating` | Star rating. The value is a number. |
+
+Option values of a `multiselect` must not contain spaces, because the select joins values with spaces.
+
+## Validation
+
+The client checks all visible fields when the user submits. If any check fails, it shows a message under the field and sends nothing.
+
+1. A field with `required: true` and an empty value fails. An empty value is `''`, `null`, `undefined` or an empty array.
+2. An empty optional value skips the other checks.
+3. For `number` fields, `validation.min` and `validation.max` bound the value.
+4. For `text`, `email`, `password`, `textarea` and `markdown` fields, they bound the string length.
+5. For the same text types, `validation.pattern` is a JavaScript regex source. The client anchors it, so it must match the whole string. An invalid pattern is ignored and the client writes one console warning.
+
+`min`, `max` and `pattern` have no effect on other types. The client reads `required` from the field, not from `validation.required`. Server-side validation is not part of the spec: validate again on the server.
+
+## Behavior
+
+- **Create form.** Hides `readOnly` fields. After a successful submit it clears the form.
+- **Edit form** (`mode: 'edit'`). Shows all fields, and sends all values, including read-only ones. It keeps the saved values.
+- **Submit.** Sends JSON with every visible value to the `create` or `update` endpoint through the `http` action. On success it shows a toast, dispatches `refresh`, then dispatches `onDone`. On a non-2xx response it shows the `error` string from a JSON body, or `Request failed: <status>`.
+- **Delete.** An edit form with `endpoints.delete` shows **Delete**. A dialog asks to confirm. On success the client shows a toast, dispatches `refresh`, then dispatches `onDone`.
+
+### Headings and buttons
+
+Outside a page, the form shows an `h1`: `New <title>` or `Edit <title>`, or just `New` or `Edit` with no title. If `onDone` is set, a "Back" button dispatches it. Inside a page, `metadata.title` is shown unchanged as a smaller heading, and there is no Back button.
+
+### Layout
+
+`metadata.layout` is `{ direction?, gap?, columns?, labelPosition? }`. With `columns`, the form is a CSS grid of that many equal columns. Otherwise it is a flex box with `direction` (default `column`; `row` wraps). `gap` defaults to the Shoelace medium spacing. `labelPosition: 'hidden'` hides the labels of most inputs; checkbox and switch keep their text.
+
+### Inside a page
+
+A form in a [page](/guide/layouts#pages-and-filters) starts with the page filter value for any field with the same name. With `autoSubmit`, each change writes the filter, and the submit button is hidden. Without `autoSubmit`, a successful write dispatches `refresh` and the page's tables reload.
+
+## Building the spec with Zod
 
 ```typescript
 import { formSpec } from '@retrofit-ui/builder-zod';
@@ -56,37 +127,31 @@ import { z } from 'zod';
 
 const PostSchema = z.object({
   id: z.number(),
-  title: z.string(),
+  title: z.string().min(3),
   body: z.string(),
   status: z.enum(['draft', 'published', 'archived']),
 });
-
 const UpdatePostSchema = PostSchema.omit({ id: true });
 
 function postForm() {
   return formSpec(PostSchema, UpdatePostSchema)
-    .title('Post') // headings read "New Post" / "Edit Post"
-    .onDone({ type: 'navigate', to: '#/posts' }); // after save/delete, and Back
+    .title('Post')
+    .fieldOverride('body', { type: 'markdown' })
+    .onDone({ type: 'navigate', to: '#/posts' });
 }
 
-// Routes in /retrofit.json: crudRoutes('posts') → #/posts/new and #/posts/:id.
-// URL prefix below is arbitrary — pick anything and match `apiBase` to it.
-// Register /new before /:id so "new" is never read as an id.
-app.get('/admin-ui/posts/new', (_req, res) => {
+app.get('/api/ui/posts/new', (_req, res) => {
   res.json(postForm().create({ method: 'POST', url: '/posts' }).build());
 });
 
-app.get('/admin-ui/posts/:id', (req, res) => {
+app.get('/api/ui/posts/:id', (req, res) => {
   const post = store.find(req.params.id);
-  if (!post) {
-    res.status(404).json({ error: `No post ${req.params.id}` });
-    return;
-  }
+  if (!post) return void res.status(404).json({ error: `No post ${req.params.id}` });
   res.json(
     postForm()
-      .edit()                  // submits to update, offers delete
-      .values(post)            // pre-populates the fields
-      .params({ id: post.id }) // fills {id} in the urls, here on the server
+      .edit()
+      .values(post)
+      .params({ id: post.id })
       .update({ method: 'PUT', url: '/posts/{id}' })
       .delete({ method: 'DELETE', url: '/posts/{id}' })
       .build(),
@@ -94,301 +159,36 @@ app.get('/admin-ui/posts/:id', (req, res) => {
 });
 ```
 
-A form is a create form unless it says otherwise: `.edit()` sets `metadata.mode: 'edit'`, which submits to `update` and shows the delete button. The record's current values travel in the spec (`values()` sets each field's `value`), and `params()` resolves the endpoint urls before the spec leaves the server — the client receives `/posts/7`, not `/posts/{id}`.
+`formSpec(schema, updateSchema?)`: a field that `updateSchema` leaves out becomes `readOnly`. The builder derives each field from Zod:
 
-## Field types
+| Zod type | Field type |
+|----------|------------|
+| `z.string()` | `text` |
+| `z.string().email()` | `email` |
+| `z.string().datetime()`, `z.date()` | `datetime` |
+| `z.string().date()` | `date` |
+| `z.string().time()` | `time` |
+| `z.number()` | `number` |
+| `z.boolean()` | `checkbox` |
+| `z.enum(...)` | `select`, with `options` from the values |
+| anything else | `text` |
 
-retrofit-ui derives field types from Zod automatically:
-
-| Zod type | Field type | Input |
-|----------|------------|-------|
-| `z.string()` | `text` | `<sl-input type="text">` |
-| `z.string().email()` | `email` | `<sl-input type="email">` |
-| `z.number()` | `number` | `<sl-input type="number">` |
-| `z.boolean()` | `checkbox` | `<sl-checkbox>` |
-| `z.enum(...)` | `select` | `<sl-select>` with auto-derived options |
-| `z.date()` | `date` | `<sl-input type="date">` |
-
-<PreviewBlock title="All field types">
-
-<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
-  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Full name</label>
-      <input readonly value="Alice Kowalski" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Email</label>
-      <input readonly type="email" value="alice@example.com" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Amount</label>
-      <input readonly type="number" value="42.50" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-    </div>
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <input type="checkbox" checked style="width: 16px; height: 16px; cursor: default;" />
-      <label style="font-size: 13px; color: var(--vp-c-text-1);">Active</label>
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Status</label>
-      <select style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);">
-        <option>draft</option>
-        <option selected>published</option>
-        <option>archived</option>
-      </select>
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Date</label>
-      <input readonly type="date" value="2026-06-27" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
+A schema field that is not `.optional()` gets `required: true`. The builder also copies `.min()` and `.max()` to `validation.min` and `validation.max` (length for strings, bounds for numbers). Use `fieldOverride` for everything else: `multiselect`, `radio-group`, `switch`, `tags`, `rating`, `color`, `password`, `textarea`, `markdown`, a pattern, help text.
 
 ```typescript
-const schema = z.object({
-  name:   z.string(),
-  email:  z.string().email(),
-  amount: z.number(),
-  active: z.boolean(),
-  status: z.enum(['draft', 'published', 'archived']),
-  date:   z.date(),
-});
-formSpec(schema, schema).build()
-// Zod types → field types automatically
+formSpec(ContactSchema)
+  .fieldOverride('slug', { validation: { pattern: '^[a-z0-9-]+$' }, helpText: 'lowercase and hyphens' })
+  .fieldOverride('role', { type: 'multiselect', options: [{ label: 'Admin', value: 'admin' }] })
+  .fieldOverride('plan', { type: 'radio-group' })
+  .layout({ columns: 2, gap: '16px' });
 ```
 
-:::
+| Builder method | Spec field |
+|----------------|------------|
+| `fieldOverride(key, partial)` | Merges `Partial<Field>` into one field. |
+| `values(record)` | Sets each field's `value`. |
+| `create(d)`, `update(d)`, `delete(d)` | `endpoints.*` |
+| `params({ id })` | Fills `{id}` in every endpoint URL here, on the server. |
+| `title(t)`, `submitLabel(l)`, `edit()`, `onDone(a)`, `autoSubmit()`, `layout(cfg)` | `metadata.*` |
 
-Override the inferred type with `fieldOverride`:
-
-```typescript
-formSpec(PostSchema, UpdatePostSchema)
-  .fieldOverride('body', { type: 'markdown' })   // renders a textarea with "Markdown supported" hint
-  .fieldOverride('notes', { type: 'textarea' })
-  .fieldOverride('status', { type: 'radio-group' })  // renders a segmented button control
-```
-
-| Override type | Input |
-|---|---|
-| `radio-group` | `<sl-radio-group>` with `<sl-radio-button>` children (segmented control) |
-
-<PreviewBlock title="fieldOverride type examples">
-
-<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
-  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Body (markdown)</label>
-      <textarea readonly rows="4" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); resize: vertical; box-sizing: border-box; font-family: monospace;">## Introduction
-This is **bold** text.</textarea>
-      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px; font-style: italic;">Markdown supported</div>
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Notes</label>
-      <textarea readonly rows="3" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); resize: vertical; box-sizing: border-box;">Additional context for this record.</textarea>
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Priority</label>
-      <div style="display: inline-flex; border: 1px solid var(--vp-c-divider); border-radius: 4px; overflow: hidden; font-size: 13px;">
-        <button style="padding: 6px 14px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-right: 1px solid var(--vp-c-divider); cursor: default;">Low</button>
-        <button style="padding: 6px 14px; background: var(--vp-c-bg); color: var(--vp-c-text-1); border: none; border-right: 1px solid var(--vp-c-divider); cursor: default;">Medium</button>
-        <button style="padding: 6px 14px; background: var(--vp-c-bg); color: var(--vp-c-text-1); border: none; cursor: default;">High</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-formSpec(PostSchema, UpdatePostSchema)
-  .fieldOverride('body',     { type: 'markdown' })
-  .fieldOverride('notes',    { type: 'textarea' })
-  .fieldOverride('priority', { type: 'radio-group' })
-  .build()
-```
-
-:::
-
-## Field overrides
-
-Customise any field without re-defining the whole schema:
-
-```typescript
-formSpec(PostSchema, UpdatePostSchema)
-  .fieldOverride('slug', {
-    helpText: 'lowercase letters and hyphens only',
-    validation: { pattern: '^[a-z0-9-]+$' },
-  })
-  .fieldOverride('amount', {
-    validation: { min: 0.01, max: 10_000 },
-  })
-  .fieldOverride('phone', {
-    placeholder: '+1 555 000 0000',
-    validation: { pattern: '^\\+?[\\d\\s\\-()]+$' },
-  })
-```
-
-<PreviewBlock title="Field validation and helpers">
-
-<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
-  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Slug</label>
-      <input readonly value="my-post-title" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-      <div style="font-size: 11px; color: var(--vp-c-text-3); margin-top: 4px;">lowercase letters and hyphens only</div>
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Phone</label>
-      <input placeholder="+1 555 000 0000" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-3); box-sizing: border-box;" />
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Amount</label>
-      <input readonly value="-5" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-red-1, #ef4444); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-      <div style="font-size: 11px; color: var(--vp-c-red-1, #ef4444); margin-top: 4px;">Must be at least 0.01</div>
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-formSpec(PostSchema, UpdatePostSchema)
-  .fieldOverride('slug',   { helpText: 'lowercase letters and hyphens only',
-                             validation: { pattern: '^[a-z0-9-]+$' } })
-  .fieldOverride('phone',  { placeholder: '+1 555 000 0000',
-                             validation: { pattern: '^\\+?[\\d\\s\\-()]+$' } })
-  .fieldOverride('amount', { validation: { min: 0.01, max: 10_000 } })
-  .build()
-```
-
-:::
-
-| Override field | Type | Effect |
-|----------------|------|--------|
-| `type` | `FieldType` | Override the auto-derived input type |
-| `label` | `string` | Override the auto-derived label |
-| `placeholder` | `string` | Input placeholder text |
-| `helpText` | `string` | Helper text shown below the field |
-| `tooltip` | `string` | Renders a `?` icon button next to the field label; hovering or focusing the button shows the tooltip text |
-| `required` | `boolean` | Override required state |
-| `readOnly` | `boolean` | Force the field read-only |
-| `validation.min` | `number` | Minimum value (numbers) or length (strings) |
-| `validation.max` | `number` | Maximum value or length |
-| `validation.pattern` | `string` | Regex pattern (string inputs) |
-
-`tooltip` and `helpText` are independent and can coexist on the same field:
-
-```typescript
-formSpec(PaymentSchema)
-  .fieldOverride('cvv', {
-    tooltip: 'The 3-digit code on the back of your card (4 digits for Amex)',
-  })
-  .fieldOverride('routingNumber', {
-    tooltip: 'Found at the bottom-left of your check',
-    helpText: '9-digit ABA number',
-  })
-```
-
-## Read-only fields
-
-Fields in the full schema but absent from the `updateSchema` are rendered as read-only on the edit form. They are hidden entirely on the create form (since they don't exist yet).
-
-This is how server-controlled fields like `id`, `createdAt`, or `status` work — users see them but cannot edit them.
-
-<PreviewBlock title="Read-only vs editable fields">
-
-<div style="padding: 20px; background: var(--vp-c-bg); font-family: var(--vp-font-family-base, system-ui, sans-serif);">
-  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 420px;">
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-2); margin-bottom: 4px;">Author <span style="font-size: 11px; font-weight: 400; color: var(--vp-c-text-3);">(read-only)</span></label>
-      <input readonly value="Alice Kowalski" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-2); cursor: not-allowed; box-sizing: border-box;" />
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-2); margin-bottom: 4px;">Updated at <span style="font-size: 11px; font-weight: 400; color: var(--vp-c-text-3);">(read-only)</span></label>
-      <input readonly value="2026-06-27T14:30:00Z" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-2); cursor: not-allowed; box-sizing: border-box;" />
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Title</label>
-      <input readonly value="Getting started with Vite" style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1); box-sizing: border-box;" />
-    </div>
-    <div>
-      <label style="display: block; font-size: 13px; font-weight: 500; color: var(--vp-c-text-1); margin-bottom: 4px;">Status</label>
-      <select style="width: 100%; padding: 7px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);">
-        <option>draft</option>
-        <option selected>published</option>
-        <option>archived</option>
-      </select>
-    </div>
-  </div>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-const PostSchema = z.object({
-  id:        z.number(),
-  title:     z.string(),
-  status:    z.enum(['draft', 'published', 'archived']),
-  author:    z.string(),
-  updatedAt: z.date(),
-});
-
-// author and updatedAt omitted from update schema → rendered read-only
-const UpdatePostSchema = PostSchema.pick({ title: true, status: true });
-
-formSpec(PostSchema, UpdatePostSchema)
-  .edit()
-  .values(post)
-  .params({ id: post.id })
-  .update({ method: 'PUT', url: '/posts/{id}' })
-  .build()
-```
-
-:::
-
-## Endpoint wiring
-
-| Endpoint | Effect |
-|----------|--------|
-| `create` | Wires the submit button of a create form. |
-| `update` | Wires the save button of an edit form (`.edit()`). |
-| `delete` | On an edit form, shows a "Delete" button that confirms then calls this endpoint. |
-
-Endpoints arrive resolved: the client calls each url exactly as the spec gives it, so fill any `{param}` with `.params()` (or build the url yourself). There is no `find` endpoint — an edit form carries its values.
-
-## Metadata
-
-| Builder method | Spec field | Effect |
-|----------------|------------|--------|
-| `.title(t)` | `metadata.title` | Heading: "New *t*" on a create form, "Edit *t*" on an edit form ("New"/"Edit" without one). Inside a page, shown as is. |
-| `.edit()` | `metadata.mode: 'edit'` | Submit goes to `update`; delete is offered. The default, `'create'`, submits to `create`. |
-| `.onDone(action)` | `metadata.onDone` | Dispatched after a successful save or delete, and by the "← Back" button (shown outside a page when `onDone` is set) — typically a `navigate` back to the list. |
-| `.submitLabel(l)` | `metadata.submitLabel` | Submit button text. Defaults to "Create", or "Save" when editing. |
-| `.params(p)` | — | Fills `{name}` in every endpoint url with `p[name]` on the server. |
-| `.autoSubmit()` | `metadata.autoSubmit` | Inside a page, writes each change to the page's filters instead of submitting. |
-
-A create form starts empty again after a successful submit; an edit form keeps what was saved.
-
-## Making the table row clickable
-
-For the form view to be reachable from a table, give each row a link to the form's route — see [Row links](/guide/table-view#row-links):
-
-```typescript
-// Table spec — each row opens #/posts/:id
-TableView.forRows(PostSchema, store.all())
-  .rowLink((row) => `#/posts/${String(row.id)}`)
-  .toolbar('New', { type: 'navigate', to: '#/posts/new' })
-  .build();
-```
-
-The route `#/posts/:id` fetches the edit form from `/admin-ui/posts/{id}` (the handler above); its `onDone` brings the user back to `#/posts`.
+Link a table to these routes with a row link and a toolbar button. See [Table view](/guide/table-view#row-links-and-row-actions).

@@ -1,41 +1,28 @@
 # Table View
 
-The table view is driven by a `TableSpec` — in the hosted SPA, the spec served for a route such as `#/posts`. It renders a data table with optional inline editing, row links, row actions, and toolbar buttons.
+The table view is driven by a `TableSpec` (`kind: 'table'`). It shows rows, and can sort, paginate, link, edit rows in place and delete rows. A producer sends the spec; the client draws it.
 
-<PreviewBlock>
+<PreviewBlock title="A list-backed table with a sortable column and status badges">
 
 <div>
-  <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--vp-c-bg-soft); border-bottom: 1px solid var(--vp-c-divider);">
-    <div style="font-weight: 600; font-size: 16px; color: var(--vp-c-text-1);">Posts</div>
-    <button style="padding: 5px 14px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: default;">New</button>
-  </div>
   <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
     <thead>
       <tr style="background: var(--vp-c-bg-soft);">
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Title</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Status</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Author</th>
-        <th style="padding: 8px 16px; text-align: right; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Actions</th>
+        <th style="padding: 8px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 2px solid var(--vp-c-divider);">Title</th>
+        <th style="padding: 8px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 2px solid var(--vp-c-divider);">Status</th>
+        <th style="padding: 8px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 2px solid var(--vp-c-divider);">Author</th>
       </tr>
     </thead>
     <tbody>
       <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Getting started with Vite</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">published</span></td>
+        <td style="padding: 10px 16px;">Getting started with Vite</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 2px 8px; border-radius: 9999px; font-size: 11px;">published</span></td>
         <td style="padding: 10px 16px; color: var(--vp-c-text-2);">Alice K.</td>
-        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button></td>
-      </tr>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Building server-driven UIs</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-bg-mute); color: var(--vp-c-text-2); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">draft</span></td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">Bob M.</td>
-        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button></td>
       </tr>
       <tr>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">SolidJS reactivity explained</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-yellow-soft, rgba(245,158,11,0.12)); color: var(--vp-c-yellow-1, #d97706); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">archived</span></td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">Carol T.</td>
-        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button></td>
+        <td style="padding: 10px 16px;">Building server-driven UIs</td>
+        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-bg-mute); color: var(--vp-c-text-2); padding: 2px 8px; border-radius: 9999px; font-size: 11px;">draft</span></td>
+        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">Bob M.</td>
       </tr>
     </tbody>
   </table>
@@ -45,15 +32,172 @@ The table view is driven by a `TableSpec` — in the hosted SPA, the spec served
 
 ::: details Spec
 
-```typescript
-const spec = TableView.schema(PostSchema)
-  .list({ method: 'GET', url: '/posts' })
-  .build();
+```json
+{
+  "kind": "table",
+  "columns": [
+    { "key": "title", "label": "Title", "type": "string", "sortable": true },
+    {
+      "key": "status", "label": "Status", "type": "enum",
+      "badgeVariants": { "published": "success", "draft": "neutral" }
+    },
+    { "key": "author", "label": "Author", "type": "string" }
+  ],
+  "endpoints": { "list": { "method": "GET", "url": "/posts" } }
+}
 ```
 
 :::
 
-## Basic setup (JS)
+## Spec fields
+
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `columns` | `Column[]` | yes | One entry per column, in display order. |
+| `rows` | `InlineRow[]` | no | Rows embedded in the spec. When set, the client does not call `endpoints.list`. |
+| `endpoints.list` | `{ method, url }` | no | Fetches rows as a raw array of objects (`ListRow[]`). |
+| `endpoints.create` | `{ method, url }` | no | With at least one editable column, adds an inline "new row" form. |
+| `rowLinkField` | `string` | no | Field in each row holding that row's finished link, for example `#/posts/7`. Clicking the row opens it. The field does not need to be a column. |
+| `rowActions` | `{ label, linkField }[]` | no | One link button per entry in each row. A row with no link in `linkField` shows no button. |
+| `toolbar` | `{ label, action, variant? }[]` | no | Buttons above the table. `variant` is `primary` (default) or `default`. Each button dispatches its [action](/guide/actions). |
+| `metadata.title` | `string` | no | Heading above the table. |
+| `metadata.pagination` | `{ pageSize, totalRows, pageSizeOptions? }` | no | Turns on the pager. See [Pagination](#pagination). |
+
+There is no automatic "New" button and no `find` endpoint. Navigation is data: a toolbar `navigate` action opens a create form, and a row link opens a record.
+
+## Columns
+
+| Field | Type | Meaning |
+|-------|------|---------|
+| `key` | `string` | Field name in each row. Required. |
+| `label` | `string` | Header text. Required. |
+| `type` | `string` | `string`, `number`, `date`, `datetime`, `time`, `boolean`, `enum` or `custom`. Required. |
+| `sortable` | `boolean` | Makes the header a sort button. See [Sorting](#sorting). |
+| `editable` | `boolean` | Shows an input for this column when a row is edited. See [Writes](#row-writes). |
+| `width` | `string` | CSS width of the header cell, for example `12rem`. |
+| `alignment` | `left`, `center` or `right` | Text alignment in the column. |
+| `options` | `{ label, value }[]` | Choices for the select input of an editable `enum` column. |
+| `badgeVariants` | `Record<string, variant>` | Shows the cell as a badge. Variants: `primary`, `success`, `neutral`, `warning`, `danger`. A value not in the map is shown as plain text. |
+| `format` | `currency`, `bytes`, `percent` or `decimal` | Formats a numeric value on the client with Shoelace format components. |
+| `currency` | `string` | Currency code for `format: 'currency'`. Default `USD`. |
+
+The client shows other types as follows: `boolean` as a check or cross, `date` and `datetime` in the browser locale, `time` as `HH:MM`, and all others as text. `percent` expects a fraction (`0.25` shows as 25%).
+
+A producer may also pre-format a cell, for inline rows only (list rows carry raw values). An inline cell is `{ "value": 1200, "formatted": "$1,200.00" }`, and the client shows `formatted`. A column with `badgeVariants` or `format` ignores `formatted` and draws from the raw value.
+
+## Rows
+
+Rows come from one of two places.
+
+**Inline rows** are in the spec. Each row is an object of cells, `{ "title": { "value": "Hello" } }`.
+
+**List rows** come from `endpoints.list`. The response is a raw JSON array of plain objects. The client adds the query params `page`, `pageSize`, `sort`, `order` and the page's filter names. The full rules, including encoding, are in the [spec contract](/guide/contract).
+
+While rows load, the table shows skeleton rows. A failed request shows an error message. A table with no rows (and no editable column) shows "No data.".
+
+## Sorting
+
+A column with `sortable: true` shows a header button for a list-backed table. A click sorts ascending, and the next click on the same column sorts descending. The client sends `sort=<key>&order=asc|desc` and goes back to page 1. The server does the sort. The header carries `aria-sort`.
+
+A table with inline `rows` does not show sort buttons: the client never reorders rows itself.
+
+## Pagination
+
+```json
+"metadata": { "pagination": { "pageSize": 20, "totalRows": 134, "pageSizeOptions": [10, 20, 50] } }
+```
+
+For a list-backed table the client sends `page` (from 1) and `pageSize`, and shows previous and next buttons and "Page N of M". It computes M from the spec's `totalRows` and the page size, so the producer must put the correct total in the spec. With `pageSizeOptions` the client also shows a page size select. The client does not slice inline `rows`.
+
+## Row links and row actions
+
+Both are link data that the producer resolves. The client does not build any URL.
+
+```json
+{
+  "kind": "table",
+  "columns": [{ "key": "title", "label": "Title", "type": "string" }],
+  "rowLinkField": "link",
+  "rowActions": [{ "label": "Preview", "linkField": "previewLink" }],
+  "endpoints": { "list": { "method": "GET", "url": "/posts" } }
+}
+```
+
+```json
+[{ "id": 7, "title": "Hello", "link": "#/posts/7", "previewLink": "#/posts/7/preview" }]
+```
+
+`rowActions` are link buttons only. They are not the same as the `_actions` writes below. Clicking a row or a `rowActions` button dispatches `navigate`. A `#`-prefixed target sets the hash.
+
+With the builder, inline rows get their links per row:
+
+```typescript
+import { TableView } from '@retrofit-ui/builder-zod';
+
+TableView.forRows(PostSchema, posts)
+  .rowLink((row) => `#/posts/${String(row.id)}`)
+  .rowAction('Preview', (row) => `#/posts/${String(row.id)}/preview`)
+  .toolbar('New', { type: 'navigate', to: '#/posts/new' })
+  .build();
+```
+
+`rowLink` and `rowAction` store the link in hidden fields (`_link`, `_action0`, ...) of each inline row. A row for which the function returns `undefined` has no link. For list rows, call `.rowLinkField('link')` and let the list endpoint return the links. `rowAction` works for inline rows only: for list rows, add `rowActions` to the built spec yourself.
+
+## Row writes
+
+A row that can be saved or deleted carries its own finished HTTP actions in `_actions`:
+
+```json
+{ "update": { "method": "PUT", "url": "/posts/7" }, "delete": { "method": "DELETE", "url": "/posts/7" } }
+```
+
+- Inline rows wrap it as a cell: `"_actions": { "value": { ... } }`.
+- List rows carry it raw: `"_actions": { ... }`.
+- A row with no `_actions` has no writes.
+
+What the client shows and sends:
+
+| Part | When it shows | Request |
+|------|---------------|---------|
+| **Edit** button, then **Save** and **Cancel** | The row has `_actions.update` and at least one column is `editable`. | `update` with a JSON body of the row's raw values. The body leaves out `_actions`, the `rowLinkField` field and each `rowActions` link field. Column keys always stay. |
+| **Delete** button | The row has `_actions.delete`. A dialog asks to confirm. | `delete` with no body. |
+| Inline "new row" | A column is `editable` and `endpoints.create` is set. | `create` with a JSON body of one value per column key. A new row starts with `false` for boolean columns, `0` for number columns and `''` for others. |
+
+After a successful write the client shows a toast, reloads the table and dispatches `refresh`. A failed request changes nothing. The client sends every request through the `http` action, so an `http` override sees these writes too. See [Actions](/guide/actions).
+
+Only columns with `editable: true` show an input: a checkbox for `boolean`, a select for `enum` with `options`, a date-time input for `datetime`, and number, date, time or text inputs for the rest.
+
+### With the builder
+
+`updateSchema(schema)` marks the columns whose keys it has as `editable`. For inline rows, `update()` and `delete()` fill each row's `_actions`, replacing `{name}` in the URL with that row's field:
+
+```typescript
+TableView.forRows(TodoSchema, todos)
+  .updateSchema(UpdateTodoSchema) // title, done, priority become editable
+  .update({ method: 'PUT', url: '/todos/{id}' })
+  .delete({ method: 'DELETE', url: '/todos/{id}' })
+  .create({ method: 'POST', url: '/todos' })
+  .build();
+```
+
+The builder fills `{name}` on the server and URI-encodes the value. `update()` and `delete()` apply to inline `rows()` only: `build()` throws for a list-backed table, because the builder never sees those rows. For list rows, add the writes in the list handler with `withRowActions`:
+
+```typescript
+import { withRowActions } from '@retrofit-ui/builder-zod';
+
+app.get('/todos', (_req, res) => {
+  res.json(
+    withRowActions(store.all(), {
+      update: { method: 'PUT', url: '/todos/{id}' },
+      delete: { method: 'DELETE', url: '/todos/{id}' },
+    }),
+  );
+});
+```
+
+`withRowActions` throws if a row has no value for a placeholder. The exact request bodies for every view are in the `RowActions` type documentation of `@retrofit-ui/core`.
+
+## Building the spec with Zod
 
 ```typescript
 import { TableView } from '@retrofit-ui/builder-zod';
@@ -67,414 +211,41 @@ const PostSchema = z.object({
 });
 
 const spec = TableView.schema(PostSchema)
-  .list({ method: 'GET', url: '/posts' })
-  .build();
-```
-
-retrofit-ui derives column types from the Zod schema automatically:
-
-| Zod type | Column type | Renders as |
-|----------|-------------|------------|
-| `z.string()` | `string` | Plain text |
-| `z.number()` | `number` | Plain text |
-| `z.boolean()` | `boolean` | ✓ / ✗ |
-| `z.enum(...)` | `enum` | Enum value text |
-| `z.date()` | `date` | Plain text |
-
-Enum options are also derived automatically — no separate configuration needed.
-
-## Filtering visible columns
-
-By default all schema fields become columns. Use `visibleColumns` to show a subset:
-
-```typescript
-TableView.schema(ExpenseSchema)
-  .visibleColumns(['description', 'amount', 'date']) // only these three
-  .list({ method: 'GET', url: '/expenses' })
-  .build();
-```
-
-<PreviewBlock title="Filtered columns">
-
-<div>
-  <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
-    <thead>
-      <tr style="background: var(--vp-c-bg-soft);">
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Description</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Amount</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Date</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Team lunch</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">$42.50</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">2026-06-25</td>
-      </tr>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Office supplies</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">$18.99</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">2026-06-24</td>
-      </tr>
-      <tr>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">AWS bill</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">$230.14</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">2026-06-01</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-const ExpenseSchema = z.object({
-  id:          z.number(),
-  description: z.string(),
-  amount:      z.number(),
-  date:        z.date(),
-  category:    z.string(),
-  submittedBy: z.string(),
-});
-
-TableView.schema(ExpenseSchema)
-  .visibleColumns(['description', 'amount', 'date'])
-  .list({ method: 'GET', url: '/expenses' })
-  .build();
-```
-
-:::
-
-## Column overrides
-
-Customise individual columns without losing the auto-derived type:
-
-```typescript
-TableView.schema(PostSchema)
   .columnOverride('title', { sortable: true })
-  .columnOverride('author', { width: '120px', alignment: 'right' })
+  .columnOverride('status', { badgeVariants: { draft: 'neutral', published: 'success', archived: 'warning' } })
   .list({ method: 'GET', url: '/posts' })
   .build();
 ```
 
-| Override field | Type | Effect |
-|----------------|------|--------|
-| `sortable` | `boolean` | Clicking the header sends `sort=<key>&order=asc\|desc` with the list request; the server sorts |
-| `width` | `string` | CSS width, e.g. `'120px'` |
-| `alignment` | `'left' \| 'center' \| 'right'` | Cell alignment |
-| `label` | `string` | Override the auto-derived column header |
-| `type` | `ColumnType` | Override the auto-derived type |
-| `badgeVariants` | `Record<string, 'primary' \| 'success' \| 'neutral' \| 'warning' \| 'danger'>` | Renders the cell as `<sl-badge>` with the mapped variant; values absent from the map render as plain text |
+The builder derives the column `type` from the schema:
 
-<PreviewBlock title="Column overrides">
+| Zod type | Column type |
+|----------|-------------|
+| `z.string()` | `string` |
+| `z.string().datetime()` | `datetime` |
+| `z.string().date()` | `date` |
+| `z.string().time()` | `time` |
+| `z.date()` | `datetime` |
+| `z.number()` | `number` |
+| `z.boolean()` | `boolean` |
+| `z.enum(...)` | `enum`, with `options` taken from the enum values |
+| anything else | `string` |
 
-<div>
-  <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
-    <thead>
-      <tr style="background: var(--vp-c-bg-soft);">
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Title <span style="color: var(--vp-c-text-3); font-size: 10px;">↑</span></th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Status <span style="color: var(--vp-c-text-3); font-size: 10px;">⊟</span></th>
-        <th style="padding: 8px 16px; text-align: right; width: 100px; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Author</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Getting started with Vite</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">published</span></td>
-        <td style="padding: 10px 16px; text-align: right; color: var(--vp-c-text-2);">Alice K.</td>
-      </tr>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Building server-driven UIs</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-bg-mute); color: var(--vp-c-text-2); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">draft</span></td>
-        <td style="padding: 10px 16px; text-align: right; color: var(--vp-c-text-2);">Bob M.</td>
-      </tr>
-      <tr>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">SolidJS reactivity explained</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-yellow-soft, rgba(245,158,11,0.12)); color: var(--vp-c-yellow-1, #d97706); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">archived</span></td>
-        <td style="padding: 10px 16px; text-align: right; color: var(--vp-c-text-2);">Carol T.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+Every derived column starts with `sortable: false`, `editable: false` and `alignment: 'left'`.
 
-</PreviewBlock>
+| Builder method | Effect |
+|----------------|--------|
+| `TableView.schema(schema)` | Starts a builder. |
+| `TableView.forRows(schema, rows)` | Starts a builder with inline `rows`. `.rows(rows)` does the same on an existing builder. |
+| `columnOverride(key, partial)` | Merges `Partial<Column>` into one column. `format` may also be a function `(value) => string`; it fills `formatted` for inline rows only. |
+| `visibleColumns(keys)` | Keeps only these columns. |
+| `updateSchema(schema)` | Marks columns with keys in `schema` as `editable`. |
+| `list(d)`, `create(d)` | Set `endpoints.list` and `endpoints.create`. |
+| `update(d)`, `delete(d)` | Fill each inline row's `_actions`. Throw at `build()` for a list-backed table. |
+| `rowLink(fn)`, `rowLinkField(field)`, `rowAction(label, fn)` | Row links, see above. |
+| `toolbar(label, action, variant?)` | Adds a toolbar button. |
+| `metadata(meta)` | Sets `metadata`, including `pagination`. |
 
-::: details Spec
+## Inside a page
 
-```typescript
-TableView.schema(PostSchema)
-  .columnOverride('title',  { sortable: true })
-  .columnOverride('author', { width: '100px', alignment: 'right' })
-  .list({ method: 'GET', url: '/posts' })
-  .build()
-```
-
-:::
-
-### Status badges (enum columns)
-
-Use `badgeVariants` to render enum values as coloured `<sl-badge>` elements for at-a-glance status scanning:
-
-```typescript
-TableView.schema(PostSchema)
-  .columnOverride('status', {
-    badgeVariants: {
-      draft:     'neutral',
-      published: 'success',
-      archived:  'warning',
-    },
-  })
-  .list({ method: 'GET', url: '/posts' })
-  .build();
-```
-
-Values absent from the map fall through to plain text — partial maps are valid.
-
-<PreviewBlock title="Status badges">
-
-<div>
-  <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
-    <thead>
-      <tr style="background: var(--vp-c-bg-soft);">
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider);">Title</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider);">Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">My first post</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 2px 9px; border-radius: 9999px; font-size: 11px; font-weight: 500;">published</span></td>
-      </tr>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Work in progress</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-bg-mute); color: var(--vp-c-text-2); padding: 2px 9px; border-radius: 9999px; font-size: 11px; font-weight: 500;">draft</span></td>
-      </tr>
-      <tr>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Old article</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-yellow-soft, rgba(245,158,11,0.12)); color: var(--vp-c-yellow-1, #d97706); padding: 2px 9px; border-radius: 9999px; font-size: 11px; font-weight: 500;">archived</span></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-TableView.schema(PostSchema)
-  .columnOverride('status', {
-    badgeVariants: {
-      draft:     'neutral',
-      published: 'success',
-      archived:  'warning',
-    },
-  })
-  .list({ method: 'GET', url: '/posts' })
-  .build();
-```
-
-:::
-
-## Inline editing
-
-To enable per-row Edit/Save/Cancel buttons, pass an `updateSchema` containing only the fields users are allowed to change:
-
-```typescript
-const TodoSchema = z.object({
-  id: z.number(),
-  title: z.string(),
-  done: z.boolean(),
-  priority: z.enum(['low', 'medium', 'high']),
-});
-
-// id is server-controlled — exclude it from updates
-const CreateTodoSchema = z.object({
-  title: z.string(),
-  done: z.boolean(),
-  priority: z.enum(['low', 'medium', 'high']),
-});
-
-TableView.schema(TodoSchema)
-  .updateSchema(CreateTodoSchema) // title/done/priority become editable cells
-  .list({ method: 'GET', url: '/todos' })
-  .update({ method: 'PUT', url: '/todos/{id}' })
-  .delete({ method: 'DELETE', url: '/todos/{id}' })
-  .build();
-```
-
-Columns present in `updateSchema` get an inline editor (text input, checkbox, or select for enums). The `id` column stays read-only because it is absent from `updateSchema`.
-
-A "new row" form also appears at the bottom of the table when `create` is wired.
-
-<PreviewBlock title="Inline editing">
-
-<div>
-  <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
-    <thead>
-      <tr style="background: var(--vp-c-bg-soft);">
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Title</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Done</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Priority</th>
-        <th style="padding: 8px 16px; text-align: right; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Write docs</td>
-        <td style="padding: 10px 16px;">✓</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">high</td>
-        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Edit</button></td>
-      </tr>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider); background: var(--vp-c-bg-soft);">
-        <td style="padding: 6px 16px;"><input value="Todo item title" style="width: 100%; padding: 4px 6px; border: 1px solid var(--vp-c-brand-1, #3b82f6); border-radius: 3px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);" /></td>
-        <td style="padding: 6px 16px;"><input type="checkbox" checked style="cursor: default;" /></td>
-        <td style="padding: 6px 16px;"><select style="padding: 4px 6px; border: 1px solid var(--vp-c-divider); border-radius: 3px; font-size: 13px; background: var(--vp-c-bg); color: var(--vp-c-text-1);"><option>low</option><option selected>medium</option><option>high</option></select></td>
-        <td style="padding: 6px 16px; text-align: right; white-space: nowrap;">
-          <button style="padding: 3px 10px; background: var(--vp-c-brand-1, #3b82f6); color: #fff; border: none; border-radius: 3px; font-size: 11px; margin-right: 4px; cursor: default;">Save</button>
-          <button style="padding: 3px 10px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); border: 1px solid var(--vp-c-divider); border-radius: 3px; font-size: 11px; cursor: default;">Cancel</button>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Ship v1.0</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-3);">✗</td>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-2);">low</td>
-        <td style="padding: 10px 16px; text-align: right;"><button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Edit</button></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-TableView.schema(TodoSchema)
-  .updateSchema(CreateTodoSchema)
-  .list({ method: 'GET', url: '/todos' })
-  .update({ method: 'PUT', url: '/todos/{id}' })
-  .delete({ method: 'DELETE', url: '/todos/{id}' })
-  .build()
-```
-
-:::
-
-## Row links
-
-Every link in a table is resolved on the server: each row carries its own finished link, and the client only follows it. With inline rows, pass `rowLink` a function from row to link — it runs in the builder, once per row:
-
-```typescript
-TableView.forRows(PostSchema, posts)
-  .rowLink((row) => `#/posts/${String(row.id)}`) // clicking a row opens #/posts/7
-  .build();
-```
-
-The link lands in a hidden field of each row, and the spec's `rowLinkField` names it; the field needn't be a column. A row the function returns `undefined` for isn't clickable.
-
-Rows fetched from `list()` are never seen by the builder, so the list endpoint returns the links itself. Point `rowLinkField` at the field that holds them:
-
-```typescript
-// GET /posts returns [{ id: 7, title: '…', link: '#/posts/7' }, …]
-TableView.schema(PostSchema)
-  .list({ method: 'GET', url: '/posts' })
-  .rowLinkField('link')
-  .build();
-```
-
-## Toolbar
-
-Buttons above the table come from `toolbar(label, action, variant?)`. Each one dispatches its action — typically a `navigate` to a create form. There is no automatic "New" button:
-
-```typescript
-TableView.forRows(PostSchema, posts)
-  .toolbar('New', { type: 'navigate', to: '#/posts/new' }, 'primary')
-  .build();
-```
-
-## Row actions
-
-Add buttons to each row that open a link of their own. Like `rowLink`, `rowAction(label, link)` resolves the link per row in the builder; a row it returns `undefined` for gets no button:
-
-```typescript
-TableView.forRows(PostSchema, posts)
-  .rowAction('Preview', (row) => `#/posts/${String(row.id)}/preview`)
-  .build();
-```
-
-In the spec this is `rowActions: [{ label: 'Preview', linkField: '…' }]`, where `linkField` names the row field holding that button's link. Since `rowAction` needs the rows, it applies to `forRows()` / `rows()`; for rows fetched from `list()`, have the list endpoint return a link field and set `rowActions` on the built spec:
-
-```typescript
-const spec = TableView.schema(PostSchema)
-  .list({ method: 'GET', url: '/posts' }) // rows carry `previewLink`
-  .build();
-res.json({ ...spec, rowActions: [{ label: 'Preview', linkField: 'previewLink' }] });
-```
-
-<PreviewBlock title="Row actions">
-
-<div>
-  <table style="width: 100%; border-collapse: collapse; font-family: var(--vp-font-family-base, system-ui, sans-serif); font-size: 13px; background: var(--vp-c-bg);">
-    <thead>
-      <tr style="background: var(--vp-c-bg-soft);">
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Title</th>
-        <th style="padding: 8px 16px; text-align: left; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Status</th>
-        <th style="padding: 8px 16px; text-align: right; font-size: 11px; font-weight: 600; color: var(--vp-c-text-2); border-bottom: 1px solid var(--vp-c-divider); text-transform: uppercase; letter-spacing: 0.04em;">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Getting started with Vite</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-green-soft, rgba(34,197,94,0.12)); color: var(--vp-c-green-1, #16a34a); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">published</span></td>
-        <td style="padding: 10px 16px; text-align: right;">
-          <button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button>
-          <button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default; margin-left: 4px;">✏ Edit</button>
-        </td>
-      </tr>
-      <tr style="border-bottom: 1px solid var(--vp-c-divider);">
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">Building server-driven UIs</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-bg-mute); color: var(--vp-c-text-2); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">draft</span></td>
-        <td style="padding: 10px 16px; text-align: right;">
-          <button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button>
-          <button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default; margin-left: 4px;">✏ Edit</button>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding: 10px 16px; color: var(--vp-c-text-1);">SolidJS reactivity explained</td>
-        <td style="padding: 10px 16px;"><span style="background: var(--vp-c-yellow-soft, rgba(245,158,11,0.12)); color: var(--vp-c-yellow-1, #d97706); padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500;">archived</span></td>
-        <td style="padding: 10px 16px; text-align: right;">
-          <button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default;">Preview</button>
-          <button style="padding: 3px 10px; border: 1px solid var(--vp-c-divider); border-radius: 4px; background: var(--vp-c-bg-soft); color: var(--vp-c-text-1); font-size: 11px; cursor: default; margin-left: 4px;">✏ Edit</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-</PreviewBlock>
-
-::: details Spec
-
-```typescript
-TableView.forRows(PostSchema, posts)
-  .rowAction('Preview', (row) => `#/posts/${String(row.id)}/preview`)
-  .rowLink((row) => `#/posts/${String(row.id)}`)
-  .build()
-```
-
-:::
-
-## Endpoint wiring
-
-| Method | Effect when present |
-|--------|---------------------|
-| `list` | Fetches row data, unless the spec has inline `rows`. |
-| `create` | With editable columns (`updateSchema`), adds an inline new-row form. It adds no "New" button — use `toolbar()`. |
-| `update` | Enables inline save (requires `updateSchema`). |
-| `delete` | Shows a "Delete" button per row. |
-
-Inline save and delete are the one place the client fills a url from a row: `{id}` in the `update`/`delete` url is replaced with the row's id field (`idField`, derived from the url) when the user clicks. Write the placeholder as `{id}`. The `list` url gets query params from the client: `page` and `pageSize` when the table is paginated, `sort` and `order` for a sortable column, and each [page](/guide/layouts) filter by name. Empty values are omitted. Everything else — row links, row actions, toolbar actions — arrives finished.
-
-There is no `find` endpoint: opening a record is a row link to a route whose spec is that record's form.
+A table inside a [page](/guide/layouts#pages-and-filters) also sends the page's filter fields as list query params, by field name. Names are only taken from the page's `filter-form` and `autoSubmit` forms. When a form on the same page writes, the page's tables reload.

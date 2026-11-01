@@ -22,7 +22,7 @@ const config: RetrofitConfig = {
 app.get('/retrofit.json', (_req, res) => res.json(config));
 ```
 
-The hosted SPA (and `createShell`) applies it at boot: the CSS variables are set on `:root` (the `<html>` element's inline style). `extraCss` is appended as a raw `<style>` block, letting you target retrofit-ui's own CSS classes. Script islands take the same object as `init({ rootElement, theme })`.
+The hosted SPA (and `createShell`) applies it at boot: the CSS variables are set on `:root` (the `<html>` element's inline style). `extraCss` is appended as a raw `<style>` block, letting you target retrofit-ui's own CSS classes. It is injected as-is, so use it only with trusted producers. Script islands take the same object as `init({ rootElement, theme })`.
 
 ## The primary colour scale
 
@@ -48,25 +48,65 @@ Buttons, focus rings, and selected states all derive from this scale automatical
 
 ## retrofit-ui CSS classes
 
-These classes are applied to the rendered HTML and can be targeted with `extraCss`:
+The classes below exist in the renderer (`ui/*.tsx` and `ui/layout.css`). Target them with `extraCss`.
+
+**Views**
 
 | Class | Element |
 |-------|---------|
-| `.retrofit-view` | Top-level wrapper (padding, font) |
-| `.retrofit-page-title` | `<h1>` on table and form pages |
-| `.retrofit-page-header` | Flex row containing title + toolbar buttons |
-| `.retrofit-toolbar` | The toolbar buttons above a table, tree or calendar |
-| `.retrofit-table` | The `<table>` element |
-| `.retrofit-thead` | `<thead>` — background colour |
-| `.retrofit-th` | `<th>` — header cell |
-| `.retrofit-tr` | `<tr>` — row |
-| `.retrofit-tr--clickable` | Row that navigates on click |
-| `.retrofit-td` | `<td>` — data cell |
-| `.retrofit-empty` | "No data." placeholder |
-| `.retrofit-back-btn` | "← Back" button on form, markdown and timeline views whose spec asks for one |
-| `.retrofit-form-actions` | Flex row containing Save/Delete buttons |
-| `.retrofit-error-message` | Validation/submit error text |
-| `.retrofit-markdown` | Markdown render container — reads `--retrofit-markdown-{max-width,line-height,font-size}` |
+| `.retrofit-view` | Wrapper of every view and of a page (padding, font, color) |
+| `.retrofit-page-title` | `<h1>` heading of a view |
+| `.retrofit-page-header` | Flex row with the title and the toolbar (table, tree, calendar) |
+| `.retrofit-toolbar` | Container of toolbar buttons (no rule in `layout.css`; a hook only) |
+| `.retrofit-back-btn` | The "Back" button of a form, markdown or timeline view |
+| `.retrofit-error-message` | Load and submit error text |
+| `.retrofit-empty` | "No data." and "No events." text |
+
+**Table**
+
+| Class | Element |
+|-------|---------|
+| `.retrofit-table` | The `<table>` |
+| `.retrofit-thead` | `<thead>` |
+| `.retrofit-th` | Header cell |
+| `.retrofit-sort-button` | Header button of a sortable column |
+| `.retrofit-tr` | Row |
+| `.retrofit-tr--clickable` | Row that has a link |
+| `.retrofit-tr--new` | The inline "new row" |
+| `.retrofit-td` | Data cell |
+| `.retrofit-pagination`, `.retrofit-pagination-label` | The pager and its "Page N of M" text |
+
+**Form and filters**
+
+| Class | Element |
+|-------|---------|
+| `.retrofit-form-actions` | Row with the submit and delete buttons |
+| `.retrofit-form-title` | Form heading inside a page |
+| `.retrofit-filter-form` | Container of a `filter-form` (no rule in `layout.css`; a hook only) |
+| `.retrofit-tags-input`, `.retrofit-tags-label`, `.retrofit-tags-field`, `.retrofit-tags-help` | The `tags` field |
+
+**Other views**
+
+| Class | Element |
+|-------|---------|
+| `.retrofit-markdown` | Markdown content. Reads the `--retrofit-markdown-*` properties |
+| `.retrofit-stat-grid`, `.retrofit-stat-card`, `.retrofit-stat-value`, `.retrofit-stat-label`, `.retrofit-stat-description` | Stat grid and its cards |
+| `.retrofit-timeline`, `.retrofit-timeline-event`, `.retrofit-timeline-header`, `.retrofit-timeline-title`, `.retrofit-timeline-time`, `.retrofit-timeline-description` | Timeline list and its parts |
+| `.retrofit-timeline-event--success`, `--warning`, `--danger`, `--neutral` | Dot color of an event with that variant |
+| `.retrofit-card-header`, `.retrofit-card-body` | Parts of a `card` |
+| `.retrofit-calendar` | Calendar wrapper. Its rules restyle FullCalendar's `.fc-*` classes |
+
+**Hosted shell**
+
+`.retrofit-shell`, `.retrofit-shell--no-nav`, `.retrofit-shell-main`, `.retrofit-shell-nav` (the drawer), `.retrofit-shell-nav-toggle`, `.retrofit-shell-nav-toggle--hidden`, `.retrofit-shell-nav-list`, `.retrofit-shell-nav-link`, `.retrofit-shell-nav-link--active`, `.retrofit-shell-nav-icon`.
+
+**Classes that do not exist**
+
+- `flex`, `grid` and `tabs` containers have no `retrofit-*` class. They are plain elements with inline styles. A `page` has only `.retrofit-view`. There are no `.retrofit-flex` or `.retrofit-grid` classes. To style inside a container, use another hook such as `.retrofit-card-body`, or a Shoelace selector.
+- `.retrofit-timeline-event--primary` does not exist. A `primary` event keeps the default dot color.
+- `.retrofit-muted` has a rule in `layout.css`, but no built-in view uses it.
+
+`extraCss` is injected as raw CSS. Send it only from trusted producers.
 
 ## Markdown typography
 
@@ -84,9 +124,8 @@ Because the override is decided by the cascade of the custom property (not selec
 /* global opt-out: markdown fills its container everywhere */
 :root { --retrofit-markdown-max-width: none; }
 
-/* scoped: full-width only inside layout containers, others keep 720px */
-.retrofit-flex .retrofit-markdown,
-.retrofit-grid .retrofit-markdown {
+/* scoped: full-width only inside cards, others keep 720px */
+.retrofit-card-body .retrofit-markdown {
   --retrofit-markdown-max-width: none;
 }
 ```
@@ -108,7 +147,7 @@ For a scoped override, use `extraCss` (appended as a raw `<style>` block):
 const config: RetrofitConfig = {
   routes: [/* ... */],
   theme: {
-    extraCss: `.retrofit-flex .retrofit-markdown { --retrofit-markdown-max-width: 1200px; }`,
+    extraCss: `.retrofit-card-body .retrofit-markdown { --retrofit-markdown-max-width: 1200px; }`,
   },
 };
 ```

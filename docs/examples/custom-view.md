@@ -4,7 +4,7 @@
 
 The server sends a `rating` spec that core does not know. The client registers a SolidJS component for it and renders it, and every built-in kind, with `createRenderer({ kits })`.
 
-Run it locally (Vite on `:5173`, proxying `/api` to Express on `:3000`):
+Run it locally (Vite on `:5173`, proxying `/api` and `/retrofit.json` to Express on `:3000`):
 
 ```bash
 just example custom-view
@@ -71,4 +71,4 @@ The imports come from `@retrofit-ui/spa-solid-shoelace/components`. That entry e
 
 ## Theming
 
-`RatingView` reuses `retrofit-view` and `retrofit-page-title`, and namespaces its own classes as `custom-rating-*`. The colors use `--sl-color-primary-*`, so the theme in `/retrofit.json` styles both kinds. `client/main.tsx` applies the theme itself, because it does not use the hosted shell.
+`RatingView` reuses `retrofit-view` and `retrofit-page-title`, and namespaces its own classes as `custom-rating-*`. The colors use `--sl-color-primary-*`, so the theme in `/retrofit.json` styles both kinds, under `pnpm dev` and under the built client alike. `client/main.tsx` applies the theme itself, because it does not use the hosted shell.

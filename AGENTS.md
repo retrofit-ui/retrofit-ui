@@ -24,7 +24,7 @@ scripts/                 publish guard, consumer type check, local publish
 |---|---|---|
 | `@retrofit-ui/core` | `.` (types only, no runtime code); `./schema.json` | The spec contract: `Spec`, `SpecKinds`, `BuiltinSpecKinds`, `Action`, `ActionKinds`, `RetrofitConfig`, `RouteSpec`, `RowActions`. `schema.json` is generated JSON Schema (draft-07) for the built-in kinds. |
 | `@retrofit-ui/builder-zod` | `.` | Fluent builders (`TableView`, `formSpec`, `pageSpec`, `TreeView`, `CalendarView`, `StatView`, `TimelineView`, `CardView`, `WorkflowBundle`) plus `route`, `crudRoutes`, `withRowActions`. Zod only derives columns and fields from a schema. |
-| `@retrofit-ui/spa-solid-shoelace` | `.` (`distPath` of the hosted SPA); `./components` (`createRenderer`, `createShell`, `createIslands`, `defineKind`, `defineKit`, `builtinKinds`, `builtinActions`, `Root`/`SpecRenderer`/`Scope`/`RenderSpec`, ...); `./renderer` (prebuilt islands `init()`, built-in kinds only); `./renderer.css` | The renderer. Source is in `ui/` (entries: `ui/components.tsx`, `ui/mount.tsx`, `ui/main.tsx`). |
+| `@retrofit-ui/spa-solid-shoelace` | `.` (`distPath` of the hosted SPA); `./components` (`createRenderer`, `createShell`, `createIslands`, `defineKind`, `defineKit`, `builtinKinds`, `builtinActions`, `SpecRenderer`/`Scope`/`RenderSpec`, ...); `./renderer` (prebuilt islands `init()`, built-in kinds only); `./renderer.css` | The renderer. Source is in `ui/` (entries: `ui/components.tsx`, `ui/mount.tsx`, `ui/main.tsx`). |
 
 `./components` emits no CSS: its users must also import `./renderer.css`. `@solidjs/router` is a required peer of the renderer package; `solid-js` is an optional peer.
 
@@ -85,7 +85,7 @@ CI builds the packages, then runs `git diff --exit-code packages/core/schema` an
 3. **Schema.** Run `pnpm --filter @retrofit-ui/core gen:schema` and commit the diff.
 4. **Builder** (if producers need one). Add a builder in `packages/builder-zod/src/` and export it from `src/index.ts`. Add a test that validates its output against the schema.
 5. **Renderer kind.** Add a component in `packages/spa-solid-shoelace/ui/` and register it in `ui/builtins.tsx`. `builtinKinds` is typed over `BuiltinSpecKinds`, so a missing entry is a type error. Export new public symbols from `ui/components.tsx` if apps need them.
-6. **Public exports.** Re-export new types from `packages/builder-zod/src/index.ts` and `packages/spa-solid-shoelace/src/index.ts` where the neighbours are.
+6. **Public exports.** Re-export new types from `packages/builder-zod/src/index.ts` where the neighbours are. The renderer's public symbols are exported from `packages/spa-solid-shoelace/ui/components.tsx` (step 5).
 7. **Docs.** Add or update a guide page under `docs/guide/`, the entry in `docs/reference/js-api.md`, and the sidebar in `docs/.vitepress/config.ts`.
 8. **Changeset.** `pnpm changeset` for each affected package.
 9. Run `pnpm build`, `pnpm test`, `pnpm typecheck`, `pnpm lint`.

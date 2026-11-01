@@ -128,7 +128,7 @@ Urls in actions arrive finished: `/api/contacts/7`, never `/api/contacts/{id}`. 
   - `/retrofit.json`: `#/definitions/RetrofitConfig`
   - one list row: `#/definitions/ListRow`
 - `BuiltinSpec` is a `oneOf` over the 15 kinds, and each kind pins `kind` with a `const`. It also carries an OpenAPI-style `"discriminator": { "propertyName": "kind" }`. A validator that knows that keyword reports only the errors of the spec's own kind; one that does not know it ignores it and still validates correctly through `oneOf`.
-- Every object has `additionalProperties: false`, so a misspelled key is an error, not a silent no-op.
+- Every spec, action and config object has `additionalProperties: false`, so a misspelled key is an error, not a silent no-op.
 
 A non-JS producer can copy the file from an installed package (`node_modules/@retrofit-ui/core/schema/retrofit-ui.schema.json`) or from `packages/core/schema/` in the repository, and vendor it next to its code.
 
@@ -269,7 +269,7 @@ A row's writes are data on the row, not on the table. Each row carries its own f
 }
 ```
 
-**Calendar events** carry `actions: { "update"? }` (not `_actions`). An event without `actions.update` cannot be dragged.
+**Calendar events** carry `actions: { "update"? }` (not `_actions`). An event without `actions.update` cannot be dragged, and the spec needs `editable: true` for dragging at all.
 
 ```json
 {
@@ -298,17 +298,17 @@ Bodies are JSON, with `Content-Type: application/json`.
 | table | `_actions.delete` | the user confirms delete | none |
 | table | `endpoints.create` | the user adds an inline "new row" (needs an `editable` column) | the new row's values, keyed by column `key` |
 | tree | `_actions.delete` | the user deletes the selected nodes (one request per node; a node without it is skipped) | none |
-| calendar | `actions.update` | the user drags or resizes an event | `{ "start", "end" }`, ISO strings; `end` is left out when the event has none |
+| calendar | `actions.update` | the user drags or resizes an event (the spec also needs `editable: true`) | `{ "start", "end" }`, ISO strings; `end` is left out when the event has none |
 | form | `endpoints.create` / `endpoints.update` | submit (`update` when `metadata.mode` is `"edit"`) | the form's values, keyed by field `name` |
 | form | `endpoints.delete` | delete (edit mode only) | none |
 
-Each request uses the action's own `method` and `url`. After a successful write the view dispatches `refresh`, so the screen's spec (and any list) is fetched again. A form also dispatches its `metadata.onDone` action. When a form write fails, the form shows the response's `error` field if the body is JSON with one, else the HTTP status.
+Each request uses the action's own `method` and `url`. After a successful write the view dispatches `refresh`, so the screen's spec (and any list) is fetched again. A form also dispatches its `metadata.onDone` action. When a form submit fails, the form shows the response's `error` field if the body is JSON with one, else the HTTP status.
 
 Tree nodes use only `delete`; calendar events use only `update`.
 
 ## Custom kinds
 
-`schema.json` covers the built-in kinds only. An app that adds a kind (for example `acme.rating`, with a kit on the frontend — see [Extending](/guide/extending)) owns that kind's schema: the frontend team and the producers agree on it, and the producer adds it to its copy of the definitions. Because every container's `children` refers to `BuiltinSpec`, one added `oneOf` entry makes the new kind valid at the top level and nested:
+`schema.json` covers the built-in kinds only. An app that adds a kind (for example `acme.rating`, with a kit on the frontend — see [Extending](/guide/extending)) owns that kind's schema: the frontend team and the producers agree on it, and the producer adds it to its copy of the definitions, before it builds the validators. Because every container's `children` refers to `Spec`, which refers to `BuiltinSpec`, one added `oneOf` entry makes the new kind valid at the top level and nested:
 
 ```python
 definitions["AcmeRatingSpec"] = {
@@ -322,6 +322,8 @@ definitions["AcmeRatingSpec"] = {
     "additionalProperties": False,
 }
 definitions["BuiltinSpec"]["oneOf"].append({"$ref": "#/definitions/AcmeRatingSpec"})
+
+spec_validator = validator_for("BuiltinSpec")  # build it after the change
 ```
 
 Namespace custom kinds and custom action types (`acme.rating`, `acme.add-to-cart`) so they never collide with a built-in.

@@ -47,7 +47,7 @@ routes: [
 
 ## The bundle
 
-From `src/specs.ts`:
+From `src/specs.ts` (abridged):
 
 ```typescript
 TableFormWorkflowBundle.schema(ContactSchema)

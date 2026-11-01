@@ -62,7 +62,7 @@ Run it:
 npx tsx server.ts
 ```
 
-Open `http://localhost:3000/#/items`. The table has ID, Name and Active columns: the builder derived them from the Zod schema, and the rows come from `GET /items`.
+Open `http://localhost:3000/#/items`. The table has Id, Name and Active columns: the builder derived them from the Zod schema, and the rows come from `GET /items`.
 
 The spec endpoint returns plain JSON. You can see exactly what the app receives:
 

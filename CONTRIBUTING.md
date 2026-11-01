@@ -146,7 +146,7 @@ Semver, with the standard pre-1.0 convention:
 Version bumps cascade through `dependencies`: `builder-zod` and `spa-solid-shoelace` declare `@retrofit-ui/core` in `dependencies` (`workspace:^`), not `peerDependencies`. When `core` bumps, changesets (`updateInternalDependencies: "patch"` in `.changeset/config.json`) also bumps both dependents by at least a patch and rewrites their range. This means:
 
 - A consumer always gets a matching `core` through its builder or renderer. Nobody installs `core` by hand to make them agree.
-- A `core` change that alters the wire format should come with its own changeset on the dependents (minor or major), because the automatic bump is only a patch.
+- A `core` change that alters the wire format should come with its own changeset on the dependents (minor), because the automatic bump is only a patch.
 - `@solidjs/router` and `solid-js` are the peers of `spa-solid-shoelace`; `zod` is the peer of `builder-zod`. Changesets treats a peer-range change as breaking.
 
 **Graduating to 1.0.0** happens when the spec surface (the types in `@retrofit-ui/core`) is stable enough to commit to backward compatibility. Not soon.

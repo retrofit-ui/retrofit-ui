@@ -29,7 +29,7 @@ The Kubernetes API decouples app developers from infra operators: developers dec
 ### What Kubernetes has that we don't yet
 
 - **Versioning.** Kubernetes resources carry an `apiVersion`, so a resource can change shape while old clients keep working. Specs have no version field. The packages are pre-1.0, and a breaking change to a kind breaks producers that emit the old shape.
-- **Server-side validation.** The Kubernetes API server rejects an invalid resource before any controller sees it. Nothing validates a spec on its way to the renderer. A producer can validate its own output against `schema.json`; otherwise a bad spec shows up as a rendering error in the browser.
+- **Server-side validation.** The Kubernetes API server rejects an invalid resource before any controller sees it. Nothing validates a spec on its way to the renderer. A producer can validate its own output against `schema.json`; otherwise a bad spec reaches the browser, where the renderer may draw it wrongly or show an error in its place.
 
 ## Finished data, not templates
 

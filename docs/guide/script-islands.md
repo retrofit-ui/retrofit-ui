@@ -155,7 +155,7 @@ init({
 });
 ```
 
-Nothing owns an island's spec, so the built-in `refresh` handler does nothing. A table or tree loads its own rows again after a write. To fetch an island's spec again, unmount it and mount it again. See [Actions](/guide/actions#refresh).
+Nothing owns an island's spec, so the built-in `refresh` handler does nothing. A list-backed table or a tree loads its own rows again after a write. An inline-row table does not: a deleted inline row stays visible. To fetch an island's spec again, unmount it and mount it again. See [Actions](/guide/actions#refresh).
 
 ## Islands with your own kinds
 

@@ -94,7 +94,7 @@ export default defineConfig({
           text: 'Customisation',
           items: [
             { text: 'Theming', link: '/guide/theming' },
-            { text: 'Extending', link: '/guide/extending' },
+            { text: 'Negotiating a new kind', link: '/guide/extending' },
           ],
         },
       ],

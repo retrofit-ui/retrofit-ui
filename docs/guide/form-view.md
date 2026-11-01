@@ -90,7 +90,7 @@ Option values of a `multiselect` must not contain spaces, because the select joi
 
 ## Validation
 
-The client checks all visible fields when the user submits. If any check fails, it shows a message under the field and sends nothing.
+The client checks all visible fields, except read-only ones, when the user submits. If any check fails, it shows a message under the field and sends nothing.
 
 1. A field with `required: true` and an empty value fails. An empty value is `''`, `null`, `undefined` or an empty array.
 2. An empty optional value skips the other checks.

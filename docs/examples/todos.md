@@ -48,7 +48,7 @@ const config: RetrofitConfig = {
 
 ## The inline table
 
-From `src/specs.ts`. The column set in `updateSchema` is the editable set; `id` is absent, so it stays read-only.
+From `src/specs.ts` (abridged). The column set in `updateSchema` is the editable set; `id` is absent, so it stays read-only.
 
 ```typescript
 const builder = TableView.forRows(TodoSchema, rows)

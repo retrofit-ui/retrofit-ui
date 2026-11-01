@@ -2,7 +2,7 @@
 
 **Pattern: hand-built `table`, `form`, `markdown` and `timeline` specs linked by navigation data**
 
-The blog admin serves four screens for posts and links them with server-resolved navigation. The server also serves a second resource, reviews, with its own table and form.
+The blog admin serves five post screens (list, new, edit, rendered view, timeline) and a posts-by-status page, and links them with server-resolved navigation. The server also serves a second resource, reviews, with its own table and form.
 
 <BlogDemo />
 
@@ -43,7 +43,7 @@ Static paths come before `/:id`, so "new" is never read as an id.
 
 ## The posts table
 
-From `src/specs.ts`. Each link is a finished hash route; the client does not build URLs.
+From `src/specs.ts` (abridged). Each link is a finished hash route; the client does not build URLs.
 
 ```typescript
 TableView.forRows(PostSchema, rows)
@@ -60,6 +60,8 @@ TableView.forRows(PostSchema, rows)
 ```
 
 ## The form
+
+Abridged: the real form also overrides `tags` and `author`.
 
 ```typescript
 formSpec(PostSchema, UpdatePostSchema)

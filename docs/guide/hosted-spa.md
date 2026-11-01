@@ -102,7 +102,7 @@ crudRoutes('posts');
 //  { path: '/posts/:id', spec: '/posts/{id}' }]
 ```
 
-`route(path)` makes `spec` from the path, with each `:name` as `{name}`. Put more specific paths before a `:param` path that also matches them. `crudRoutes` puts `/new` before `/:id` for this reason. Register your server's spec handlers in the same order, so that `new` is never read as an id.
+`route(path)` makes `spec` from the path, with each `:name` as `{name}`. The client router picks the best match in any order. Your server's spec handlers are different: register a specific path such as `/new` before a `:param` path that also matches it, so that `new` is never read as an id. `crudRoutes` lists `/new` before `/:id` to match.
 
 ## Your own client entry
 

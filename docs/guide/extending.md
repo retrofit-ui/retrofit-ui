@@ -190,7 +190,7 @@ export function RatingView(props: { spec: RatingSpec }) {
 
 A kit is the unit that you ship: its kinds, and handlers for the action types they dispatch. `defineKind` checks that the component takes the spec of its `kind`.
 
-```tsx
+```ts
 // client/rating-kit.ts
 import { defineKind, defineKit } from '@retrofit-ui/spa-solid-shoelace/components';
 import { RatingView } from './RatingView';

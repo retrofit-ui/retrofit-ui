@@ -10,7 +10,7 @@ In this style you import a renderer from `@retrofit-ui/spa-solid-shoelace/compon
 pnpm add @retrofit-ui/spa-solid-shoelace @retrofit-ui/core solid-js @solidjs/router
 ```
 
-`solid-js` and `@solidjs/router` are peer dependencies: the `./components` build uses your app's copies. You need `@solidjs/router` installed even if your app has no router. Shoelace is in the build, so you do not install it.
+`solid-js` and `@solidjs/router` are peer dependencies (`solid-js` is marked optional, but a `./components` app needs it): the `./components` build uses your app's copies. You need `@solidjs/router` installed even if your app has no router. Shoelace is in the build, so you do not install it.
 
 The `./components` build has no CSS. Import the stylesheet once in your entry:
 

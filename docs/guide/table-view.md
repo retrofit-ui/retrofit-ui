@@ -55,7 +55,8 @@ The table view is driven by a `TableSpec` (`kind: 'table'`). It shows rows, and 
 |-------|------|----------|---------|
 | `columns` | `Column[]` | yes | One entry per column, in display order. |
 | `rows` | `InlineRow[]` | no | Rows embedded in the spec. When set, the client does not call `endpoints.list`. |
-| `endpoints.list` | `{ method, url }` | no | Fetches rows as a raw array of objects (`ListRow[]`). |
+| `endpoints` | `{ list?, create? }` | yes | Required in the TypeScript type: send `{}` when there are none. The renderer also accepts a spec with no `endpoints`. |
+| `endpoints.list` | `{ method, url }` | no | Fetches rows as a raw array of objects (`ListRow[]`). The table always sends `GET`; it ignores `method`. |
 | `endpoints.create` | `{ method, url }` | no | With at least one editable column, adds an inline "new row" form. |
 | `rowLinkField` | `string` | no | Field in each row holding that row's finished link, for example `#/posts/7`. Clicking the row opens it. The field does not need to be a column. |
 | `rowActions` | `{ label, linkField }[]` | no | One link button per entry in each row. A row with no link in `linkField` shows no button. |
@@ -91,7 +92,7 @@ Rows come from one of two places.
 
 **Inline rows** are in the spec. Each row is an object of cells, `{ "title": { "value": "Hello" } }`.
 
-**List rows** come from `endpoints.list`. The response is a raw JSON array of plain objects. The client adds the query params `page`, `pageSize`, `sort`, `order` and the page's filter names. The full rules, including encoding, are in the [spec contract](/guide/contract).
+**List rows** come from `endpoints.list`. The response is a raw JSON array of plain objects. The client adds `page` and `pageSize` when `metadata.pagination` is set, `sort` and `order` after the user sorts a column, and the page's filter names. The full rules, including encoding, are in the [spec contract](/guide/contract).
 
 While rows load, the table shows skeleton rows. A failed request shows an error message. A table with no rows (and no editable column) shows "No data.".
 
@@ -141,7 +142,7 @@ TableView.forRows(PostSchema, posts)
   .build();
 ```
 
-`rowLink` and `rowAction` store the link in hidden fields (`_link`, `_action0`, ...) of each inline row. A row for which the function returns `undefined` has no link. For list rows, call `.rowLinkField('link')` and let the list endpoint return the links. `rowAction` works for inline rows only: for list rows, add `rowActions` to the built spec yourself.
+`rowLink` and `rowAction` store the link in hidden fields (`_link`, `_action0`, ...) of each inline row. A row for which the function returns `undefined` has no link. For list rows, call `.rowLinkField('link')` and let the list endpoint return the links. `rowAction` works for inline rows only. On a list table the call has no effect, because no row has the hidden fields: drop it and add `rowActions` to the built spec yourself.
 
 ## Row writes
 
@@ -159,7 +160,7 @@ What the client shows and sends:
 
 | Part | When it shows | Request |
 |------|---------------|---------|
-| **Edit** button, then **Save** and **Cancel** | The row has `_actions.update` and at least one column is `editable`. | `update` with a JSON body of the row's raw values. The body leaves out `_actions`, the `rowLinkField` field and each `rowActions` link field. Column keys always stay. |
+| **Edit** button, then **Save** and **Cancel** | The row has `_actions.update` and at least one column is `editable`. | `update` with a JSON body of the row's raw values. The body leaves out `_actions`, the `rowLinkField` field and each `rowActions` link field. Unless a column key starts with `_`, it also leaves out any other `_`-prefixed field. Column keys always stay. |
 | **Delete** button | The row has `_actions.delete`. A dialog asks to confirm. | `delete` with no body. |
 | Inline "new row" | A column is `editable` and `endpoints.create` is set. | `create` with a JSON body of one value per column key. A new row starts with `false` for boolean columns, `0` for number columns and `''` for others. |
 

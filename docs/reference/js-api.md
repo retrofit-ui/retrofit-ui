@@ -73,7 +73,7 @@ declare module '@retrofit-ui/core' {
 | `RowActions` | A row's own finished writes: `{ update?: HttpAction; delete?: HttpAction }`. Per-view request bodies are in [the contract](/guide/contract#row-writes). |
 | `RowAction` | A per-row link button: `{ label, linkField }`. |
 | `ToolbarButton` | A button above a view: `{ label, action: Action, variant? }`. |
-| `Field` | One form field: `name`, `label`, `type`, and `required`, `readOnly`, `validation`, `options`, `value`, and type-specific options. |
+| `Field` | One form field: `name`, `label`, `type`, and `required`, `readOnly`, `validation`, `options`, `value`, `placeholder`, `helpText`, `tooltip`, and type-specific options. |
 | `FieldType` | `'text' \| 'email' \| 'password' \| 'number' \| 'date' \| 'datetime' \| 'time' \| 'select' \| 'multiselect' \| 'checkbox' \| 'switch' \| 'radio-group' \| 'textarea' \| 'markdown' \| 'color' \| 'tags' \| 'rating'`. |
 | `FieldValidation` | `{ required?, min?, max?, pattern? }`. `min`/`max` bound a number's value, or a text-like field's length; `pattern` must match the whole string. |
 | `FieldOption` | `{ label, value: string \| number }`. |
@@ -238,7 +238,7 @@ class WorkflowBundleBuilder<S extends ZodRawShape> {
   updateSchema(schema: ZodObject<ZodRawShape>): this
   table(customiser: (t: TableCustomizer) => TableCustomizer): this
   form(customiser: (f: FormCustomizer) => FormCustomizer): this
-  route(path: string): this  // table "New" → `#<route>/new`; forms' onDone → `#<route>`
+  route(path: string): this  // table "New" (only when `create()` is also set) → `#<route>/new`; forms' onDone → `#<route>`
   list(directive: EndpointDirective): this
   create(directive: EndpointDirective): this
   update(directive: EndpointDirective): this

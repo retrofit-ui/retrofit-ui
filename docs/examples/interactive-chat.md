@@ -15,7 +15,7 @@ just example interactive-chat
 
 ## What it demonstrates
 
-- Containers nest specs directly: `page` holds `card`s, and each card holds `markdown`, `stat`, `timeline`, `table` or `grid` children
+- Containers nest specs directly: `page` holds `card`s, and each card holds a `markdown` child or a `col` or `grid` that holds `stat`, `timeline`, `table` and other specs
 - Layout helpers: `col(gap)` and `grid(columns, gap)`
 - Builders: `CardViewBuilder`, `StatViewBuilder`, `TimelineView`, `TableView`
 - A static page: the content is inline, with no list endpoints
@@ -38,7 +38,7 @@ const config: RetrofitConfig = {
 
 ## The conversation
 
-From `src/spec.ts`. A user turn is a card with a `markdown` child. An assistant turn is a card that wraps any spec.
+From `src/spec.ts` (abridged; helpers such as `todayStats` are not shown). A user turn is a card with a `markdown` child. An assistant turn is a card that wraps any spec.
 
 ```typescript
 function assistantReply(content: Spec): Spec {

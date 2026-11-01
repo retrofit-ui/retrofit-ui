@@ -1,8 +1,8 @@
 # Layouts
 
-Layouts are specs that hold other specs. Every container has a `children: Spec[]` array that nests specs directly, in the same flat `{ kind, ... }` shape they have at the top level. A container has no data and no endpoint of its own. Only the specs inside it load data.
+Layouts are specs that hold other specs. Every container except `tabs` has a `children: Spec[]` array that nests specs directly, in the same flat `{ kind, ... }` shape they have at the top level. A container has no data and no endpoint of its own. Only the specs inside it load data.
 
-The container kinds are `page`, `card`, `flex`, `grid` and `tabs`. The small leaf kinds `text`, `details` and `filter-form` complete the layout toolbox.
+The container kinds are `page`, `card`, `flex` and `grid`. `tabs` nests specs too, inside each tab's own `children`. The small leaf kinds `text`, `details` and `filter-form` complete the layout toolbox.
 
 <PreviewBlock title="A grid with two columns">
 

@@ -62,6 +62,8 @@ The client formats `format: 'currency'`. A `format` function makes the server se
 
 ## Filter above a table
 
+Abridged: the real spec also sets `visibleColumns`.
+
 ```typescript
 pageSpec()
   .title('Expenses')

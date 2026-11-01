@@ -2,7 +2,7 @@
 
 **Pattern: `calendar` view with drag-to-update, next to a table and forms**
 
-Events show in a month calendar, a table and a filtered page. All three link to the same edit form.
+Events show in a month calendar, a table and a filtered page. The calendar and the `/events` table link to the same edit form. The filtered page has no row links.
 
 Run it locally (serves on port 3000, or `PORT`):
 

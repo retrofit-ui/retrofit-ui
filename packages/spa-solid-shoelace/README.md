@@ -24,7 +24,7 @@ Peer dependencies: `@solidjs/router` (required, `>=0.15.0`) and `solid-js` (opti
 | Import | What it gives you |
 |---|---|
 | `@retrofit-ui/spa-solid-shoelace` | `distPath`: the folder of the prebuilt hosted app. Serve it from any backend. |
-| `@retrofit-ui/spa-solid-shoelace/components` | `createShell`, `createRenderer`, `createIslands`, `defineKind`, `defineKit`, `builtinKinds`, `builtinActions`, `Root`, `SpecRenderer`, `Scope`, `RenderSpec`, `configureMarked`, ... |
+| `@retrofit-ui/spa-solid-shoelace/components` | `createShell`, `createRenderer`, `createIslands`, `defineKind`, `defineKit`, `builtinKinds`, `builtinActions`, `SpecRenderer`, `Scope`, `RenderSpec`, `configureMarked`, ... |
 | `@retrofit-ui/spa-solid-shoelace/renderer` | Prebuilt script islands: `init()`. Built-in kinds only. |
 | `@retrofit-ui/spa-solid-shoelace/renderer.css` | The stylesheet. Required by `./components` users; that build emits no CSS. |
 
@@ -61,12 +61,14 @@ The app loads `/retrofit.json`, then fetches each route's spec. The build uses `
 import { createShell, defineKind, defineKit } from "@retrofit-ui/spa-solid-shoelace/components";
 import "@retrofit-ui/spa-solid-shoelace/renderer.css";
 
+// Declare the kind once, so the types know it (see the core README):
+// declare module "@retrofit-ui/core" { interface SpecKinds { "acme.rating": { kind: "acme.rating"; score: number } } }
 const rating = defineKind({ kind: "acme.rating", component: (props) => <b>{props.spec.score}</b> });
 
 void createShell({ kits: [defineKit({ name: "acme", kinds: [rating] })] }).mount(document.getElementById("root")!);
 ```
 
-`createRenderer({ kits })` gives you `Root` and `SpecRenderer` to embed specs in a Solid app; `createIslands({ kits })` gives islands with custom kinds. See [extending](https://retrofitui.dev/guide/extending).
+`createRenderer({ kits })` gives you a renderer with `Root` and `SpecRenderer` members to embed specs in a Solid app; `createIslands({ kits })` gives islands with custom kinds. See [extending](https://retrofitui.dev/guide/extending).
 
 > **Production tip:** replace `<version>` with an exact version you tested, and add [Subresource Integrity](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) `integrity="sha384-..." crossorigin="anonymous"` attributes to CDN-loaded scripts and stylesheets. Generate hashes with `openssl dgst -sha384 -binary <file> | openssl base64 -A`.
 

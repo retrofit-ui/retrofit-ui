@@ -6,45 +6,60 @@
 
 [![npm](https://img.shields.io/npm/v/@retrofit-ui/core.svg)](https://www.npmjs.com/package/@retrofit-ui/core)
 [![license](https://img.shields.io/npm/l/@retrofit-ui/core.svg)](https://github.com/retrofit-ui/retrofit-ui/blob/main/LICENSE)
-[![provenance](https://img.shields.io/npm/collaborators/@retrofit-ui/core.svg?label=provenance&color=green)](https://www.npmjs.com/package/@retrofit-ui/core)
 
-The types package for [retrofit-ui](https://retrofitui.dev) — a server-driven UI framework where your server describes screens as JSON and the browser renders them without any frontend code. This package defines the **contract** that both sides of the wire agree on: TypeScript interfaces and matching Zod schemas for every kind of view retrofit-ui knows about.
+The spec contract for [retrofit-ui](https://retrofitui.dev). Frontend, backend, and AI teams keep blocking each other: every new screen needs all three. retrofit-ui puts a typed spec between them. The backend or a model says what to show. The frontend owns how it looks and behaves. They meet only at the spec — so each side can change without waiting on the others.
 
-Install it on the server side to get typed spec objects, runtime validation, and autocomplete on every field. The renderer package (`@retrofit-ui/spa-solid-shoelace`) reuses the same schemas at build time to validate incoming specs.
+This package is that spec: **TypeScript types only, no runtime code**, plus a generated JSON Schema for producers that are not written in TypeScript.
 
 ## Install
 
 ```bash
-npm install @retrofit-ui/core zod
+npm install @retrofit-ui/core
 ```
 
-`zod` is a peer dependency.
+`@retrofit-ui/builder-zod` and `@retrofit-ui/spa-solid-shoelace` depend on this package, so you rarely install it on its own.
 
-## Usage
+## Types
 
 ```ts
-import type { TableSpec } from "@retrofit-ui/core";
+import type { Spec, TableSpec } from "@retrofit-ui/core";
 
 const users: TableSpec = {
   kind: "table",
   columns: [
-    { key: "name", label: "Name", type: "text" },
-    { key: "email", label: "Email", type: "text" },
-    { key: "role", label: "Role", type: "badge" },
+    { key: "name", label: "Name", type: "string" },
+    { key: "role", label: "Role", type: "enum", badgeVariants: { admin: "primary" } },
   ],
   rows: [
-    { name: "Ada Lovelace", email: "ada@example.com", role: "admin" },
-    { name: "Grace Hopper", email: "grace@example.com", role: "user" },
+    { name: { value: "Ada Lovelace" }, role: { value: "admin" } },
   ],
-  endpoints: {
-    list: { method: "GET", url: "/api/users" },
-  },
+  endpoints: {},
 };
 ```
 
-Return that object as JSON from your API endpoint. The retrofit-ui renderer draws it as an interactive table.
+Return that object as JSON from your API. The renderer draws it as a table. Every spec is a flat `{ kind, ... }` object; containers (`page`, `card`, `flex`, `grid`, `tabs`) nest specs directly.
 
-Same package also ships `FormSpec`, `PageSpec`, `TreeSpec`, `TimelineSpec`, `CalendarSpec`, `StatSpec`, `MarkdownViewSpec` — one for each renderable view. See [the spec reference on retrofitui.dev](https://retrofitui.dev/reference/js-api).
+## Registries
+
+`BuiltinSpecKinds` lists the 15 built-in kinds by `kind`. `SpecKinds` extends it, and `Spec` is the union of every entry. An app adds its own kind by augmenting `SpecKinds` once; `ActionKinds` works the same way for action types.
+
+```ts
+declare module "@retrofit-ui/core" {
+  interface SpecKinds {
+    "acme.rating": RatingSpec; // RatingSpec.kind must be "acme.rating"
+  }
+}
+```
+
+The renderer needs a matching component (a *kit*) to draw a custom kind. See [extending](https://retrofitui.dev/guide/extending).
+
+## JSON Schema
+
+```ts
+import schema from "@retrofit-ui/core/schema.json" with { type: "json" };
+```
+
+`schema.json` is generated from these types (JSON Schema draft-07). It covers the built-in kinds and actions only, with `BuiltinSpec` discriminated on `kind`. Custom kinds are app-owned: add your own definitions next to it. Use it to validate specs from a backend in any language; see [the contract guide](https://retrofitui.dev/guide/contract).
 
 ## See also
 

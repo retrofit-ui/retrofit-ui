@@ -2,7 +2,7 @@
 
 > **Status: experimental.** This project is in active exploration. APIs, package boundaries, and even which languages are supported may change without notice while we're pre-1.0. Feedback and issues are welcome; please expect breaking changes between releases.
 
-`retrofit-ui` is developed as a **monorepo** so the spec types, builders, and renderer can evolve in lockstep. Right now we publish JavaScript artifacts to npm.
+`retrofit-ui` is developed as a **monorepo** so the spec types, builders, and renderer can evolve in lockstep. We publish three packages to npm. Coding agents: read `AGENTS.md` first.
 
 ---
 
@@ -19,20 +19,22 @@ pnpm install
 Common commands:
 
 ```bash
-pnpm build        # build all packages
-pnpm dev          # watch mode for all packages
+pnpm build        # build all packages (and the docs site)
+pnpm dev          # watch mode / dev servers for all packages
 pnpm test         # run all tests
 pnpm typecheck    # type-check everything
 pnpm lint         # Biome
 pnpm format       # Biome with --write
 ```
 
-Run a specific example:
+Run a specific example (build the packages first; the examples serve the built SPA):
 
 ```bash
 cd examples/js/contacts
 pnpm dev
 ```
+
+[`just`](https://github.com/casey/just) shortcuts are in the `justfile` (`just --list`).
 
 ---
 
@@ -45,12 +47,12 @@ Check the [open issues](https://github.com/retrofit-ui/retrofit-ui/issues) — a
 ## Submitting a PR
 
 1. Fork the repo and branch from `main` (naming is loose — `feat/…`, `fix/…`, `chore/…`).
-2. Make your changes. Ensure `pnpm test`, `pnpm typecheck`, and `pnpm lint` pass.
+2. Make your changes. Run the checks CI runs (see [CI](#ci) below). If you changed a type in `@retrofit-ui/core`, run `pnpm --filter @retrofit-ui/core gen:schema` and commit the result.
 3. If your change affects a **published package**, add a changeset:
    ```bash
    pnpm changeset
    ```
-   Select the affected packages, pick minor/patch/major, and write a short summary — this becomes the CHANGELOG entry.
+   Select the affected packages, pick patch/minor (see [versioning](#versioning)), and write a short summary — this becomes the CHANGELOG entry.
 4. Commit the changeset file alongside your code change.
 5. Open a PR with a clear description of what changed and why.
 
@@ -64,14 +66,34 @@ PRs that don't touch published packages (docs, example apps, CI config, internal
 
 | Package | Path | Contents |
 |---|---|---|
-| `@retrofit-ui/core` | `packages/core` | Zod type definitions for UI specs |
-| `@retrofit-ui/builder-zod` | `packages/builder-zod` | Zod-driven spec builders |
-| `@retrofit-ui/spa-solid-shoelace` | `packages/spa-solid-shoelace` | SolidJS + Shoelace renderer bundle |
+| `@retrofit-ui/core` | `packages/core` | TypeScript types for specs, plus the generated `schema.json` |
+| `@retrofit-ui/builder-zod` | `packages/builder-zod` | Fluent spec builders (Zod schemas derive columns and fields) |
+| `@retrofit-ui/spa-solid-shoelace` | `packages/spa-solid-shoelace` | SolidJS + Shoelace renderer: hosted SPA, `./components`, `./renderer` |
 
 **Not published from this repo:**
 
-- `docs/` — VitePress docs site, deployed separately via `docs.yml`
+- `docs/` — VitePress docs site, deployed to GitHub Pages by `docs.yml` on pushes to `main` that touch `docs/`
 - `examples/js/*` — reference example apps
+
+---
+
+## CI
+
+`ci.yml` runs on every PR that touches more than `docs/`. In order:
+
+1. `pnpm install --frozen-lockfile`
+2. `pnpm -r --filter '!@retrofit-ui/docs' run build` (core's build regenerates the schema)
+3. `git diff --exit-code packages/core/schema` and a clean `git status` for that folder. A diff means the committed schema is stale.
+4. `pnpm verify:publish`
+5. `pnpm test:publish-guard`
+6. `pnpm check:consumer-types`
+7. `pnpm typecheck`
+8. `pnpm lint`
+9. `pnpm test`
+
+`ci-docs.yml` runs on PRs that touch `docs/`: `pnpm --filter "@retrofit-ui/docs..." build`. VitePress fails the build on dead links.
+
+The local `lefthook` hooks run `pnpm lint` on commit and `act -j ci` (or `act -j docs`) on push.
 
 ---
 
@@ -89,13 +111,15 @@ A commit's presence on `main` means it's *ready to be published* at the next rel
 
 ## Release workflow
 
-Releases are automated by `.github/workflows/release.yml`, driven by [`changesets/action`](https://github.com/changesets/action), and publish to npm via [Trusted Publishing](https://docs.npmjs.com/trusted-publishers). No manual `npm publish`, no manual `git tag`.
+Releases are automated by `.github/workflows/release.yml`, driven by [`changesets/action`](https://github.com/changesets/action). No manual `npm publish`, no manual `git tag`.
 
-The workflow runs on every push to `main` and has two modes:
+**Auth is an npm token, not Trusted Publishing.** The workflow passes the `NPM_TOKEN` repository secret (a granular token, read+write on the `@retrofit-ui` scope, 365-day expiry) to the `changesets/action` step only. Trusted Publishing (OIDC) hit unresolved 404 errors with this npm org. The job has no `id-token: write` permission and publishes without provenance, so npm shows no "Built and signed on GitHub Actions" badge yet. The build and `verify:publish` steps run without the token.
 
-**Mode A — pending changesets exist.** It opens (or updates) a PR titled **"chore: version packages"** containing version bumps and generated CHANGELOG entries. This PR accumulates changes as more PRs land.
+The workflow runs on every push to `main`. It installs, builds (`pnpm build`), runs `pnpm verify:publish`, then runs `changesets/action` in one of two modes:
 
-**Mode B — no pending changesets.** It runs `pnpm release`, which builds all packages, publishes to npm, and pushes git tags.
+**Mode A — pending changesets exist.** It runs `pnpm changeset version` and opens (or updates) a PR titled **"chore: version packages"** with version bumps and CHANGELOG entries. This PR accumulates changes as more PRs land.
+
+**Mode B — no pending changesets.** It runs `pnpm exec changeset publish`, which publishes the versions not yet on npm and pushes git tags. (It does not run `pnpm release`, which would rebuild in a step that has the token.) `pnpm release` (`pnpm build && changeset publish`) is for a local publish by a maintainer.
 
 ### To cut a release
 
@@ -114,16 +138,18 @@ Merging the Version Packages PR is the release. That's the button.
 
 Semver, with the standard pre-1.0 convention:
 
-- Everything is currently `0.x.y`. In 0ver semantics:
-  - **`major` bump** on `0.x.y` → `0.(x+1).0` (still 0.x; not 1.0)
-  - **`minor` and `patch`** both bump `y` while below 1.0
+- Everything is currently `0.x.y`. Changesets applies plain semver arithmetic:
+  - `patch` → `0.x.(y+1)`; `minor` → `0.(x+1).0`
+  - `major` → `1.0.0`. Do not pick `major` before you intend to release 1.0. For a breaking change below 1.0, pick `minor` and say so in the summary.
 - After `1.0.0`, standard semver applies.
 
-Changesets handles this automatically — you pick "minor" or "major" in the CLI and it does the right thing based on the current version.
+Version bumps cascade through `dependencies`: `builder-zod` and `spa-solid-shoelace` declare `@retrofit-ui/core` in `dependencies` (`workspace:^`), not `peerDependencies`. When `core` bumps, changesets (`updateInternalDependencies: "patch"` in `.changeset/config.json`) also bumps both dependents by at least a patch and rewrites their range. This means:
 
-Version bumps cascade: because `builder-zod` and `spa-solid-shoelace` declare `@retrofit-ui/core` in `peerDependencies`, a minor bump to `core` triggers a major bump on both consumers. Peer-dep changes are treated as breaking.
+- A consumer always gets a matching `core` through its builder or renderer. Nobody installs `core` by hand to make them agree.
+- A `core` change that alters the wire format should come with its own changeset on the dependents (minor or major), because the automatic bump is only a patch.
+- `@solidjs/router` and `solid-js` are the peers of `spa-solid-shoelace`; `zod` is the peer of `builder-zod`. Changesets treats a peer-range change as breaking.
 
-**Graduating to 1.0.0** happens when the spec surface (Zod types in `@retrofit-ui/core`) is stable enough to commit to backward compatibility. Not soon.
+**Graduating to 1.0.0** happens when the spec surface (the types in `@retrofit-ui/core`) is stable enough to commit to backward compatibility. Not soon.
 
 ---
 
@@ -146,18 +172,13 @@ To enforce the invariant, `pnpm verify:publish` (`scripts/verify-publish-manifes
 
 One-time bootstrap:
 
-1. Manually published each package at its initial version from a maintainer's laptop (`npm login && pnpm release`) to establish the packages on npm.
-2. Configured **Trusted Publisher** on each package on npmjs.com:
-   - Publisher: GitHub Actions
-   - Organization: `retrofit-ui`
-   - Repository: `retrofit-ui`
-   - Workflow: `release.yml`
-3. Enabled repo setting: **Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"**.
-4. Enabled npm 2FA on the publisher account (required for provenance attestations).
+1. Publish each package at its initial version from a maintainer's laptop (`npm login && pnpm release`) to create it on npm.
+2. Create a granular npm token with read+write on the `@retrofit-ui` scope and read-only on the `retrofit-ui` organization. Store it as the `NPM_TOKEN` repository secret. Rotate it before it expires.
+3. Enable the repo setting **Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"**.
 
-No `NPM_TOKEN` secret is needed — OIDC via Trusted Publishing handles auth on every run.
+**Moving to Trusted Publishing later.** Configure a Trusted Publisher for `release.yml` on each package on npmjs.com, add `id-token: write` to the job, and drop `NPM_TOKEN`. Not done today (see Release workflow).
 
-**When a new package is added** to the monorepo: after its first publish, add a Trusted Publisher entry for it on npmjs.com. Until then, that package can't be published from CI.
+**When a new package is added** to the monorepo, publish it once by hand (step 1). The token's scope then covers it.
 
 ---
 
@@ -177,9 +198,9 @@ No `NPM_TOKEN` secret is needed — OIDC via Trusted Publishing handles auth on 
 
 **CI doesn't run on the Version PR.** Expected if opened via `GITHUB_TOKEN` — GitHub deliberately doesn't trigger downstream workflows from bot-created PRs. Fix by configuring a `GH_PAT` secret (see `release.yml`) or by pushing a trivial commit to the Version PR branch to re-trigger CI.
 
-**Publish fails with "requires authentication".** Trusted Publisher config on npm is missing or misconfigured. Verify the org/repo/workflow name match exactly. The workflow filename is *just* the filename, no path prefix (`release.yml`, not `.github/workflows/release.yml`).
+**Publish fails with "requires authentication" or 404.** The `NPM_TOKEN` secret is missing, expired, or lacks write access to the `@retrofit-ui` scope. Create a new token and update the secret. Do not add `id-token: write` or provenance to the workflow without also moving to Trusted Publishing: npm then prefers OIDC over the token and fails.
 
-**Version bump looks wrong.** Peer dep cascades. If `@retrofit-ui/core` bumps minor, both consumers bump major (correctly). If this isn't what you want, downgrade the core bump to patch, or edit the Version PR to override before merging.
+**Version bump looks wrong.** Dependents of `@retrofit-ui/core` get at least a patch bump when core changes. Edit the changesets or the Version PR before you merge to override it.
 
 **Changeset references a package that no longer exists.** Rename the package reference in the changeset file, or delete the file. `pnpm changeset status` points at the exact problem.
 

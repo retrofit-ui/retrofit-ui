@@ -18,7 +18,7 @@ check:
     pnpm typecheck
     pnpm lint
 
-# Start an example's dev server (hot-reloads via tsx).
+# Start an example's dev server (runs its `pnpm dev`; only custom-view restarts on change, via `tsx watch`).
 example name:
     cd "examples/js/{{name}}" && pnpm dev
 
@@ -28,8 +28,10 @@ e2e name:
 
 # ── docs ──────────────────────────────────────────────────────────────────────
 # Start the VitePress dev server, build, or preview the documentation site.
-# `just docs dev` also runs the renderer in watch mode so changes to
-# packages/spa-solid-shoelace/ui/ are picked up without a manual rebuild.
+# `just docs dev` also rebuilds the renderer bundle (dist/renderer, the
+# ./renderer entry) in watch mode when packages/spa-solid-shoelace/ui/
+# changes. The ./components and hosted-SPA bundles are not watched: rebuild
+# those with `pnpm build`.
 
 docs cmd="dev":
     #!/usr/bin/env bash

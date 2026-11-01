@@ -1,17 +1,22 @@
 # JS Quickstart
 
-Get a working table view in under five minutes with Express.
+Get a working table in the hosted app in a few minutes, with Express and Zod.
 
 ## Install
 
 ```bash
-pnpm add @retrofit-ui/builder-zod @retrofit-ui/spa-solid-shoelace express
+pnpm add @retrofit-ui/builder-zod @retrofit-ui/spa-solid-shoelace express zod
 pnpm add -D @types/express tsx
 ```
 
-`builder-zod` contains the Zod-driven spec builders. `spa-solid-shoelace` provides the pre-built SPA bundle (exposed as `distPath`) that your server serves as static files at `/`. The server's only jobs are to declare its screens in `/retrofit.json`, emit spec JSON and serve the bundle — the same model in any language.
+- `@retrofit-ui/builder-zod` builds specs from Zod schemas. Zod is its peer dependency, so you install it yourself.
+- `@retrofit-ui/spa-solid-shoelace` ships the prebuilt hosted app. Its `distPath` export is the folder your server serves as static files.
+
+The server has three jobs: declare its screens in `/retrofit.json`, return spec JSON for each screen, and serve the app's files. A server in another language does the same three things; see [The spec contract](/guide/contract).
 
 ## Minimum working example
+
+Save this as `server.ts`:
 
 ```typescript
 import { type RetrofitConfig, route, TableView } from '@retrofit-ui/builder-zod';
@@ -22,7 +27,7 @@ import { z } from 'zod';
 const app = express();
 app.use(express.json());
 
-// Your existing data + schema
+// Your existing data and schema
 const ItemSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -34,25 +39,21 @@ const items = [
   { id: 2, name: 'Second item', active: false },
 ];
 
-// 1. Serve the config — the app's screens — and the SPA bundle as static files.
-//    route('/items') is the hash route #/items, whose spec is /api/ui/items.
+// 1. The app's screens, and the app itself as static files.
+//    route('/items') is the hash route #/items; its spec is served at /api/ui/items.
 const config: RetrofitConfig = { apiBase: '/api/ui', routes: [route('/items')] };
 app.get('/retrofit.json', (_req, res) => res.json(config));
 app.use(express.static(distPath));
 
-// 2. Your existing REST endpoint (unchanged)
+// 2. Your existing REST endpoint, unchanged: it returns a plain array of rows.
 app.get('/items', (_req, res) => res.json(items));
 
-// 3. The spec endpoint for #/items — tells the SPA how to render the table
+// 3. The spec for #/items: a table whose rows come from GET /items.
 app.get('/api/ui/items', (_req, res) => {
-  res.json(
-    TableView.schema(ItemSchema)
-      .list({ method: 'GET', url: '/items' })
-      .build(),
-  );
+  res.json(TableView.schema(ItemSchema).list({ method: 'GET', url: '/items' }).build());
 });
 
-app.listen(3000, () => console.log('http://localhost:3000'));
+app.listen(3000, () => console.log('http://localhost:3000/#/items'));
 ```
 
 Run it:
@@ -61,30 +62,60 @@ Run it:
 npx tsx server.ts
 ```
 
-Open `http://localhost:3000/#/items` and you'll see a table with ID, Name and Active columns populated from your data. retrofit-ui derived the column types from the Zod schema automatically.
+Open `http://localhost:3000/#/items`. The table has ID, Name and Active columns: the builder derived them from the Zod schema, and the rows come from `GET /items`.
 
-The SPA shows only the routes you declare: the bare `http://localhost:3000` has no route, so it says so. To show the table there too, add `route('/', '/items')` — a hash route `/` served by the same spec.
+The spec endpoint returns plain JSON. You can see exactly what the app receives:
+
+```bash
+curl http://localhost:3000/api/ui/items
+```
+
+```json
+{
+  "kind": "table",
+  "columns": [
+    { "key": "id", "label": "Id", "type": "number", "sortable": false, "editable": false, "alignment": "left" },
+    { "key": "name", "label": "Name", "type": "string", "sortable": false, "editable": false, "alignment": "left" },
+    { "key": "active", "label": "Active", "type": "boolean", "sortable": false, "editable": false, "alignment": "left" }
+  ],
+  "endpoints": { "list": { "method": "GET", "url": "/items" } }
+}
+```
+
+The app shows only the routes you declare. `http://localhost:3000/` has no route, so the app says so. To show the table there too, add `route('/', '/items')`: the hash route `/`, served by the same spec.
 
 ::: info The `/api/ui` prefix is your choice
-`apiBase` is a prefix retrofit-ui prepends to each route's `spec` when it fetches it. `/api/ui` above (also the default) is a convention that reads cleanly, not a requirement — use `/admin-ui`, `/ui/v2`, or `/` if that fits your server. Just make sure `apiBase` plus each route's `spec` matches a spec endpoint you register.
+`apiBase` is a prefix that the app puts before each route's `spec` when it fetches it. It defaults to `/api/ui`, but any prefix works (`/admin-ui`, `/ui/v2`, `/`). `apiBase` plus each route's `spec` must match a spec endpoint that you register. Urls inside a spec, such as `list`, are fetched as written, with no prefix.
 :::
 
 ## Adding create and delete
 
-Wire up more endpoints by adding handlers, a create-form screen, and endpoint directives to the builder:
+Replace the `config`, the `GET /items` handler and the `/api/ui/items` handler above with the code below. Add `formSpec` and `withRowActions` to the `@retrofit-ui/builder-zod` import.
 
 ```typescript
-import { formSpec } from '@retrofit-ui/builder-zod';
+import {
+  formSpec,
+  type RetrofitConfig,
+  route,
+  TableView,
+  withRowActions,
+} from '@retrofit-ui/builder-zod';
 
-// Declare the new screen in /retrofit.json
+// A second screen: the create form at #/items/new
 const config: RetrofitConfig = {
   apiBase: '/api/ui',
   routes: [route('/items'), route('/items/new')],
 };
 
-// Add REST handlers
+// REST handlers. Each row the list returns carries its own finished delete
+// in `_actions`; withRowActions fills {id} from the row, here on the server.
+app.get('/items', (_req, res) => {
+  res.json(withRowActions(items, { delete: { method: 'DELETE', url: '/items/{id}' } }));
+});
+
+let nextId = items.length + 1;
 app.post('/items', (req, res) => {
-  const item = { id: items.length + 1, ...req.body };
+  const item = { id: nextId++, ...req.body };
   items.push(item);
   res.status(201).json(item);
 });
@@ -95,19 +126,19 @@ app.delete('/items/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-// Update the table's spec endpoint
+// The table, now with a "New" button above it
 app.get('/api/ui/items', (_req, res) => {
   res.json(
     TableView.schema(ItemSchema)
       .list({ method: 'GET', url: '/items' })
-      .delete({ method: 'DELETE', url: '/items/{id}' })
       .toolbar('New', { type: 'navigate', to: '#/items/new' })
       .build(),
   );
 });
 
-// The create form for #/items/new. `id` isn't in the update schema, so the
-// create form leaves it out; `onDone` goes back to the table after saving.
+// The create form for #/items/new. `id` is not in the second (update) schema,
+// so it is read-only and the create form leaves it out. After a save, `onDone`
+// goes back to the table.
 app.get('/api/ui/items/new', (_req, res) => {
   res.json(
     formSpec(ItemSchema, ItemSchema.omit({ id: true }))
@@ -119,12 +150,19 @@ app.get('/api/ui/items/new', (_req, res) => {
 });
 ```
 
-A "New" button now opens the create form, and each row gets a "Delete" button. Nothing is added implicitly: the "New" button exists because the spec has a `toolbar` entry, and it goes to `#/items/new` because that is the action's `to`.
+Now the table has a "New" button, and each row has a "Delete" button. The client adds nothing on its own:
+
+- The "New" button is there because the spec has a `toolbar` entry. It opens `#/items/new` because that is the action's `to`.
+- A row shows "Delete" because the row carries `_actions.delete`. A row without `_actions` has no delete button.
+- After a create or a delete, the app fetches the screen's spec again, so the table shows the change. See [Actions](/guide/actions#refresh).
+
+`TableView`'s own `.update()` and `.delete()` apply only to rows embedded in the spec with `.rows()`. On a table that loads its rows from `list()`, `build()` throws, because the rows are not known when the spec is built. Use `withRowActions` in the list handler, as above.
 
 ## Next steps
 
-- **Inline editing** — use `updateSchema` to mark which fields are editable directly in the table. See [Table View](/guide/table-view).
-- **Edit forms and row links** — see [Form View](/guide/form-view) and [Table View](/guide/table-view#row-links).
-- **More routes** — `crudRoutes('items')` declares the list, create and edit screens at once. See [Hosted SPA](/guide/hosted-spa#the-route-table).
-- **Combined table + form** — use `TableFormWorkflowBundle` for the most common pattern. See [Workflow Bundle](/guide/workflow-bundle).
-- **Run a full example** — `just example todos` starts the todos example from the repo.
+- **Inline editing**: `updateSchema` marks the columns a user can edit in the table. See [Table View](/guide/table-view).
+- **Edit forms and row links**: see [Form View](/guide/form-view) and [Table View](/guide/table-view).
+- **More routes**: `crudRoutes('items')` declares the list, create and edit screens at once. See [Hosted SPA](/guide/hosted-spa#the-route-table).
+- **Table and form together**: `TableFormWorkflowBundle` builds the usual set of screens. See [Workflow Bundle](/guide/workflow-bundle).
+- **Auth headers and other client behavior**: see [Actions](/guide/actions).
+- **A full example**: `just example todos` starts the todos example from the repo.

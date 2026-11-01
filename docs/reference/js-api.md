@@ -1,51 +1,177 @@
 # JS API Reference
 
-All exports from `@retrofit-ui/builder-zod`. The package produces spec JSON and the hosted app's route table; your server emits them on whatever routes you register (spec endpoints are matched to the `apiBase` in `/retrofit.json` — the default is `/api/ui`) and serves the SPA bundle.
+Every public export of the three packages, by import path. The wire format these types describe — as raw JSON, for producers in any language — is on [The spec contract](/guide/contract).
+
+| Import path | What it is |
+| --- | --- |
+| [`@retrofit-ui/core`](#core) | TypeScript types for every spec, action and config. No runtime code. |
+| [`@retrofit-ui/core/schema.json`](#core-schema-json) | The JSON Schema generated from those types. |
+| [`@retrofit-ui/builder-zod`](#builder-zod) | Server-side builders that turn Zod schemas into specs. Peer dependency: `zod@^4`. |
+| [`@retrofit-ui/spa-solid-shoelace`](#spa-root) | Node entry: the path of the prebuilt hosted SPA. |
+| [`@retrofit-ui/spa-solid-shoelace/components`](#spa-components) | Browser entry for apps with their own Solid build: renderers, kits, actions, shell, islands. |
+| [`@retrofit-ui/spa-solid-shoelace/renderer`](#spa-renderer) | Browser entry, prebuilt with Solid inside: `init()` for script islands. |
+| [`@retrofit-ui/spa-solid-shoelace/renderer.css`](#spa-renderer-css) | The renderer's styles, for both browser entries. |
 
 ---
 
-## Serving the SPA
+## `@retrofit-ui/core` {#core}
 
-The builders only produce specs. To serve the UI, serve the pre-built bundle from `@retrofit-ui/spa-solid-shoelace` as static files and expose a `/retrofit.json` config endpoint declaring every screen:
+Types only: import them with `import type`. Each kind's fields are documented on its guide page and in the type's JSDoc.
 
-```typescript
-import { crudRoutes, type RetrofitConfig, route } from '@retrofit-ui/builder-zod';
-import { distPath } from '@retrofit-ui/spa-solid-shoelace';
+### Spec model
 
-const config: RetrofitConfig = {
-  apiBase: '/api/ui',
-  routes: [...crudRoutes('posts'), route('/dashboard')],
-  theme, // optional
-};
-app.get('/retrofit.json', (_req, res) => res.json(config));
-app.use(express.static(distPath));
+| Type | Description |
+| --- | --- |
+| `SpecNode<K>` | `{ kind: K }` — the base of every spec. |
+| `ContainerSpec<K>` | A `SpecNode` with `children: Spec[]`. |
+| `BuiltinSpecKinds` | The 15 built-in kinds, keyed by `kind`: `table`, `form`, `filter-form`, `markdown`, `stat`, `calendar`, `tree`, `timeline`, `text`, `details`, `page`, `card`, `flex`, `grid`, `tabs`. |
+| `SpecKinds` | Every kind, keyed by `kind`. Extends `BuiltinSpecKinds`; an app augments it to add its own kinds. |
+| `SpecKind` | `keyof SpecKinds`. |
+| `SpecOf<K>` | The spec type for kind `K`. |
+| `Spec` | Any spec: the union of every registered kind. |
+
+Adding a kind (see [Extending](/guide/extending)):
+
+```ts
+declare module '@retrofit-ui/core' {
+  interface SpecKinds {
+    'acme.rating': RatingSpec; // RatingSpec extends SpecNode<'acme.rating'>
+  }
+}
 ```
 
-The SPA fetches `/retrofit.json` on startup, applies the optional `theme` (see [`RetrofitTheme`](#retrofittheme)) and renders the route matching the hash: it fetches that route's spec from `apiBase` + `spec` and renders it by `kind`. It has no routes of its own, and a config without `routes` shows an error. Hash-based routing means no catch-all route is needed. Any server in any language can serve the bundle the same way.
+### Kind specs
 
-`distPath` is the build of `createShell()` from `@retrofit-ui/spa-solid-shoelace/components`. To keep the hosted app with custom kinds, mount `createShell({ kits, actions })` from your own client entry — see [Hosted SPA](/guide/hosted-spa#keeping-the-hosted-app-with-custom-kinds).
+| Type | `kind` | Notes |
+| --- | --- | --- |
+| `TableSpec` | `table` | `columns`, `endpoints: { list?, create? }`, optional inline `rows`, `rowLinkField`, `rowActions`, `toolbar`, `metadata.pagination`. |
+| `FormSpec` | `form` | `fields`, `endpoints: { create?, update?, delete? }`, `metadata.mode`, `metadata.onDone`, `metadata.autoSubmit`. |
+| `FilterFormSpec` | `filter-form` | `fields: FilterField[]`, written to the page's filters. |
+| `MarkdownViewSpec` | `markdown` | `content`, `metadata.back`. |
+| `StatSpec` | `stat` | `stats: Stat[]`. |
+| `CalendarSpec` | `calendar` | `events: CalendarEvent[]`, `defaultView`, `editable`, `toolbar`. |
+| `TreeSpec` | `tree` | `endpoint`, `idField`, `parentField`, `labelField`, `linkField`, `selection`, `toolbar`. |
+| `TimelineSpec` | `timeline` | `events: TimelineEvent[]`, `metadata.back`. |
+| `TextSpec` | `text` | `content`, `variant`. |
+| `DetailsSpec` | `details` | `items: DetailsItem[]`. |
+| `PageSpec` | `page` | Container. `title`, `layout: LayoutConfig`. Owns filters for the specs inside it. |
+| `CardSpec` | `card` | Container. `header`, `footer: Spec`. |
+| `FlexSpec` | `flex` | Container. `direction`, `gap`, `wrap`, `align`, `justify`. |
+| `GridSpec` | `grid` | Container. `columns`, `columnTemplate`, `gap`, `align`, `justify`. |
+| `TabsSpec` | `tabs` | `tabs: TabItem[]`, `placement`. |
+
+### Spec parts
+
+| Type | Description |
+| --- | --- |
+| `Column` | One table column: `key`, `label`, `type`, and `sortable`, `editable`, `width`, `alignment`, `options`, `badgeVariants`, `format`, `currency`. |
+| `ColumnType` | `'string' \| 'number' \| 'date' \| 'datetime' \| 'time' \| 'boolean' \| 'enum' \| 'custom'`. |
+| `BadgeVariant` | `'primary' \| 'success' \| 'neutral' \| 'warning' \| 'danger'`. |
+| `Cell` | One inline table cell: `{ value, formatted? }`. |
+| `InlineRow` | One inline table row: a `Cell` per field, with `_actions` wrapped as `{ value: RowActions }`. |
+| `ListRow` | One fetched row (table `list`, tree `endpoint`): raw values, with `_actions?: RowActions` raw. |
+| `RowActions` | A row's own finished writes: `{ update?: HttpAction; delete?: HttpAction }`. Per-view request bodies are in [the contract](/guide/contract#row-writes). |
+| `RowAction` | A per-row link button: `{ label, linkField }`. |
+| `ToolbarButton` | A button above a view: `{ label, action: Action, variant? }`. |
+| `Field` | One form field: `name`, `label`, `type`, and `required`, `readOnly`, `validation`, `options`, `value`, and type-specific options. |
+| `FieldType` | `'text' \| 'email' \| 'password' \| 'number' \| 'date' \| 'datetime' \| 'time' \| 'select' \| 'multiselect' \| 'checkbox' \| 'switch' \| 'radio-group' \| 'textarea' \| 'markdown' \| 'color' \| 'tags' \| 'rating'`. |
+| `FieldValidation` | `{ required?, min?, max?, pattern? }`. `min`/`max` bound a number's value, or a text-like field's length; `pattern` must match the whole string. |
+| `FieldOption` | `{ label, value: string \| number }`. |
+| `FormLayoutConfig` | `{ direction?, gap?, columns?, labelPosition? }`. |
+| `FilterField` | One filter input: `{ name, label, type: 'select' \| 'text' \| 'date' \| 'datetime' \| 'time', options?, placeholder? }`. |
+| `LayoutConfig` | A page's root layout: `direction`, `wrap`, `gap`, `align`, `justify`, `columns`, `columnTemplate`. |
+| `TabItem` | `{ label, children: Spec[] }`. |
+| `DetailsItem` | `{ summary, body, open? }`. |
+| `Stat` | One KPI: `{ label, value, format?, currency?, description? }`. |
+| `TimelineEvent` | `{ timestamp, title, description?, variant?, icon? }`. |
+| `CalendarEvent` | `{ id, title, start, end?, color?, allDay?, link?, actions?: { update? } }`. |
+
+### Actions
+
+| Type | Description |
+| --- | --- |
+| `ActionDescriptor<T>` | `{ type: T }` — the base of an action. |
+| `HttpAction` | `{ type?: 'http'; method: 'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE'; url: string }`. |
+| `EndpointDirective` | Alias of `HttpAction`: every `{ method, url }` endpoint is an http action. |
+| `NavigateAction` | `{ type: 'navigate'; to: string }`. A `#`-prefixed `to` sets the hash. |
+| `RefreshAction` | `{ type: 'refresh' }`. Asks the owner of the current spec to fetch it again. |
+| `ActionEntry<A, Input, Result>` | One registered action type: its descriptor, dispatch input and result. |
+| `ActionKinds` | Every action type, keyed by `type`. Core registers `navigate` and `refresh`; the renderer package registers `http`. An app augments it to add its own. |
+| `ActionType` | `keyof ActionKinds`. |
+| `Action` | Any registered action descriptor. |
+
+### App config
+
+| Type | Description |
+| --- | --- |
+| `RetrofitConfig` | The body of `/retrofit.json`: `routes` (required), `apiBase?` (default `/api/ui`), `title?`, `nav?`, `theme?`. |
+| `RouteSpec` | `{ path, spec }`: a hash route and the endpoint of its spec, relative to `apiBase`. `{name}` in `spec` is filled from `:name` in `path`. |
+| `NavItem` | `{ label, href, icon? }`: one sidebar link. |
+| `RetrofitTheme` | `{ cssVariables?, extraCss? }`. `extraCss` is injected as-is. |
 
 ---
 
-## `route` / `crudRoutes`
+## `@retrofit-ui/core/schema.json` {#core-schema-json}
 
-```typescript
+A JSON Schema (draft-07) generated from the types above. It covers the built-in kinds and actions only. Use `#/definitions/BuiltinSpec` for a spec, `#/definitions/RetrofitConfig` for `/retrofit.json` and `#/definitions/ListRow` for one list row.
+
+```ts
+import schema from '@retrofit-ui/core/schema.json' with { type: 'json' };
+```
+
+Loading and validating it, in Node and in Python: [The spec contract](/guide/contract#validating-with-schema-json).
+
+---
+
+## `@retrofit-ui/builder-zod` {#builder-zod}
+
+Builders that run on your server and return plain spec objects. Send the result of `build()` as JSON.
+
+The package re-exports these types from `@retrofit-ui/core`, so a producer needs one import: `Action`, `CalendarEvent`, `CalendarSpec`, `CardSpec`, `EndpointDirective`, `FilterField`, `FilterFormSpec`, `FlexSpec`, `FormLayoutConfig`, `FormSpec`, `GridSpec`, `LayoutConfig`, `MarkdownViewSpec`, `NavItem`, `PageSpec`, `RetrofitConfig`, `RetrofitTheme`, `RouteSpec`, `RowAction`, `RowActions`, `Spec`, `Stat`, `StatSpec`, `TableSpec`, `TimelineEvent`, `TimelineSpec`, `ToolbarButton`, `TreeSpec`. Import any other type from `@retrofit-ui/core`.
+
+Each builder class also has a shorter alias: `TableView` = `TableViewBuilder`, `CalendarView` = `CalendarViewBuilder`, `CardView` = `CardViewBuilder`, `StatView` = `StatViewBuilder`, `TimelineView` = `TimelineViewBuilder`, `TreeView` = `TreeViewBuilder`, `TableFormWorkflowBundle` = `WorkflowBundleBuilder`.
+
+### `route` / `crudRoutes`
+
+```ts
 /** One route; `spec` defaults to `path` with each `:name` as `{name}`. */
 function route(path: string, spec?: string): RouteSpec
-
 /** `/<resource>`, `/<resource>/new` and `/<resource>/:id`, in that order. */
 function crudRoutes(resource: string): RouteSpec[]
 ```
 
-`route('/posts/:id')` is `{ path: '/posts/:id', spec: '/posts/{id}' }`. `crudRoutes('posts')` puts `/posts/new` before `/posts/:id`, so `new` is never read as an id.
+`route('/posts/:id')` is `{ path: '/posts/:id', spec: '/posts/{id}' }`.
 
----
+```ts
+const config: RetrofitConfig = {
+  routes: [...crudRoutes('posts'), route('/dashboard')],
+};
+app.get('/retrofit.json', (_req, res) => res.json(config));
+```
 
-## `TableView` / `TableViewBuilder`
+### `withRowActions`
 
-`TableView` is an alias for `TableViewBuilder`.
+```ts
+function withRowActions<R extends object>(
+  rows: R[],
+  actions: { update?: EndpointDirective; delete?: EndpointDirective },
+): (R & { _actions: RowActions })[]
+```
 
-```typescript
+Gives each row its finished writes in `_actions`, filling each `{name}` in the urls from `row[name]` (URI-encoded). Throws when a row has no value for a placeholder. Use it in a list or tree handler:
+
+```ts
+app.get('/api/contacts', (_req, res) =>
+  res.json(withRowActions(contacts, {
+    update: { method: 'PUT', url: '/api/contacts/{id}' },
+    delete: { method: 'DELETE', url: '/api/contacts/{id}' },
+  })),
+);
+```
+
+### `TableViewBuilder` (`TableView`)
+
+```ts
 type RowLink = (row: Record<string, unknown>) => string | undefined;
 
 class TableViewBuilder<S extends ZodRawShape> {
@@ -53,79 +179,70 @@ class TableViewBuilder<S extends ZodRawShape> {
   static forRows<S>(schema: ZodObject<S>, rows: Record<string, unknown>[]): TableViewBuilder<S>
 
   rows(rows: Record<string, unknown>[]): this
-  updateSchema(schema: ZodObject<ZodRawShape>): this
-  columnOverride(key: string, override: Partial<Column>): this // format may also be (v) => string
+  updateSchema(schema: ZodObject<ZodRawShape>): this    // its keys become editable columns
+  columnOverride(key: string, override: Omit<Partial<Column>, 'format'> & {
+    format?: Column['format'] | ((v: unknown) => string) // a function sets each inline cell's `formatted`
+  }): this
   visibleColumns(keys: string[]): this
   metadata(meta: TableSpec['metadata']): this
 
-  rowLink(link: RowLink): this              // inline rows: each row opens link(row)
-  rowLinkField(field: string): this         // list() rows: the field holding each row's link
+  rowLink(link: RowLink): this                 // inline rows: each row opens link(row)
+  rowLinkField(field: string): this            // list() rows: the field holding each row's link
   rowAction(label: string, link: RowLink): this // inline rows: a per-row link button
   toolbar(label: string, action: Action, variant?: 'primary' | 'default'): this
 
   list(directive: EndpointDirective): this
   create(directive: EndpointDirective): this
-  update(directive: EndpointDirective): this
-  delete(directive: EndpointDirective): this
+  update(directive: EndpointDirective): this   // inline rows only
+  delete(directive: EndpointDirective): this   // inline rows only
 
   build(): TableSpec
 }
 ```
 
-`rowLink` and `rowAction` run once per inline row at `build()`, storing each link in a hidden row field; a row they return `undefined` for gets no link or button. Rows fetched from `list()` aren't seen by the builder, so the list endpoint returns the links and `rowLinkField` names the field.
+`rowLink`, `rowAction`, `update` and `delete` run per inline row at `build()`; `update`/`delete` fill each row's `_actions` with `withRowActions`. `build()` throws when `update()` or `delete()` is set without `rows()`: for a `list()` table, the list handler adds `_actions` itself with [`withRowActions`](#withrowactions). Inline rows hold only the visible column keys, plus `_actions` and the link fields.
 
----
+### `formSpec` / `FormSpecBuilder`
 
-## `formSpec` / `FormSpecBuilder`
-
-```typescript
+```ts
 function formSpec<S extends ZodRawShape>(
   schema: ZodObject<S>,
-  updateSchema?: ZodObject<ZodRawShape>,
+  updateSchema?: ZodObject<ZodRawShape>, // fields not in it are read-only
 ): FormSpecBuilder<S>
 
 class FormSpecBuilder<S extends ZodRawShape> {
+  constructor(schema: ZodObject<S>, updateSchema?: ZodObject<ZodRawShape>)
   fieldOverride(key: string, override: Partial<Field>): this
-  values(entity: Record<string, unknown>): this // each field's initial value
-
-  title(title: string): this       // headings: "New <title>" / "Edit <title>"
-  edit(): this                     // metadata.mode = 'edit'
-  onDone(action: Action): this     // after save/delete, and by Back
-  submitLabel(label: string): this
-  params(params: Record<string, string | number>): this // fills {name} in endpoint urls at build()
-  autoSubmit(): this
-  layout(config: FormLayoutConfig): this
-
+  values(entity: Record<string, unknown>): this   // each field's initial `value`
   create(directive: EndpointDirective): this
   update(directive: EndpointDirective): this
   delete(directive: EndpointDirective): this
-
+  edit(): this                                    // metadata.mode = 'edit'
+  params(params: Record<string, string | number>): this // fills `{name}` in every endpoint url
+  onDone(action: Action): this
+  title(title: string): this
+  submitLabel(label: string): this
+  autoSubmit(): this
+  layout(config: FormLayoutConfig): this
   build(): FormSpec
 }
 ```
 
-`build()` resolves the endpoint urls with `params` (values are url-encoded; a `{name}` with no param is left as is), so an edit form arrives at the client as `/posts/7`, not `/posts/{id}`.
+### `WorkflowBundleBuilder` (`TableFormWorkflowBundle`)
 
----
+A table, its create form and its edit forms from one schema.
 
-## `TableFormWorkflowBundle` / `WorkflowBundleBuilder`
-
-`TableFormWorkflowBundle` is an alias for `WorkflowBundleBuilder`.
-
-```typescript
+```ts
 class WorkflowBundleBuilder<S extends ZodRawShape> {
   static schema<S>(schema: ZodObject<S>): WorkflowBundleBuilder<S>
-
   updateSchema(schema: ZodObject<ZodRawShape>): this
-  table(customizer: (t: TableCustomizer) => TableCustomizer): this
-  form(customizer: (f: FormCustomizer) => FormCustomizer): this
-  route(path: string): this // e.g. '/contacts'
-
+  table(customiser: (t: TableCustomizer) => TableCustomizer): this
+  form(customiser: (f: FormCustomizer) => FormCustomizer): this
+  route(path: string): this  // table "New" → `#<route>/new`; forms' onDone → `#<route>`
   list(directive: EndpointDirective): this
   create(directive: EndpointDirective): this
   update(directive: EndpointDirective): this
   delete(directive: EndpointDirective): this
-
   build(): WorkflowBundle
 }
 
@@ -134,330 +251,274 @@ class WorkflowBundle {
   get createForm(): FormSpec
   editForm(values: Record<string, unknown>, params: Record<string, string | number>): FormSpec
 }
+```
 
-class TableCustomizer {
-  columnOverride(key: string, override: Partial<Column>): this
-  metadata(meta: TableSpec['metadata']): this
+`TableCustomizer` has `columnOverride(key, override)` and `metadata(meta)`; `FormCustomizer` has `fieldOverride(key, override)` and `title(title)`. They are not exported by name: use them through the callbacks. The bundle's table is never inline-editable; `update` and `delete` go to the edit form.
+
+### `pageSpec`, `filterForm`, `row`, `col`, `grid`
+
+```ts
+function pageSpec(): PageSpecBuilder
+class PageSpecBuilder {
+  title(t: string): this
+  layout(config: LayoutConfig | LayoutContainerBuilder): this
+  add(child: Spec): this
+  filterForm(spec: FilterFormSpec): this
+  form(spec: FormSpec, title?: string): this
+  table(spec: TableSpec): this
+  markdown(spec: MarkdownViewSpec): this
+  build(): PageSpec
 }
 
-class FormCustomizer {
-  fieldOverride(key: string, override: Partial<Field>): this
-  title(title: string): this
+function filterForm(): FilterFormSpecBuilder
+class FilterFormSpecBuilder {
+  field(name: string, config: Omit<FilterField, 'name'>): this
+  build(): FilterFormSpec
+}
+
+function row(gap?: string): LayoutContainerBuilder            // flex, direction row
+function col(gap?: string): LayoutContainerBuilder            // flex, direction column
+function grid(columns: number, gap?: string): LayoutContainerBuilder
+class LayoutContainerBuilder {
+  constructor(kind: 'flex' | 'grid', props?: object)
+  add(child: Spec): this
+  form(spec: FormSpec, title?: string): this
+  table(spec: TableSpec): this
+  filterForm(spec: FilterFormSpec): this
+  markdown(spec: MarkdownViewSpec): this
+  layoutConfig(): LayoutConfig  // for PageSpecBuilder.layout()
+  build(): FlexSpec | GridSpec
 }
 ```
 
-`build()` returns a plain `WorkflowBundle`. With `route(path)`, the table gets a "New" toolbar button to `#<path>/new` (when `create` is set) and both forms get `onDone` navigating to `#<path>`. The table's rows get no links. Serve the three specs on a list route, a create route and an item route — see [Workflow Bundle](/guide/workflow-bundle).
+### `CardViewBuilder` (`CardView`)
 
----
+```ts
+class CardViewBuilder {
+  header(text: string): this
+  add(child: Spec): this
+  footer(spec: Spec): this
+  build(): CardSpec
+}
+```
 
-## `TreeView` / `TreeViewBuilder`
+### `StatViewBuilder` (`StatView`)
 
-```typescript
+```ts
+class StatViewBuilder {
+  stat(stat: Stat): this
+  title(title: string): this
+  build(): StatSpec
+}
+```
+
+### `TimelineViewBuilder` (`TimelineView`)
+
+```ts
+class TimelineViewBuilder {
+  static events(events: TimelineEvent[]): TimelineViewBuilder
+  title(t: string): this
+  back(action: Action): this  // metadata.back: a Back button
+  build(): TimelineSpec
+}
+```
+
+### `TreeViewBuilder` (`TreeView`)
+
+```ts
 class TreeViewBuilder {
-  endpoint(directive: EndpointDirective): this // required
-  idField(field: string): this                 // default 'id'
-  parentField(field: string): this             // default 'parentId'
-  labelField(field: string): this              // default 'name'
+  endpoint(directive: EndpointDirective): this  // required: build() throws without it
+  idField(field: string): this                  // default 'id'
+  parentField(field: string): this              // default 'parentId'
+  labelField(field: string): this               // default 'name'
   selection(mode: 'single' | 'multiple' | 'leaf'): this
-  linkField(field: string): this               // node field holding its link; adds "Edit"
+  linkField(field: string): this
   toolbar(label: string, action: Action, variant?: 'primary' | 'default'): this
-  create(directive: EndpointDirective): this
-  update(directive: EndpointDirective): this
-  delete(directive: EndpointDirective): this
   metadata(meta: TreeSpec['metadata']): this
   build(): TreeSpec
 }
 ```
 
----
+Nodes carry their own `_actions` (only `delete` is used): add them in the endpoint's handler with [`withRowActions`](#withrowactions).
 
-## `CalendarView` / `CalendarViewBuilder`
+### `CalendarViewBuilder` (`CalendarView`)
 
-```typescript
+```ts
 class CalendarViewBuilder {
-  static events(events: CalendarEvent[]): CalendarViewBuilder // each event may carry a `link`
+  static events(events: CalendarEvent[]): CalendarViewBuilder
   defaultView(view: 'month' | 'week' | 'day' | 'list'): this
-  editable(editable?: boolean): this
+  editable(editable?: boolean): this  // default true
   title(title: string): this
   toolbar(label: string, action: Action, variant?: 'primary' | 'default'): this
-  create(directive: EndpointDirective): this
-  update(directive: EndpointDirective): this
-  delete(directive: EndpointDirective): this
+  update(directive: EndpointDirective): this  // each event's actions.update, `{name}`s filled from the event
   build(): CalendarSpec
 }
 ```
 
 ---
 
-## `TimelineView` / `TimelineViewBuilder`
+## `@retrofit-ui/spa-solid-shoelace` {#spa-root}
 
-```typescript
-class TimelineViewBuilder {
-  static events(events: TimelineEvent[]): TimelineViewBuilder
-  title(title: string): this
-  back(action: Action): this // adds a Back button dispatching it
-  build(): TimelineSpec
-}
-```
+The Node entry.
+
+| Export | Description |
+| --- | --- |
+| `distPath: string` | Absolute path of the prebuilt hosted SPA. Serve it as static files, e.g. `app.use(express.static(distPath))`. It is `createShell().mount(...)` with the built-in kinds. |
+| `type Spec` | Re-export of `Spec` from `@retrofit-ui/core`. |
+
+See [Hosted SPA](/guide/hosted-spa).
 
 ---
 
-## Types
+## `@retrofit-ui/spa-solid-shoelace/components` {#spa-components}
 
-All spec types come from `@retrofit-ui/core` (types only, no runtime code); `@retrofit-ui/builder-zod` re-exports the common ones.
+For apps with their own Solid build. Solid is not bundled: `solid-js` and `@solidjs/router` come from your app (`@solidjs/router` is a required peer dependency; `solid-js` is an optional one, needed only by this entry). This build emits no CSS: also import [`renderer.css`](#spa-renderer-css).
 
-### `Spec`, `SpecKinds`, `SpecNode`, `ContainerSpec`
+### Renderers
 
-```typescript
-interface SpecNode<K extends string = string> {
-  kind: K;
+```ts
+function createRenderer(options?: RendererOptions): Renderer
+
+interface RendererOptions {
+  kits?: Kit[];                  // applied in order; a later kit's kind replaces an earlier one
+  actions?: ActionHandlers;      // override every kit's handlers
+  fallback?: FallbackComponent;  // drawn for a missing or unregistered kind
 }
 
-/** A spec that lays out other specs. */
-interface ContainerSpec<K extends string = string> extends SpecNode<K> {
-  children: Spec[];
+interface Renderer {
+  Root: (props: RootProps) => JSX.Element;  // provides kinds and actions; render <RenderSpec> inside
+  SpecRenderer: (props: { spec: Spec; actions?: ActionHandlers }) => JSX.Element; // Root around one spec
+  registry: Registry;
 }
 
-/** Every kind, keyed by `kind`. Augment it to add your own (see Extending). */
-interface SpecKinds {
-  table: TableSpec; form: FormSpec; 'filter-form': FilterFormSpec;
-  markdown: MarkdownViewSpec; stat: StatSpec; calendar: CalendarSpec;
-  tree: TreeSpec; timeline: TimelineSpec; text: TextSpec; details: DetailsSpec;
-  page: PageSpec; card: CardSpec; flex: FlexSpec; grid: GridSpec; tabs: TabsSpec;
-}
-
-type Spec = SpecKinds[keyof SpecKinds];
-type SpecOf<K extends keyof SpecKinds> = SpecKinds[K];
-```
-
-`page`, `card`, `flex` and `grid` extend `ContainerSpec`; `tabs` holds `{ label, children: Spec[] }[]`. A spec has the same shape wherever it appears — at the top level or as a child.
-
-### `EndpointDirective`
-
-```typescript
-/** An http action; `type` may be omitted. */
-interface EndpointDirective {
-  type?: 'http';
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  url: string; // may contain {param} placeholders
+interface RootProps {
+  actions?: ActionHandlers;  // for this subtree; win over the renderer's
+  children: JSX.Element;
 }
 ```
 
-### `TableSpec`
+| Export | Description |
+| --- | --- |
+| `SpecRenderer` | `(props: { spec: Spec; actions?: ActionHandlers })`. Renders a spec with the surrounding renderer's kinds, or the built-in kinds outside any renderer. |
+| `RenderSpec` | `(props: { spec: Spec })`. Renders one node with the registered component for its kind. Container components use it for children. Throws outside a renderer. |
+| `Scope` | `(props: RootProps)`. Adds action handlers for a subtree. |
+| `UnsupportedKind` | The default fallback: an "Unsupported spec kind" message. |
+| `type Registry` | `{ kinds: Readonly<KindComponents>; fallback: FallbackComponent }`. |
 
-```typescript
-interface TableSpec extends SpecNode<'table'> {
-  columns: Column[];
-  rows?: Record<string, Cell>[]; // inline rows; otherwise fetched from `list`
-  idField?: string;      // row field filling {id} in update/delete urls; default "id"
-  rowLinkField?: string; // row field holding the row's finished link, e.g. '#/posts/7'
-  toolbar?: ToolbarButton[];
-  endpoints: {
-    list?:   EndpointDirective; // in a page, {param}s are filled from its filters
-    create?: EndpointDirective; // with editable columns: an inline new row
-    update?: EndpointDirective;
-    delete?: EndpointDirective;
-  };
-  rowActions?: RowAction[];
-  metadata?: {
-    title?: string;
-    pagination?: { pageSize: number; totalRows: number; pageSizeOptions?: number[] };
-  };
-}
-```
+### Kinds and kits
 
-### `FormSpec`
+```ts
+function defineKind<K extends SpecKind>(definition: KindDefinition<K>): KindDefinition<K>
+function defineKit(kit: Kit): Kit
 
-```typescript
-interface FormSpec extends SpecNode<'form'> {
-  fields: Field[];
-  endpoints: {
-    create?: EndpointDirective;
-    update?: EndpointDirective;
-    delete?: EndpointDirective;
-  };
-  metadata?: {
-    title?: string;
-    mode?: 'create' | 'edit'; // 'edit' submits to update and offers delete; default 'create'
-    onDone?: Action;          // after a successful save or delete, and by Back
-    submitLabel?: string;     // default "Create", or "Save" when editing
-    autoSubmit?: boolean;     // in a page: write changes to its filters instead
-    layout?: FormLayoutConfig;
-  };
-}
-```
-
-Form endpoints arrive resolved, e.g. `/posts/7`; the client calls them as written.
-
-### `MarkdownViewSpec`
-
-```typescript
-interface MarkdownViewSpec extends SpecNode<'markdown'> {
-  content: string;
-  metadata?: { title?: string; back?: Action }; // back: adds a Back button dispatching it
-}
-```
-
-### `TreeSpec`, `CalendarSpec`, `TimelineSpec` (navigation fields)
-
-```typescript
-interface TreeSpec extends SpecNode<'tree'> {
-  endpoint: EndpointDirective;
-  idField: string; parentField: string; labelField: string;
-  linkField?: string;           // node field holding its link; "Edit" opens the selected node's
-  toolbar?: ToolbarButton[];
-  selection?: 'single' | 'multiple' | 'leaf';
-  actions?: { create?: EndpointDirective; update?: EndpointDirective; delete?: EndpointDirective };
-  metadata?: { title?: string };
-}
-
-interface CalendarEvent {
-  id: string; title: string; start: string; end?: string; color?: string; allDay?: boolean;
-  link?: string;                // opened when the event is clicked
-}
-
-interface CalendarSpec extends SpecNode<'calendar'> {
-  events: CalendarEvent[];
-  defaultView?: 'month' | 'week' | 'day' | 'list';
-  editable?: boolean;
-  toolbar?: ToolbarButton[];
-  endpoints?: { create?: EndpointDirective; update?: EndpointDirective; delete?: EndpointDirective };
-  metadata?: { title?: string };
-}
-
-interface TimelineSpec extends SpecNode<'timeline'> {
-  events: TimelineEvent[];
-  metadata?: { title?: string; back?: Action };
-}
-```
-
-### `Column`
-
-```typescript
-interface Column {
-  key: string;
-  label: string;
-  type: 'string' | 'number' | 'date' | 'datetime' | 'time' | 'boolean' | 'enum' | 'custom';
-  sortable?: boolean;   // default false
-  editable?: boolean;   // default false
-  width?: string;
-  alignment?: 'left' | 'center' | 'right'; // default 'left'
-  options?: FieldOption[];
-  badgeVariants?: Record<string, 'primary' | 'success' | 'neutral' | 'warning' | 'danger'>;
-  format?: 'currency' | 'bytes' | 'percent' | 'decimal';
-  currency?: string;
-}
-
-interface Cell {
-  value: unknown;
-  formatted?: string; // server-formatted display text
-}
-```
-
-### `Field`
-
-```typescript
-interface Field {
+interface KindDefinition<K extends SpecKind> { kind: K; component: KindComponent<K> }
+interface Kit {
   name: string;
-  label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'date' | 'datetime' | 'time'
-      | 'select' | 'multiselect' | 'checkbox' | 'switch' | 'radio-group'
-      | 'textarea' | 'markdown' | 'color' | 'tags' | 'rating';
-  required?: boolean; // default false
-  readOnly?: boolean; // default false
-  value?: unknown;    // initial value
-  placeholder?: string;
-  helpText?: string;
-  tooltip?: string;
-  validation?: { required?: boolean; min?: number; max?: number; pattern?: string };
-  options?: FieldOption[];
-  colorFormat?: 'hex' | 'rgb' | 'hsl';
-  colorSwatches?: string[];
-  ratingMax?: number;
-  ratingPrecision?: number;
+  kinds?: AnyKindDefinition[];  // a kind under a built-in name replaces the built-in
+  actions?: ActionHandlers;
 }
 ```
 
-### `FieldOption`
+| Export | Description |
+| --- | --- |
+| `builtinKinds` | The component for each of the 15 built-in kinds, keyed by kind. Use it to wrap a built-in in a kit. |
+| `type KindComponent<K>` | `Component<{ spec: SpecOf<K> }>`. |
+| `type AnyKindDefinition` | A `KindDefinition` for any one registered kind. |
+| `type KindComponents` | `{ [K in SpecKind]?: KindComponent<K> }`. |
+| `type FallbackComponent` | `Component<{ spec: { kind?: unknown } }>`. |
 
-```typescript
-interface FieldOption {
-  label: string;
-  value: string | number;
-}
-```
-
-### `RowAction`, `ToolbarButton`
-
-```typescript
-/** A per-row link button; a row without a value in `linkField` shows none. */
-interface RowAction {
-  label: string;
-  linkField: string; // row field holding this button's finished link
-}
-
-/** A button above a view, e.g. "New". */
-interface ToolbarButton {
-  label: string;
-  action: Action;
-  variant?: 'primary' | 'default';
-}
-```
+See [Extending](/guide/extending).
 
 ### Actions
 
-```typescript
-interface ActionDescriptor<T extends string = string> { type: T }
-interface NavigateAction extends ActionDescriptor<'navigate'> { to: string }
-interface RefreshAction extends ActionDescriptor<'refresh'> {}
-
-/** One action type: its descriptor, the input it is dispatched with, its result. */
-interface ActionEntry<A, Input = undefined, Result = unknown> {
-  action: A; input: Input; result: Result;
-}
-
-/** Every action type, keyed by `type`. Augment it to add your own. */
-interface ActionKinds {
-  navigate: ActionEntry<NavigateAction, undefined, void>;
-  refresh: ActionEntry<RefreshAction, undefined, void>;
-  // `http` is registered by @retrofit-ui/spa-solid-shoelace:
-  // ActionEntry<EndpointDirective, { init?: RequestInit } | undefined, Response>
-}
-
-type Action = ActionKinds[keyof ActionKinds]['action'];
+```ts
+type ActionHandler<T extends ActionType> = (
+  action: ActionKinds[T]['action'],
+  input: InputOf<T>,
+  next: () => Promise<ResultOf<T>>,   // the handler further out
+) => ResultOf<T> | Promise<ResultOf<T>>  // anything, for a void result
+type ActionHandlers = { [T in ActionType]?: ActionHandler<T> };
+type Dispatch = <A extends Action>(action: A, ...input) => Promise<ResultOf<TypeOf<A>>>;
 ```
 
-### `RetrofitConfig`, `RouteSpec`, `NavItem`
+| Export | Description |
+| --- | --- |
+| `ActionHandlers` | Component `(props: { handlers: ActionHandlers; children })`: registers handlers for a subtree. Inner handlers win; `next()` falls through. Also the type of a handler map. |
+| `builtinActions` | The default handlers: `http` (`fetch(url, { ...input.init, method })`), `navigate`, `refresh` (no-op). |
+| `useActions()` | `{ dispatch: Dispatch }` for the nearest handlers. |
+| `useHttp()` | `(url: string, init?: RequestInit) => Promise<Response>`: `fetch` through the `http` action. Every request a built-in view makes goes through it. |
+| `type HttpInput` | `{ init?: RequestInit }`: the input of an `http` handler. |
+| `type TypeOf<A>`, `InputOf<T>`, `ResultOf<T>` | An action's type (`'http'` when it has none), and a type's input and result. |
 
-```typescript
-/** Served at /retrofit.json. */
-interface RetrofitConfig {
-  apiBase?: string;     // prefix for every route's `spec`; default '/api/ui'
-  title?: string;
-  nav?: NavItem[];      // sidebar links; omit or [] for no sidebar
-  theme?: RetrofitTheme;
-  routes: RouteSpec[];  // required: the app has no routes of its own
+The package registers `http` in `ActionKinds` with input `HttpInput | undefined` and result `Response`. See [Actions](/guide/actions).
+
+### Hosted shell
+
+```ts
+function createShell(options?: ShellOptions): Shell
+
+interface ShellOptions {
+  kits?: Kit[];
+  actions?: ActionHandlers;
+  configUrl?: string;      // default '/retrofit.json'
+  shoelacePath?: string;   // default: the jsDelivr Shoelace CDN
 }
-
-interface RouteSpec {
-  path: string;         // hash route, e.g. '/contacts/:id'
-  spec: string;         // endpoint under apiBase; {name} filled from :name, e.g. '/contacts/{id}'
-}
-
-interface NavItem {
-  label: string;
-  href: string;         // hash route, e.g. '/contacts'
-  icon?: string;        // Shoelace icon name
+interface Shell {
+  mount(root: HTMLElement): Promise<() => void>;  // loads the config, applies its theme, renders
 }
 ```
 
-### `RetrofitTheme`
+The hosted app with your kits: `createShell({ kits }).mount(document.getElementById('app')!)`.
 
-```typescript
-interface RetrofitTheme {
-  cssVariables?: Record<string, string>;
-  extraCss?: string;
+### Islands
+
+```ts
+function createIslands(options: IslandsOptions): IslandController
+
+interface InitOptions {
+  rootElement: HTMLElement;     // scope for scanning and observing
+  theme?: { cssVariables?: Record<string, string>; extraCss?: string };
+  shoelacePath?: string;
+  observe?: boolean;            // mount islands added later (MutationObserver)
+  actions?: ActionHandlers;
+}
+interface IslandsOptions extends InitOptions { kits?: Kit[] }
+interface IslandController {
+  mount(spec: Spec, element: HTMLElement): () => void;
+  unmount(element: HTMLElement): void;
+  unmountAll(): void;
 }
 ```
 
-The SPA applies the theme client-side from `/retrofit.json`: `cssVariables` are set on `:root` and `extraCss` is injected as a `<style>` tag.
+Mounts every `[data-retrofit]` (inline spec JSON) and `[data-retrofit-src]` (a spec url, fetched through the `http` action) under `rootElement`. On an element with both, the inline JSON is merged over the fetched spec. Each call is independent. See [Script Islands](/guide/script-islands).
+
+### Components and helpers
+
+| Export | Description |
+| --- | --- |
+| `TableViewComponent` | `(props: { spec: TableSpec })`: the built-in table. |
+| `FormViewComponent` | `(props: { spec: FormSpec })`: the built-in form. |
+| `Toolbar` | `(props: { buttons: ToolbarButton[] \| undefined })`: the button row above a view. |
+| `configureMarked(options: object): void` | Passes `options` to `marked.use()`, e.g. a KaTeX extension. Its output is still sanitized with DOMPurify. |
+
+---
+
+## `@retrofit-ui/spa-solid-shoelace/renderer` {#spa-renderer}
+
+The prebuilt island renderer, with Solid and Shoelace bundled. Its styles are a separate file: import [`renderer.css`](#spa-renderer-css) with it. It renders the built-in kinds only; for custom kinds use [`createIslands`](#islands) from `./components`.
+
+```ts
+function init(options: InitOptions): IslandController
+```
+
+Call it once per page, after the DOM is ready. A second call logs a warning and returns the first controller. `InitOptions` and `IslandController` are as in [Islands](#islands), and are exported as types.
+
+---
+
+## `@retrofit-ui/spa-solid-shoelace/renderer.css` {#spa-renderer-css}
+
+The renderer's styles: the Shoelace light theme plus retrofit-ui's layout, table and form styles. It is the stylesheet of the `./renderer` build. Neither JS entry injects it, so import it once with `./renderer` or `./components`:
+
+```ts
+import '@retrofit-ui/spa-solid-shoelace/renderer.css';
+```

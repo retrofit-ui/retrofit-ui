@@ -32,6 +32,9 @@ export default defineConfig({
     },
   },
 
+  // Internal planning docs live in the repo but are not part of the site.
+  srcExclude: ['github_issues/**', 'superpowers/**'],
+
   themeConfig: {
     logo: '/logo.svg',
 

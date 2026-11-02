@@ -48,6 +48,17 @@ describe('TableFormWorkflowBundle', () => {
     expect(form.metadata?.mode).toBe('edit');
     expect(form.fields.find((f) => f.name === 'name')?.value).toBe('Bo');
   });
+
+  it('keeps the derived validation under a validation override', () => {
+    const form = TableFormWorkflowBundle.schema(Contact)
+      .form((f) => f.fieldOverride('name', { validation: { pattern: '^B' } }))
+      .create({ method: 'POST', url: '/contacts' })
+      .build().createForm;
+    expect(form.fields.find((f) => f.name === 'name')?.validation).toEqual({
+      required: true,
+      pattern: '^B',
+    });
+  });
 });
 
 describe('route helpers', () => {

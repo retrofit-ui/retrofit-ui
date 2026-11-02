@@ -49,3 +49,17 @@ describe('FormSpecBuilder edit forms', () => {
     expect(spec.endpoints.update?.url).toBe('/x/a%20b/{other}');
   });
 });
+
+describe('FormSpecBuilder.fieldOverride with validation', () => {
+  it('merges an override validation into the derived one', () => {
+    const spec = formSpec(z.object({ slug: z.string().min(2).max(40) }))
+      .fieldOverride('slug', { validation: { pattern: '^[a-z-]+$' } })
+      .build();
+    expect(spec.fields[0]?.validation).toEqual({
+      required: true,
+      min: 2,
+      max: 40,
+      pattern: '^[a-z-]+$',
+    });
+  });
+});

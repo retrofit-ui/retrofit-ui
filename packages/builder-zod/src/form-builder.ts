@@ -114,9 +114,15 @@ export class FormSpecBuilder<S extends ZodRawShape> {
         zodFieldToField(key, schema, updatable !== null && !updatable.has(key)),
     );
     const fields = baseFields.map((field) => {
-      const withOverride = this._fieldOverrides[field.name]
-        ? { ...field, ...this._fieldOverrides[field.name] }
-        : field;
+      const override = this._fieldOverrides[field.name];
+      const withOverride: Field = override ? { ...field, ...override } : field;
+      // An override's validation adds to the schema-derived one (required, min, max).
+      if (override?.validation) {
+        withOverride.validation = {
+          ...field.validation,
+          ...override.validation,
+        };
+      }
       if (this._entity && this._entity[withOverride.name] !== undefined) {
         return { ...withOverride, value: this._entity[withOverride.name] };
       }

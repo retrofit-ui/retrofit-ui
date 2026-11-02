@@ -23,6 +23,7 @@ export type FieldType =
  * string.
  */
 export interface FieldValidation {
+  /** Adds ` *` to the label and blocks an empty value (`''`, `null`, `undefined`, `[]`). */
   required?: boolean;
   min?: number;
   max?: number;
@@ -39,7 +40,6 @@ export interface Field {
   name: string;
   label: string;
   type: FieldType;
-  required?: boolean;
   readOnly?: boolean;
   validation?: FieldValidation;
   placeholder?: string;

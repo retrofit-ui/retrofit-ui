@@ -12,7 +12,8 @@ describe('zodFieldToField', () => {
     const field = zodFieldToField('title', z.string());
     expect(field.type).toBe('text');
     expect(field.name).toBe('title');
-    expect(field.required).toBe(true);
+    expect(field.validation?.required).toBe(true);
+    expect('required' in field).toBe(false);
     expect(field.readOnly).toBe(false);
   });
 
@@ -40,12 +41,12 @@ describe('zodFieldToField', () => {
 
   it('marks optional field as not required', () => {
     const field = zodFieldToField('bio', z.string().optional());
-    expect(field.required).toBe(false);
+    expect(field.validation).toBeUndefined();
   });
 
   it('marks non-optional field as required', () => {
     const field = zodFieldToField('name', z.string());
-    expect(field.required).toBe(true);
+    expect(field.validation).toEqual({ required: true });
   });
 
   it('sets readOnly when flag is true', () => {
@@ -89,10 +90,10 @@ describe('zodFieldToField', () => {
     expect(field.type).toBe('datetime');
   });
 
-  it('maps z.string().datetime().optional() to datetime field with required false', () => {
+  it('maps z.string().datetime().optional() to datetime field that is not required', () => {
     const field = zodFieldToField('ts', z.string().datetime().optional());
     expect(field.type).toBe('datetime');
-    expect(field.required).toBe(false);
+    expect(field.validation?.required).toBeUndefined();
   });
 
   it('maps z.string().email() to email field (unchanged)', () => {

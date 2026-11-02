@@ -25,9 +25,9 @@ The form view is driven by a `FormSpec` (`kind: 'form'`). It draws a create or e
 {
   "kind": "form",
   "fields": [
-    { "name": "title", "label": "Title", "type": "text", "required": true },
+    { "name": "title", "label": "Title", "type": "text", "validation": { "required": true } },
     {
-      "name": "status", "label": "Status", "type": "select", "required": true,
+      "name": "status", "label": "Status", "type": "select", "validation": { "required": true },
       "options": [{ "label": "draft", "value": "draft" }, { "label": "published", "value": "published" }]
     }
   ],
@@ -62,7 +62,6 @@ Endpoints arrive finished. The client calls each URL exactly as the spec gives i
 | `name` | `string` | Key in the submitted JSON. Required. |
 | `label` | `string` | Label text. Required. |
 | `type` | `FieldType` | The input. Required. See the table below. |
-| `required` | `boolean` | Adds ` *` to the label and blocks an empty value. |
 | `readOnly` | `boolean` | Disables the input in an edit form, and hides it in a create form. |
 | `validation` | `{ required?, min?, max?, pattern? }` | See [Validation](#validation). |
 | `placeholder`, `helpText` | `string` | Hint text in and below the input. |
@@ -92,13 +91,13 @@ Option values of a `multiselect` must not contain spaces, because the select joi
 
 The client checks all visible fields, except read-only ones, when the user submits. If any check fails, it shows a message under the field and sends nothing.
 
-1. A field with `required: true` and an empty value fails. An empty value is `''`, `null`, `undefined` or an empty array.
+1. A field with `validation.required: true` adds ` *` to its label. With an empty value, it fails. An empty value is `''`, `null`, `undefined` or an empty array.
 2. An empty optional value skips the other checks.
 3. For `number` fields, `validation.min` and `validation.max` bound the value.
 4. For `text`, `email`, `password`, `textarea` and `markdown` fields, they bound the string length.
 5. For the same text types, `validation.pattern` is a JavaScript regex source. The client anchors it, so it must match the whole string. An invalid pattern is ignored and the client writes one console warning.
 
-`min`, `max` and `pattern` have no effect on other types. The client reads `required` from the field, not from `validation.required`. Server-side validation is not part of the spec: validate again on the server.
+`min`, `max` and `pattern` have no effect on other types. Server-side validation is not part of the spec: validate again on the server.
 
 ## Behavior
 
@@ -173,7 +172,7 @@ app.get('/api/ui/posts/:id', (req, res) => {
 | `z.enum(...)` | `select`, with `options` from the values |
 | anything else | `text` |
 
-A schema field that is not `.optional()` gets `required: true`. The builder also copies `.min()` and `.max()` to `validation.min` and `validation.max` (length for strings, bounds for numbers). Use `fieldOverride` for everything else: `multiselect`, `radio-group`, `switch`, `tags`, `rating`, `color`, `password`, `textarea`, `markdown`, a pattern, help text.
+A schema field that is not `.optional()` gets `validation: { required: true }`. The builder also copies `.min()` and `.max()` to `validation.min` and `validation.max` (length for strings, bounds for numbers). Use `fieldOverride` for everything else: `multiselect`, `radio-group`, `switch`, `tags`, `rating`, `color`, `password`, `textarea`, `markdown`, a pattern, help text.
 
 ```typescript
 formSpec(ContactSchema)
@@ -185,7 +184,7 @@ formSpec(ContactSchema)
 
 | Builder method | Spec field |
 |----------------|------------|
-| `fieldOverride(key, partial)` | Merges `Partial<Field>` into one field. |
+| `fieldOverride(key, partial)` | Merges `Partial<Field>` into one field. Its `validation` merges into the schema-derived one, so `required`, `min` and `max` stay unless the override sets them. |
 | `values(record)` | Sets each field's `value`. |
 | `create(d)`, `update(d)`, `delete(d)` | `endpoints.*` |
 | `params({ id })` | Fills `{id}` in every endpoint URL here, on the server. |

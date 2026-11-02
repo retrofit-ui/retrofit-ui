@@ -73,9 +73,9 @@ declare module '@retrofit-ui/core' {
 | `RowActions` | A row's own finished writes: `{ update?: HttpAction; delete?: HttpAction }`. Per-view request bodies are in [the contract](/guide/contract#row-writes). |
 | `RowAction` | A per-row link button: `{ label, linkField }`. |
 | `ToolbarButton` | A button above a view: `{ label, action: Action, variant? }`. |
-| `Field` | One form field: `name`, `label`, `type`, and `required`, `readOnly`, `validation`, `options`, `value`, `placeholder`, `helpText`, `tooltip`, and type-specific options. |
+| `Field` | One form field: `name`, `label`, `type`, and `readOnly`, `validation`, `options`, `value`, `placeholder`, `helpText`, `tooltip`, and type-specific options. |
 | `FieldType` | `'text' \| 'email' \| 'password' \| 'number' \| 'date' \| 'datetime' \| 'time' \| 'select' \| 'multiselect' \| 'checkbox' \| 'switch' \| 'radio-group' \| 'textarea' \| 'markdown' \| 'color' \| 'tags' \| 'rating'`. |
-| `FieldValidation` | `{ required?, min?, max?, pattern? }`. `min`/`max` bound a number's value, or a text-like field's length; `pattern` must match the whole string. |
+| `FieldValidation` | `{ required?, min?, max?, pattern? }`. `required` adds ` *` to the label and blocks an empty value. `min`/`max` bound a number's value, or a text-like field's length; `pattern` must match the whole string. |
 | `FieldOption` | `{ label, value: string \| number }`. |
 | `FormLayoutConfig` | `{ direction?, gap?, columns?, labelPosition? }`. |
 | `FilterField` | One filter input: `{ name, label, type: 'select' \| 'text' \| 'date' \| 'datetime' \| 'time', options?, placeholder? }`. |

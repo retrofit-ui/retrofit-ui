@@ -84,7 +84,9 @@ function extractValidation(
   required: boolean,
 ): Field['validation'] {
   const checks = getChecks(def);
-  const validation: NonNullable<Field['validation']> = { required };
+  const validation: NonNullable<Field['validation']> = required
+    ? { required }
+    : {};
   let hasAny = required;
   for (const check of checks) {
     if (check.check === 'min_length' && check.minimum !== undefined) {
@@ -130,7 +132,6 @@ export function zodFieldToField(
     name: key,
     label: toLabel(key),
     type: fieldType,
-    required,
     readOnly,
   };
 

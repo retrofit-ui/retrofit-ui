@@ -52,6 +52,25 @@ async function mountForm(fields: Field[]) {
 }
 
 describe('form validation', () => {
+  it('marks a validation.required field with * and blocks an empty value', async () => {
+    const { root, writes, submit } = await mountForm([
+      {
+        name: 'title',
+        label: 'Title',
+        type: 'text',
+        validation: { required: true },
+      },
+    ]);
+    expect(root.querySelector('sl-input')?.getAttribute('aria-label')).toBe(
+      'Title *',
+    );
+    submit();
+    await vi.waitFor(() =>
+      expect(root.textContent).toContain('Title is required'),
+    );
+    expect(writes).toEqual([]);
+  });
+
   it('rejects a number below validation.min', async () => {
     const { root, writes, submit } = await mountForm([
       {
@@ -183,7 +202,7 @@ describe('multiselect', () => {
         name: 't',
         label: 'T',
         type: 'multiselect',
-        required: true,
+        validation: { required: true },
         options: [],
       },
     ]);

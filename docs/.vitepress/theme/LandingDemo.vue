@@ -185,14 +185,14 @@ const spec = {
                   name: 'name',
                   label: 'Name',
                   type: 'text',
-                  required: true,
+                  validation: { required: true },
                   placeholder: 'Jane Smith',
                 },
                 {
                   name: 'email',
                   label: 'Email',
                   type: 'email',
-                  required: true,
+                  validation: { required: true },
                   placeholder: 'jane@example.com',
                 },
                 {

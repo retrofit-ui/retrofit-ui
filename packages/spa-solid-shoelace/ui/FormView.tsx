@@ -288,7 +288,7 @@ function FormEditor(props: FormEditorProps) {
         val === '' ||
         val === null ||
         (Array.isArray(val) && val.length === 0);
-      if (field.required && isEmpty) {
+      if (field.validation?.required && isEmpty) {
         errs[field.name] = `${field.label} is required`;
         continue;
       }
@@ -398,7 +398,8 @@ function FormEditor(props: FormEditorProps) {
       <form onSubmit={handleSubmit} style={formContainerStyle()}>
         <For each={visibleFields()}>
           {(field) => {
-            const fieldLabel = () => field.label + (field.required ? ' *' : '');
+            const fieldLabel = () =>
+              field.label + (field.validation?.required ? ' *' : '');
             const err = () => errors()[field.name];
             const strVal = () => String(values()[field.name] ?? '');
             const isTextarea = () =>

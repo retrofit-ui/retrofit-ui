@@ -551,9 +551,6 @@
         "type": {
           "$ref": "#/definitions/FieldType"
         },
-        "required": {
-          "type": "boolean"
-        },
         "readOnly": {
           "type": "boolean"
         },
@@ -634,7 +631,8 @@
       "type": "object",
       "properties": {
         "required": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Adds ` *` to the label and blocks an empty value (`''`, `null`, `undefined`, `[]`)."
         },
         "min": {
           "type": "number"

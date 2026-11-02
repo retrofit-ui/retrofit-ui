@@ -14,6 +14,7 @@ import type {
   SpecOf,
   StatSpec,
   TableSpec,
+  TreeSpec,
 } from '..';
 
 // An app's own kind and action, registered the way an app would.
@@ -109,6 +110,27 @@ describe('Spec', () => {
       },
     };
     expect(table.kind).toBe('table');
+  });
+});
+
+describe('read endpoints', () => {
+  it('only GET for table list and tree endpoint', () => {
+    const table: TableSpec = {
+      kind: 'table',
+      columns: [],
+      endpoints: {
+        // @ts-expect-error reads are GET
+        list: { method: 'POST', url: '/c' },
+      },
+    };
+    const tree: TreeSpec = {
+      kind: 'tree',
+      // @ts-expect-error reads are GET
+      endpoint: { method: 'POST', url: '/n' },
+      idField: 'id',
+      parentField: 'parentId',
+    };
+    expect(table.kind).toBe(tree.kind === 'tree' ? 'table' : '');
   });
 });
 

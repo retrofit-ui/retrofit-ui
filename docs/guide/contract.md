@@ -111,7 +111,7 @@ Buttons and links carry actions: plain data that says *what* happens. The client
 ]
 ```
 
-- `http` — `{ "type"?: "http", "method", "url" }`. `type` is optional, so every endpoint (`{ "method", "url" }`) is an http action as-is. `method` is one of `GET`, `POST`, `PUT`, `PATCH`, `DELETE`.
+- `http` — `{ "type"?: "http", "method", "url" }`. `type` is optional, so every endpoint (`{ "method", "url" }`) is an http action as-is. `method` is one of `GET`, `POST`, `PUT`, `PATCH`, `DELETE`. Read endpoints (`endpoints.list` of a table and `endpoint` of a tree) must use `GET`.
 - `navigate` — `{ "type": "navigate", "to" }`. A `to` that starts with `#` sets the hash (a route of the hosted app); anything else is a full page load.
 - `refresh` — asks whoever owns the current spec to fetch it again. Built-in views dispatch it after every write.
 
@@ -201,7 +201,7 @@ For the page above, a user who types "ada l" in the search box, goes to page 2 a
 GET /api/contacts?q=ada+l&page=2&pageSize=20&sort=name&order=asc
 ```
 
-A tree requests `endpoint.url` with `endpoint.method` and no query parameters.
+A tree requests `endpoint.url` with `GET` and no query parameters. `endpoint.method` must be `GET`.
 
 ### Response
 

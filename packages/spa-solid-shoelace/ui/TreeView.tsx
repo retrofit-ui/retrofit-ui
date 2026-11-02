@@ -29,9 +29,7 @@ export function TreeViewComponent(props: { spec: TreeSpec }) {
   const send = useHttp();
   const { dispatch } = useActions();
   const [flatNodes, { refetch }] = createResource(async () => {
-    const res = await send(props.spec.endpoint.url, {
-      method: props.spec.endpoint.method,
-    });
+    const res = await send(props.spec.endpoint.url);
     if (!res.ok) throw new Error('Failed to fetch tree data');
     return (await res.json()) as Record<string, unknown>[];
   });

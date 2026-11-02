@@ -14,6 +14,7 @@ export type {
   MarkdownViewSpec,
   NavItem,
   PageSpec,
+  ReadEndpoint,
   RetrofitConfig,
   RouteSpec,
   RowAction,

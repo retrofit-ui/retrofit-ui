@@ -6,6 +6,11 @@ import type { Cell, Column } from './table';
 /** A `{ method, url }` pair. Every endpoint directive is also an http action. */
 export type EndpointDirective = HttpAction;
 
+/** A read: always GET. The table `list` and the tree `endpoint` fetch with it. */
+export interface ReadEndpoint extends HttpAction {
+  method: 'GET';
+}
+
 /**
  * The writes one row supports, each a finished http action, e.g.
  * `{ method: 'PUT', url: '/contacts/7' }`. What each built-in view sends:
@@ -75,7 +80,7 @@ export interface TableSpec extends SpecNode<'table'> {
      * url search params are not sent). Empty values are omitted. `page`,
      * `pageSize`, `sort` and `order` are reserved: a filter must not use them.
      */
-    list?: EndpointDirective;
+    list?: ReadEndpoint;
     /** With editable columns, adds an inline "new row". */
     create?: EndpointDirective;
   };
@@ -135,7 +140,7 @@ export interface MarkdownViewSpec extends SpecNode<'markdown'> {
 
 /** Drives the tree view. `endpoint` returns `ListRow[]`; a node may carry raw `_actions` (only `delete` is used). */
 export interface TreeSpec extends SpecNode<'tree'> {
-  endpoint: EndpointDirective;
+  endpoint: ReadEndpoint;
   idField: string;
   parentField: string;
   labelField: string;

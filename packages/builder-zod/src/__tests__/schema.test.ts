@@ -54,6 +54,21 @@ describe('the generated JSON Schema', () => {
     expectValid(validateSpec, page);
   });
 
+  it('rejects a table whose list is not GET', () => {
+    const bad = {
+      kind: 'table',
+      columns: [],
+      endpoints: { list: { method: 'POST', url: '/c' } },
+    };
+    expect(validateSpec?.(bad)).toBe(false);
+    expect(
+      validateSpec?.({
+        ...bad,
+        endpoints: { list: { method: 'GET', url: '/c' } },
+      }),
+    ).toBe(true);
+  });
+
   it('accepts a tree and a calendar', () => {
     const tree = new TreeView()
       .endpoint({ method: 'GET', url: '/nodes' })

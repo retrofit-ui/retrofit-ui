@@ -3,6 +3,7 @@ import type {
   EndpointDirective,
   Field,
   FormSpec,
+  ReadEndpoint,
   TableSpec,
 } from '@retrofit-ui/core';
 import type { ZodObject, ZodRawShape } from 'zod';
@@ -79,7 +80,7 @@ export class WorkflowBundleBuilder<S extends ZodRawShape> {
   private _formCustomizer = new FormCustomizer();
   private _route?: string;
   private _endpoints: {
-    list?: EndpointDirective;
+    list?: ReadEndpoint;
     create?: EndpointDirective;
     update?: EndpointDirective;
     delete?: EndpointDirective;
@@ -118,7 +119,7 @@ export class WorkflowBundleBuilder<S extends ZodRawShape> {
     return this;
   }
 
-  list(directive: EndpointDirective): this {
+  list(directive: ReadEndpoint): this {
     this._endpoints = { ...this._endpoints, list: directive };
     return this;
   }

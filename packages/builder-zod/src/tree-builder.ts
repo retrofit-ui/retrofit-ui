@@ -1,13 +1,13 @@
 import type {
   Action,
-  EndpointDirective,
+  ReadEndpoint,
   ToolbarButton,
   TreeSpec,
 } from '@retrofit-ui/core';
 
 /** Nodes carry their own writes: the endpoint's handler adds them with `withRowActions()`. */
 export class TreeViewBuilder {
-  private _endpoint?: EndpointDirective;
+  private _endpoint?: ReadEndpoint;
   private _idField = 'id';
   private _parentField = 'parentId';
   private _labelField = 'name';
@@ -16,7 +16,7 @@ export class TreeViewBuilder {
   private _linkField?: string;
   private _toolbar: ToolbarButton[] = [];
 
-  endpoint(directive: EndpointDirective): this {
+  endpoint(directive: ReadEndpoint): this {
     this._endpoint = directive;
     return this;
   }

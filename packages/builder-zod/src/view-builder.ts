@@ -4,6 +4,7 @@ import type {
   Column,
   EndpointDirective,
   FieldOption,
+  ReadEndpoint,
   RowAction,
   TableSpec,
   ToolbarButton,
@@ -146,7 +147,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
     return this;
   }
 
-  list(directive: EndpointDirective): this {
+  list(directive: ReadEndpoint): this {
     this._endpoints = { ...this._endpoints, list: directive };
     return this;
   }

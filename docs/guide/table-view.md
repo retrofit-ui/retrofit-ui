@@ -56,7 +56,7 @@ The table view is driven by a `TableSpec` (`kind: 'table'`). It shows rows, and 
 | `columns` | `Column[]` | yes | One entry per column, in display order. |
 | `rows` | `InlineRow[]` | no | Rows embedded in the spec. When set, the client does not call `endpoints.list`. |
 | `endpoints` | `{ list?, create? }` | yes | Required in the TypeScript type: send `{}` when there are none. The renderer also accepts a spec with no `endpoints`. |
-| `endpoints.list` | `{ method, url }` | no | Fetches rows as a raw array of objects (`ListRow[]`). The table always sends `GET`; it ignores `method`. |
+| `endpoints.list` | `{ method: 'GET', url }` | no | Fetches rows as a raw array of objects (`ListRow[]`). `method` must be `GET`: the schema rejects any other value. |
 | `endpoints.create` | `{ method, url }` | no | With at least one editable column, adds an inline "new row" form. |
 | `rowLinkField` | `string` | no | Field in each row holding that row's finished link, for example `#/posts/7`. Clicking the row opens it. The field does not need to be a column. |
 | `rowActions` | `{ label, linkField }[]` | no | One link button per entry in each row. A row with no link in `linkField` shows no button. |

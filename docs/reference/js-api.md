@@ -93,6 +93,7 @@ declare module '@retrofit-ui/core' {
 | `ActionDescriptor<T>` | `{ type: T }` — the base of an action. |
 | `HttpAction` | `{ type?: 'http'; method: 'GET' \| 'POST' \| 'PUT' \| 'PATCH' \| 'DELETE'; url: string }`. |
 | `EndpointDirective` | Alias of `HttpAction`: every `{ method, url }` endpoint is an http action. |
+| `ReadEndpoint` | An `HttpAction` whose `method` is `GET`. Type of the table `endpoints.list`, the tree `endpoint`, and the builder `.list()` and `.endpoint()` arguments. |
 | `NavigateAction` | `{ type: 'navigate'; to: string }`. A `#`-prefixed `to` sets the hash. |
 | `RefreshAction` | `{ type: 'refresh' }`. Asks the owner of the current spec to fetch it again. |
 | `ActionEntry<A, Input, Result>` | One registered action type: its descriptor, dispatch input and result. |
@@ -127,7 +128,7 @@ Loading and validating it, in Node and in Python: [The spec contract](/guide/con
 
 Builders that run on your server and return plain spec objects. Send the result of `build()` as JSON.
 
-The package re-exports these types from `@retrofit-ui/core`, so a producer needs one import: `Action`, `CalendarEvent`, `CalendarSpec`, `CardSpec`, `EndpointDirective`, `FilterField`, `FilterFormSpec`, `FlexSpec`, `FormLayoutConfig`, `FormSpec`, `GridSpec`, `LayoutConfig`, `MarkdownViewSpec`, `NavItem`, `PageSpec`, `RetrofitConfig`, `RetrofitTheme`, `RouteSpec`, `RowAction`, `RowActions`, `Spec`, `Stat`, `StatSpec`, `TableSpec`, `TimelineEvent`, `TimelineSpec`, `ToolbarButton`, `TreeSpec`. Import any other type from `@retrofit-ui/core`.
+The package re-exports these types from `@retrofit-ui/core`, so a producer needs one import: `Action`, `CalendarEvent`, `CalendarSpec`, `CardSpec`, `EndpointDirective`, `FilterField`, `FilterFormSpec`, `FlexSpec`, `FormLayoutConfig`, `FormSpec`, `GridSpec`, `LayoutConfig`, `MarkdownViewSpec`, `NavItem`, `PageSpec`, `ReadEndpoint`, `RetrofitConfig`, `RetrofitTheme`, `RouteSpec`, `RowAction`, `RowActions`, `Spec`, `Stat`, `StatSpec`, `TableSpec`, `TimelineEvent`, `TimelineSpec`, `ToolbarButton`, `TreeSpec`. Import any other type from `@retrofit-ui/core`.
 
 Each builder class also has a shorter alias: `TableView` = `TableViewBuilder`, `CalendarView` = `CalendarViewBuilder`, `CardView` = `CardViewBuilder`, `StatView` = `StatViewBuilder`, `TimelineView` = `TimelineViewBuilder`, `TreeView` = `TreeViewBuilder`, `TableFormWorkflowBundle` = `WorkflowBundleBuilder`.
 
@@ -191,7 +192,7 @@ class TableViewBuilder<S extends ZodRawShape> {
   rowAction(label: string, link: RowLink): this // inline rows: a per-row link button
   toolbar(label: string, action: Action, variant?: 'primary' | 'default'): this
 
-  list(directive: EndpointDirective): this
+  list(directive: ReadEndpoint): this
   create(directive: EndpointDirective): this
   update(directive: EndpointDirective): this   // inline rows only
   delete(directive: EndpointDirective): this   // inline rows only
@@ -239,7 +240,7 @@ class WorkflowBundleBuilder<S extends ZodRawShape> {
   table(customiser: (t: TableCustomizer) => TableCustomizer): this
   form(customiser: (f: FormCustomizer) => FormCustomizer): this
   route(path: string): this  // table "New" (only when `create()` is also set) → `#<route>/new`; forms' onDone → `#<route>`
-  list(directive: EndpointDirective): this
+  list(directive: ReadEndpoint): this
   create(directive: EndpointDirective): this
   update(directive: EndpointDirective): this
   delete(directive: EndpointDirective): this
@@ -327,7 +328,7 @@ class TimelineViewBuilder {
 
 ```ts
 class TreeViewBuilder {
-  endpoint(directive: EndpointDirective): this  // required: build() throws without it
+  endpoint(directive: ReadEndpoint): this  // required: build() throws without it
   idField(field: string): this                  // default 'id'
   parentField(field: string): this              // default 'parentId'
   labelField(field: string): this               // default 'name'

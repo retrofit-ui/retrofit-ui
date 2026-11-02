@@ -24,7 +24,7 @@ The tree view (`kind: 'tree'`) shows a hierarchy. The endpoint returns a flat li
 
 | Field | Type | Required | Meaning |
 |-------|------|----------|---------|
-| `endpoint` | `{ method, url }` | yes | Returns the flat node array (`ListRow[]`). |
+| `endpoint` | `{ method: 'GET', url }` | yes | Returns the flat node array (`ListRow[]`). `method` must be `GET`: the schema rejects any other value. |
 | `idField` | `string` | yes | Field that identifies a node. |
 | `parentField` | `string` | yes | Field with the parent's id. |
 | `labelField` | `string` | yes | Field shown as the node label. |

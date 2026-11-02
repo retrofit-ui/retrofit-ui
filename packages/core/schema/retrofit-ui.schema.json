@@ -118,7 +118,7 @@
           "type": "object",
           "properties": {
             "list": {
-              "$ref": "#/definitions/EndpointDirective",
+              "$ref": "#/definitions/ReadEndpoint",
               "description": "Fetches rows as a raw `ListRow[]`. The client adds query params to `url`: `page` and `pageSize` (with `metadata.pagination`), `sort` and `order=asc|desc` (a sortable column is active), and, inside a page, each field of the page's filter-forms and `autoSubmit` forms by name (other url search params are not sent). Empty values are omitted. `page`, `pageSize`, `sort` and `order` are reserved: a filter must not use them."
             },
             "create": {
@@ -426,6 +426,28 @@
         "type"
       ],
       "description": "Asks whoever owns the current spec to fetch it again."
+    },
+    "ReadEndpoint": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "http"
+        },
+        "method": {
+          "type": "string",
+          "const": "GET"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "url"
+      ],
+      "additionalProperties": false,
+      "description": "A read: always GET. The table `list` and the tree `endpoint` fetch with it."
     },
     "EndpointDirective": {
       "$ref": "#/definitions/HttpAction",
@@ -907,7 +929,7 @@
           "const": "tree"
         },
         "endpoint": {
-          "$ref": "#/definitions/EndpointDirective"
+          "$ref": "#/definitions/ReadEndpoint"
         },
         "idField": {
           "type": "string"

@@ -661,6 +661,39 @@ describe('row writes', () => {
       b.textContent?.trim(),
     );
 
+  it('shows a cell formatted string over format and badgeVariants', async () => {
+    const { SpecRenderer: R } = createRenderer({});
+    const table: TableSpec = {
+      kind: 'table',
+      columns: [
+        { key: 'amt', label: 'Amt', type: 'number', format: 'currency' },
+        {
+          key: 'st',
+          label: 'St',
+          type: 'string',
+          badgeVariants: { open: 'success' },
+        },
+      ],
+      endpoints: {},
+      rows: [
+        {
+          amt: { value: 5, formatted: 'five bucks' },
+          st: { value: 'open', formatted: 'Is open' },
+        },
+      ],
+    };
+    const root = mount(() => <R spec={table} />);
+    await vi.waitFor(() =>
+      expect(root.querySelectorAll('tbody tr')).toHaveLength(1),
+    );
+    const tds = root.querySelectorAll('tbody td');
+    expect(tds[0]?.textContent).toContain('five bucks');
+    expect(tds[0]?.querySelector('sl-format-number')).toBeNull();
+    const badge = tds[1]?.querySelector('sl-badge');
+    expect(badge?.getAttribute('variant')).toBe('success');
+    expect(badge?.textContent).toBe('Is open');
+  });
+
   it('deletes a row through its own finished delete action', async () => {
     const spy = vi.fn(async () => new Response('{}'));
     const { SpecRenderer: R } = createRenderer({ actions: { http: spy } });

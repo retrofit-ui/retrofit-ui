@@ -202,6 +202,11 @@ export class TableViewBuilder<S extends ZodRawShape> {
         "TableViewBuilder: update()/delete() fill inline rows() only; for a list() table, add each row's _actions in the list handler with withRowActions()",
       );
     }
+    if (this._formatters.size > 0 && this._rows === undefined) {
+      throw new Error(
+        'TableViewBuilder: a format function fills inline rows() only; list() rows are raw values, so use a built-in format ("currency", "bytes", "percent", "decimal") or send the display value as the field itself',
+      );
+    }
     const rows =
       this._rows !== undefined
         ? this._rows.map((row) => {

@@ -38,6 +38,15 @@ describe('TableViewBuilder.columnOverride', () => {
   });
 });
 
+describe('TableViewBuilder format functions', () => {
+  it('throws when a format function has no inline rows', () => {
+    const b = TableViewBuilder.schema(TodoSchema)
+      .list({ method: 'GET', url: '/api/todos' })
+      .columnOverride('priority', { format: (v) => String(v) });
+    expect(() => b.build()).toThrow(/format function/);
+  });
+});
+
 describe('TableViewBuilder row writes', () => {
   it('throws when update()/delete() have no inline rows to fill', () => {
     for (const write of ['update', 'delete'] as const) {

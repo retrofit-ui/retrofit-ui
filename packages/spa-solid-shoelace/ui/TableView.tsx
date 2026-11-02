@@ -213,20 +213,25 @@ function CellInput(props: {
 
 function CellDisplay(props: { col: Column; value: unknown }) {
   const raw = () => cellValue(props.value);
+  const formatted = () => cellFormatted(props.value);
   const display = () =>
-    cellFormatted(props.value) ??
-    formatCellValue(props.col, { [props.col.key]: raw() });
+    formatted() ?? formatCellValue(props.col, { [props.col.key]: raw() });
   const strVal = () => String(raw() ?? '');
   const badgeVariant = () => props.col.badgeVariants?.[strVal()];
   const numVal = () => Number(raw() ?? 0);
 
   return (
     <Switch fallback={<span>{display()}</span>}>
+      <Match when={formatted() !== undefined && !badgeVariant()}>
+        <span>{formatted()}</span>
+      </Match>
       <Match when={props.col.type === 'boolean'}>
         <span>{raw() ? '✓' : '✗'}</span>
       </Match>
       <Match when={badgeVariant()}>
-        {(variant) => <sl-badge variant={variant()}>{strVal()}</sl-badge>}
+        {(variant) => (
+          <sl-badge variant={variant()}>{formatted() ?? strVal()}</sl-badge>
+        )}
       </Match>
       <Match when={props.col.format === 'bytes'}>
         <sl-format-bytes value={numVal()} />

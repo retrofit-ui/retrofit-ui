@@ -243,7 +243,7 @@ A row's writes are data on the row, not on the table. Each row carries its own f
 
 **Fetched rows** (a table's list response, a tree's response) carry `_actions` raw, as in the response above.
 
-**Inline table rows** (`rows` in the spec) are a cell per field, `{ "value": ..., "formatted"?: ... }`, and `_actions` is wrapped as a cell too:
+**Inline table rows** (`rows` in the spec) are a cell per field, `{ "value": ..., "formatted"?: ... }`, and `_actions` is wrapped as a cell too. When a cell has `formatted`, the client shows it instead of applying the column `format`; a `badgeVariants` column keeps its colour and uses `formatted` as the label. Fetched list rows have no `formatted`.
 
 ```json
 {

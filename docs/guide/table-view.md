@@ -84,7 +84,7 @@ There is no automatic "New" button and no `find` endpoint. Navigation is data: a
 
 The client shows other types as follows: `boolean` as a check or cross, `date` and `datetime` in the browser locale, `time` as `HH:MM`, and all others as text. `percent` expects a fraction (`0.25` shows as 25%).
 
-A producer may also pre-format a cell, for inline rows only (list rows carry raw values). An inline cell is `{ "value": 1200, "formatted": "$1,200.00" }`, and the client shows `formatted`. A column with `badgeVariants` or `format` ignores `formatted` and draws from the raw value.
+A producer may also pre-format a cell, for inline rows only (list rows carry raw values). An inline cell is `{ "value": 1200, "formatted": "$1,200.00" }`, and the client shows `formatted`, even when the column has `format`. A column with `badgeVariants` keeps the badge colour from the raw value and shows `formatted` as the label.
 
 ## Rows
 
@@ -238,7 +238,7 @@ Every derived column starts with `sortable: false`, `editable: false` and `align
 |----------------|--------|
 | `TableView.schema(schema)` | Starts a builder. |
 | `TableView.forRows(schema, rows)` | Starts a builder with inline `rows`. `.rows(rows)` does the same on an existing builder. |
-| `columnOverride(key, partial)` | Merges `Partial<Column>` into one column. `format` may also be a function `(value) => string`; it fills `formatted` for inline rows only. |
+| `columnOverride(key, partial)` | Merges `Partial<Column>` into one column. `format` may also be a function `(value) => string`; it fills `formatted` for inline rows only, and `build()` throws when the table has no inline `rows()`. |
 | `visibleColumns(keys)` | Keeps only these columns. |
 | `updateSchema(schema)` | Marks columns with keys in `schema` as `editable`. |
 | `list(d)`, `create(d)` | Set `endpoints.list` and `endpoints.create`. |

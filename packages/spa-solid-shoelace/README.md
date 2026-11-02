@@ -26,7 +26,7 @@ Peer dependencies: `@solidjs/router` (required, `>=0.15.0`) and `solid-js` (opti
 | `@retrofit-ui/spa-solid-shoelace` | `distPath`: the folder of the prebuilt hosted app. Serve it from any backend. |
 | `@retrofit-ui/spa-solid-shoelace/components` | `createShell`, `createRenderer`, `createIslands`, `defineKind`, `defineKit`, `builtinKinds`, `builtinActions`, `SpecRenderer`, `Scope`, `RenderSpec`, `configureMarked`, ... |
 | `@retrofit-ui/spa-solid-shoelace/renderer` | Prebuilt script islands: `init()`. Built-in kinds only. |
-| `@retrofit-ui/spa-solid-shoelace/renderer.css` | The stylesheet. Required by `./components` users; that build emits no CSS. |
+| `@retrofit-ui/spa-solid-shoelace/renderer.css` | The stylesheet. Required by `./components` users (that build emits no CSS). `./renderer` injects the same styles itself. |
 
 ## 1. Hosted app — serve the bundle
 

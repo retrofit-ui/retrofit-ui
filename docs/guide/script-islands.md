@@ -13,19 +13,17 @@ In this style you load one script and one stylesheet, call `init()` once, and pu
 
 ## Setup
 
-The prebuilt islands bundle is `@retrofit-ui/spa-solid-shoelace/renderer`. It contains its own Solid and Shoelace, so the host page needs nothing else. It does not load CSS: also load `@retrofit-ui/spa-solid-shoelace/renderer.css`, which has the Shoelace light theme and the retrofit-ui layout classes. Without it, the views have no styles.
+The prebuilt islands bundle is `@retrofit-ui/spa-solid-shoelace/renderer`. It contains its own Solid and Shoelace, so the host page needs nothing else. The bundle injects its own styles (the Shoelace light theme and the retrofit-ui layout classes) into `document.head` when it loads, as one `<style data-retrofit-ui>` tag. One script tag is enough. `@retrofit-ui/spa-solid-shoelace/renderer.css` holds the same styles as a file, but you do not need it here.
 
 ::: code-group
 
 ```typescript [With a bundler]
-import '@retrofit-ui/spa-solid-shoelace/renderer.css';
 import { init } from '@retrofit-ui/spa-solid-shoelace/renderer';
 
 init({ rootElement: document.body });
 ```
 
 ```html [Plain HTML]
-<link rel="stylesheet" href="/vendor/retrofit-ui/spa-solid-shoelace.css" />
 <script type="module">
   import { init } from '/vendor/retrofit-ui/retrofit-ui.js';
   init({ rootElement: document.body });
@@ -34,7 +32,7 @@ init({ rootElement: document.body });
 
 :::
 
-For plain HTML, serve the files in the package's `dist/renderer/` folder: `retrofit-ui.js` (an ES module), `retrofit-ui.iife.js` (a classic script that sets the global `RetrofitUI`) and `spa-solid-shoelace.css`. With Express, that folder is next to `distPath`:
+For plain HTML, serve the files in the package's `dist/renderer/` folder: `retrofit-ui.js` (an ES module), `retrofit-ui.iife.js` (a classic script that sets the global `RetrofitUI`). `spa-solid-shoelace.css` is also there, but optional. With Express, that folder is next to `distPath`:
 
 ```typescript
 import { join } from 'node:path';

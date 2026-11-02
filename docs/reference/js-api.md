@@ -10,7 +10,7 @@ Every public export of the three packages, by import path. The wire format these
 | [`@retrofit-ui/spa-solid-shoelace`](#spa-root) | Node entry: the path of the prebuilt hosted SPA. |
 | [`@retrofit-ui/spa-solid-shoelace/components`](#spa-components) | Browser entry for apps with their own Solid build: renderers, kits, actions, shell, islands. |
 | [`@retrofit-ui/spa-solid-shoelace/renderer`](#spa-renderer) | Browser entry, prebuilt with Solid inside: `init()` for script islands. |
-| [`@retrofit-ui/spa-solid-shoelace/renderer.css`](#spa-renderer-css) | The renderer's styles, for both browser entries. |
+| [`@retrofit-ui/spa-solid-shoelace/renderer.css`](#spa-renderer-css) | The renderer's styles as a file; needed by `./components`. |
 
 ---
 
@@ -506,7 +506,7 @@ Mounts every `[data-retrofit]` (inline spec JSON) and `[data-retrofit-src]` (a s
 
 ## `@retrofit-ui/spa-solid-shoelace/renderer` {#spa-renderer}
 
-The prebuilt island renderer, with Solid and Shoelace bundled. Its styles are a separate file: import [`renderer.css`](#spa-renderer-css) with it. It renders the built-in kinds only; for custom kinds use [`createIslands`](#islands) from `./components`.
+The prebuilt island renderer, with Solid and Shoelace bundled. It injects its own styles into `document.head` when it loads (one `<style data-retrofit-ui>` tag), so [`renderer.css`](#spa-renderer-css) is not needed with it. It renders the built-in kinds only; for custom kinds use [`createIslands`](#islands) from `./components`.
 
 ```ts
 function init(options: InitOptions): IslandController
@@ -518,7 +518,7 @@ Call it once per page, after the DOM is ready. A second call logs a warning and 
 
 ## `@retrofit-ui/spa-solid-shoelace/renderer.css` {#spa-renderer-css}
 
-The renderer's styles: the Shoelace light theme plus retrofit-ui's layout, table and form styles. It is the stylesheet of the `./renderer` build. Neither JS entry injects it, so import it once with `./renderer` or `./components`:
+The renderer's styles: the Shoelace light theme plus retrofit-ui's layout, table and form styles. The `./renderer` bundle injects these styles itself. The `./components` build does not, so import the file once with `./components`:
 
 ```ts
 import '@retrofit-ui/spa-solid-shoelace/renderer.css';

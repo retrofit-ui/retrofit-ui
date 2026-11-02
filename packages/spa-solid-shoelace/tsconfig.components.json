@@ -5,5 +5,10 @@
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": ["ui/components.tsx", "ui/mount.tsx", "ui/shoelace-types.d.ts"]
+  "include": [
+    "ui/components.tsx",
+    "ui/mount.tsx",
+    "ui/shoelace-types.d.ts",
+    "ui/css-inline.d.ts"
+  ]
 }

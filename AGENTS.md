@@ -26,7 +26,7 @@ scripts/                 publish guard, consumer type check, local publish
 | `@retrofit-ui/builder-zod` | `.` | Fluent builders (`TableView`, `formSpec`, `pageSpec`, `TreeView`, `CalendarView`, `StatView`, `TimelineView`, `CardView`, `WorkflowBundle`) plus `route`, `crudRoutes`, `withRowActions`. Zod only derives columns and fields from a schema. |
 | `@retrofit-ui/spa-solid-shoelace` | `.` (`distPath` of the hosted SPA); `./components` (`createRenderer`, `createShell`, `createIslands`, `defineKind`, `defineKit`, `builtinKinds`, `builtinActions`, `SpecRenderer`/`Scope`/`RenderSpec`, ...); `./renderer` (prebuilt islands `init()`, built-in kinds only); `./renderer.css` | The renderer. Source is in `ui/` (entries: `ui/components.tsx`, `ui/mount.tsx`, `ui/main.tsx`). |
 
-`./components` emits no CSS: its users must also import `./renderer.css`. `@solidjs/router` is a required peer of the renderer package; `solid-js` is an optional peer.
+`./renderer` injects its CSS into `document.head` on load. `./components` emits no CSS: its users must also import `./renderer.css`. `@solidjs/router` is a required peer of the renderer package; `solid-js` is an optional peer.
 
 ## Package manager
 

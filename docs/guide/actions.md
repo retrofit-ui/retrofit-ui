@@ -51,7 +51,10 @@ A handler gets three arguments: the descriptor from the spec, the input from the
 type ActionHandler<T extends ActionType> = (
   action: ActionKinds[T]['action'],
   input: InputOf<T>,
-  next: () => Promise<ResultOf<T>>,
+  next: (
+    action?: ActionKinds[T]['action'],
+    input?: InputOf<T>,
+  ) => Promise<ResultOf<T>>,
 ) => ResultOf<T> | Promise<ResultOf<T>>;
 ```
 
@@ -94,7 +97,7 @@ If no level handles a type, `dispatch` logs an error and the promise rejects wit
 
 ### Wrapping a handler with `next()`
 
-`next()` hands the same action and input to the next handler out. A handler can call it to keep the default behavior and add to it:
+`next()` hands the same action and input to the next handler out. `next(action, input)` hands it the ones you give. A handler can call it to keep the default behavior and add to it:
 
 ```ts
 const handlers: ActionHandlers = {
@@ -108,7 +111,7 @@ const handlers: ActionHandlers = {
 
 A handler that does not call `next()` replaces everything further out.
 
-`next()` takes no arguments. It always sends the original action and input. To change the request itself, do the request in your handler.
+`next(action?, input?)` takes an optional replacement action and input, typed for the action type. An argument you omit keeps the original. To change the request, pass the changed input: `next(action, { ...input, init })`.
 
 ### Example: auth headers on every request
 
@@ -119,10 +122,10 @@ import { createShell } from '@retrofit-ui/spa-solid-shoelace/components';
 
 void createShell({
   actions: {
-    http: (action, input) => {
+    http: (action, input, next) => {
       const headers = new Headers(input?.init?.headers);
       headers.set('Authorization', `Bearer ${getToken()}`);
-      return fetch(action.url, { ...input?.init, method: action.method, headers });
+      return next(action, { ...input, init: { ...input?.init, headers } });
     },
   },
 }).mount(document.getElementById('root')!);

@@ -68,7 +68,7 @@ An action in a spec is a descriptor: what should happen, not how. Three types ar
 | `navigate` | `{ "type": "navigate", "to": "#/contacts" }` | A `#` target sets the hash; anything else loads the URL |
 | `refresh` | `{ "type": "refresh" }` | A `page` reloads its tables; a hosted-app route fetches its spec again; with no owner, nothing |
 
-The renderer owns the handlers. You override one with `ActionHandlers` (or the `actions` option of `createRenderer`, `createShell`, `createIslands` and `init`); the innermost handler wins and can call `next()` to wrap the default instead of replacing it. Built-in views dispatch `refresh` after every write, and send every request through `http`, so one `http` handler covers reads and writes alike. Custom action types are added by augmenting `ActionKinds` and should be namespaced, e.g. `acme.add-to-cart`. See [Actions](/guide/actions).
+The renderer owns the handlers. You override one with `ActionHandlers` (or the `actions` option of `createRenderer`, `createShell`, `createIslands` and `init`); the innermost handler wins and can call `next()` (or `next(action, input)` to change them) to wrap the default instead of replacing it. Built-in views dispatch `refresh` after every write, and send every request through `http`, so one `http` handler covers reads and writes alike. Custom action types are added by augmenting `ActionKinds` and should be namespaced, e.g. `acme.add-to-cart`. See [Actions](/guide/actions).
 
 ## Formatting: server string or client enum
 

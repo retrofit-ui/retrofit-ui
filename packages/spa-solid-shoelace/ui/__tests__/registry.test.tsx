@@ -13,7 +13,7 @@ import { HashRouter, Route } from '@solidjs/router';
 import { createSignal, For, type JSX } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useActions, useHttp } from '../actions';
+import { createDispatch, useActions, useHttp } from '../actions';
 import { eventsForCalendar, saveEvent } from '../CalendarView';
 import { defineKind, defineKit, RenderSpec } from '../kinds';
 import { createRenderer } from '../renderer';
@@ -288,6 +288,40 @@ describe('actions', () => {
     });
     mount(() => <R spec={button('test.echo')} />);
     await vi.waitFor(() => expect(results).toEqual(['wrapped(kit:7)']));
+  });
+
+  it('lets next() replace the action and input, and keeps the originals when omitted', async () => {
+    const seen: unknown[] = [];
+    const dispatch = createDispatch(
+      {
+        http: (a, i) => {
+          seen.push([a.url, i?.init?.method]);
+          return new Response();
+        },
+      },
+      {
+        http: (a, i, next) =>
+          a.url === '/keep'
+            ? next()
+            : a.url === '/input'
+              ? next(undefined, { init: { ...i?.init, method: 'PUT' } })
+              : next({ ...a, url: '/rewritten' }),
+      },
+    );
+    await dispatch(
+      { method: 'GET', url: '/keep' },
+      { init: { method: 'GET' } },
+    );
+    await dispatch(
+      { method: 'GET', url: '/input' },
+      { init: { method: 'GET' } },
+    );
+    await dispatch({ method: 'GET', url: '/other' });
+    expect(seen).toEqual([
+      ['/keep', 'GET'],
+      ['/input', 'PUT'],
+      ['/rewritten', undefined],
+    ]);
   });
 
   it('rejects an action type nobody handles', async () => {

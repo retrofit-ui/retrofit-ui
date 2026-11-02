@@ -435,7 +435,7 @@ See [Extending](/guide/extending).
 type ActionHandler<T extends ActionType> = (
   action: ActionKinds[T]['action'],
   input: InputOf<T>,
-  next: () => Promise<ResultOf<T>>,   // the handler further out
+  next: (action?: ActionKinds[T]['action'], input?: InputOf<T>) => Promise<ResultOf<T>>,   // the handler further out; omitted args keep the originals
 ) => ResultOf<T> | Promise<ResultOf<T>>  // anything, for a void result
 type ActionHandlers = { [T in ActionType]?: ActionHandler<T> };
 type Dispatch = <A extends Action>(action: A, ...input) => Promise<ResultOf<TypeOf<A>>>;

@@ -43,12 +43,17 @@ export type Dispatch = <A extends Action>(
  * Handles one action type. `input` carries the runtime values the dispatching
  * component supplies (the clicked row, the form values); the action itself is
  * the spec's fixed descriptor. `next` hands the action to the handler further
- * out, so an override can wrap the default rather than replace it.
+ * out, so an override can wrap the default rather than replace it. Called
+ * with no arguments it passes the original action and input; pass either to
+ * replace it (e.g. `next(action, { ...input, init })` to add headers).
  */
 export type ActionHandler<T extends ActionType> = (
   action: ActionKinds[T]['action'],
   input: InputOf<T>,
-  next: () => Promise<ResultOf<T>>,
+  next: (
+    action?: ActionKinds[T]['action'],
+    input?: InputOf<T>,
+  ) => Promise<ResultOf<T>>,
 ) => HandlerReturn<ResultOf<T>>;
 
 /**
@@ -67,7 +72,7 @@ type Untyped = (action: { type?: string }, input: unknown) => Promise<unknown>;
 type UntypedHandler = (
   action: unknown,
   input: unknown,
-  next: () => Promise<unknown>,
+  next: (action?: unknown, input?: unknown) => Promise<unknown>,
 ) => unknown;
 
 export function actionType(action: { type?: string }): string {
@@ -104,7 +109,9 @@ function chain(handlers: ActionHandlers, parent: Untyped): Untyped {
     if (!handler) return parent(action, input);
     try {
       return Promise.resolve(
-        handler(action, input, () => parent(action, input)),
+        handler(action, input, (a = action, i = input) =>
+          parent(a as { type?: string }, i),
+        ),
       );
     } catch (err) {
       return Promise.reject(err);

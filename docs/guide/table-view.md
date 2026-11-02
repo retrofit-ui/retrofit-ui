@@ -84,7 +84,7 @@ There is no automatic "New" button and no `find` endpoint. Navigation is data: a
 
 The client shows other types as follows: `boolean` as a check or cross, `date` and `datetime` in the browser locale, `time` as `HH:MM`, and all others as text. `percent` expects a fraction (`0.25` shows as 25%).
 
-A producer may also pre-format a cell, for inline rows only (list rows carry raw values). An inline cell is `{ "value": 1200, "formatted": "$1,200.00" }`, and the client shows `formatted`, even when the column has `format`. A column with `badgeVariants` keeps the badge colour from the raw value and shows `formatted` as the label.
+A producer may also pre-format a cell, in inline rows and in list rows. A cell is `{ "value": 1200, "formatted": "$1,200.00" }`, and the client shows `formatted`, even when the column has `format`. A column with `badgeVariants` keeps the badge colour from the raw value and shows `formatted` as the label.
 
 ## Rows
 
@@ -92,7 +92,7 @@ Rows come from one of two places.
 
 **Inline rows** are in the spec. Each row is an object of cells, `{ "title": { "value": "Hello" } }`.
 
-**List rows** come from `endpoints.list`. The response is a raw JSON array of plain objects. The client adds `page` and `pageSize` when `metadata.pagination` is set, `sort` and `order` after the user sorts a column, and the page's filter names. The full rules, including encoding, are in the [spec contract](/guide/contract).
+**List rows** come from `endpoints.list`. The response is a raw JSON array of plain objects. A field whose value is exactly `{ "value": ..., "formatted": "..." }` (no other keys; `formatted` a string) is used as a cell and shown as `formatted`. Any other value, including an object with a `value` key and other keys, is a raw value. The client adds `page` and `pageSize` when `metadata.pagination` is set, `sort` and `order` after the user sorts a column, and the page's filter names. The full rules, including encoding, are in the [spec contract](/guide/contract).
 
 While rows load, the table shows skeleton rows. A failed request shows an error message. A table with no rows (and no editable column) shows "No data.".
 

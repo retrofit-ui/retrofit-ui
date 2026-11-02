@@ -16,8 +16,23 @@ export function listUrl(
 // rows are embedded inline or fetched via the table-view path. These helpers
 // transparently unwrap a cell while passing through already-raw values, so the
 // rendering/editing code can treat a row as a flat value map.
-function isCell(v: unknown): v is { value: unknown; formatted?: string } {
-  return typeof v === 'object' && v !== null && 'value' in v;
+// Strict: own keys only `value` and `formatted` (a string if present), so an
+// ordinary object that happens to have a `value` key is not misread as a cell.
+export function isCell(
+  v: unknown,
+): v is { value: unknown; formatted?: string } {
+  if (
+    typeof v !== 'object' ||
+    v === null ||
+    Array.isArray(v) ||
+    !('value' in v)
+  )
+    return false;
+  const o = v as Record<string, unknown>;
+  return (
+    Object.keys(o).every((k) => k === 'value' || k === 'formatted') &&
+    (o.formatted === undefined || typeof o.formatted === 'string')
+  );
 }
 
 export function cellValue(v: unknown): unknown {

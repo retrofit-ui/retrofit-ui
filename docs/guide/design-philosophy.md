@@ -75,7 +75,7 @@ The renderer owns the handlers. You override one with `ActionHandlers` (or the `
 A value can be formatted on either side.
 
 - **Client enums.** `Column.format` (`currency`, `bytes`, `percent`, `decimal`) renders through Shoelace's `<sl-format-number>` / `<sl-format-bytes>`. `Stat.format` (`number`, `currency`, `percent`, `bytes`) renders through `Intl.NumberFormat`. Both use the browser's locale.
-- **Server strings.** An inline table cell can carry `{ "value": 1234.56, "formatted": "$1,234.56" }`; the table shows `formatted` even when the column has a `format` enum (a badge column keeps its colour and shows `formatted` as its label). List rows carry raw values only. A stat whose `value` is a string is shown as-is.
+- **Server strings.** An inline table cell can carry `{ "value": 1234.56, "formatted": "$1,234.56" }`; the table shows `formatted` even when the column has a `format` enum (a badge column keeps its colour and shows `formatted` as its label). A list row field can be the same cell object; any other value is shown as a raw value. A stat whose `value` is a string is shown as-is.
 
 Use the client enum when the user's locale should decide (a German user sees `1.234,56 €`). Use a server string when the producer must decide — one fixed locale for a business report, dates in a business timezone, or a format the enums do not cover (ordinals, relative times, custom units). In builder-zod, `columnOverride(key, { format: (v) => … })` with a function fills `formatted` for inline rows; with an enum it sets `Column.format`. A function on a table without inline `rows()` throws in `build()`.
 

@@ -64,7 +64,7 @@ import {
 import { useActions, useHttp } from './actions';
 import { usePage } from './page-context';
 import { showToast } from './toast';
-import { cellFormatted, cellValue, listUrl, rawRow } from './utils';
+import { cellFormatted, cellValue, isCell, listUrl, rawRow } from './utils';
 
 /** A row's own finished writes, if it has any. */
 function writesOf(row: Record<string, unknown>): RowActions | undefined {
@@ -585,7 +585,10 @@ export function TableViewComponent(props: { spec: TableSpec }) {
       const raw = (await res.json()) as Record<string, unknown>[];
       return raw.map((row) =>
         Object.fromEntries(
-          Object.entries(row).map(([k, v]) => [k, { value: v } satisfies Cell]),
+          Object.entries(row).map(([k, v]) => [
+            k,
+            k !== '_actions' && isCell(v) ? v : ({ value: v } satisfies Cell),
+          ]),
         ),
       );
     },

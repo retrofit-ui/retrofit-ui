@@ -46,7 +46,10 @@ export interface RowAction {
 /**
  * One fetched row, as a table's `endpoints.list` or a tree's `endpoint`
  * returns it (the response is a raw `ListRow[]`). It may carry `_actions`
- * raw: its own finished writes; a row without one has no writes.
+ * raw: its own finished writes; a row without one has no writes. Any other
+ * field is a raw value. In a table's list response it may instead be a `Cell`
+ * (`{ value, formatted? }`, no other keys) the client uses as-is, so a
+ * producer can pre-format a row. Tree nodes carry raw values only.
  */
 export interface ListRow {
   _actions?: RowActions;

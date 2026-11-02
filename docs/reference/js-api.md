@@ -69,7 +69,7 @@ declare module '@retrofit-ui/core' {
 | `BadgeVariant` | `'primary' \| 'success' \| 'neutral' \| 'warning' \| 'danger'`. |
 | `Cell` | One inline table cell: `{ value, formatted? }`. |
 | `InlineRow` | One inline table row: a `Cell` per field, with `_actions` wrapped as `{ value: RowActions }`. |
-| `ListRow` | One fetched row (table `list`, tree `endpoint`): raw values, with `_actions?: RowActions` raw. |
+| `ListRow` | One fetched row (table `list`, tree `endpoint`): raw values (a table list field may also be a `Cell`, `{ value, formatted? }`; tree nodes are raw only), with `_actions?: RowActions` raw. |
 | `RowActions` | A row's own finished writes: `{ update?: HttpAction; delete?: HttpAction }`. Per-view request bodies are in [the contract](/guide/contract#row-writes). |
 | `RowAction` | A per-row link button: `{ label, linkField }`. |
 | `ToolbarButton` | A button above a view: `{ label, action: Action, variant? }`. |

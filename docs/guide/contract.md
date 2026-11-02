@@ -205,7 +205,7 @@ A tree requests `endpoint.url` with `GET` and no query parameters. `endpoint.met
 
 ### Response
 
-A raw JSON array of rows — no envelope, no cell wrappers. Each row is an object of field values. A row may also carry:
+A raw JSON array of rows — no envelope. Each row is an object of field values. In a table list response a field may be a raw value, or a cell `{ "value": 1200, "formatted": "$1,200.00" }` to send display text with the value (own keys only `value` and `formatted`, `formatted` a string; any other object is a raw value). A tree response carries raw values only. A row may also carry:
 
 - its link, in the field the spec names (`rowLinkField` on a table, `linkField` on a tree), finished: `#/contacts/7`.
 - its writes, in `_actions` (see [Row writes](#row-writes)).

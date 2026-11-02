@@ -694,6 +694,37 @@ describe('row writes', () => {
     expect(badge?.textContent).toBe('Is open');
   });
 
+  it('uses a fetched list cell as-is and still wraps a lookalike object', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify([
+            {
+              amt: { value: 1200, formatted: '$1,200.00' },
+              meta: { value: 1, other: 2 },
+            },
+          ]),
+        ),
+    );
+    const { SpecRenderer: R } = createRenderer({});
+    const table: TableSpec = {
+      kind: 'table',
+      columns: [
+        { key: 'amt', label: 'Amt', type: 'number', format: 'currency' },
+        { key: 'meta', label: 'Meta', type: 'string' },
+      ],
+      endpoints: { list: { method: 'GET', url: '/rows' } },
+    };
+    const root = mount(() => <R spec={table} />);
+    await vi.waitFor(() =>
+      expect(root.querySelectorAll('tbody tr')).toHaveLength(1),
+    );
+    const tds = root.querySelectorAll('tbody td');
+    expect(tds[0]?.textContent).toContain('$1,200.00');
+    expect(tds[0]?.querySelector('sl-format-number')).toBeNull();
+    expect(tds[1]?.textContent).toContain('[object Object]'); // wrapped, not read as a cell (a cell would show 1)
+  });
+
   it('deletes a row through its own finished delete action', async () => {
     const spy = vi.fn(async () => new Response('{}'));
     const { SpecRenderer: R } = createRenderer({ actions: { http: spy } });

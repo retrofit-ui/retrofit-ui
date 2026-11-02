@@ -43,7 +43,7 @@ describe('TableViewBuilder format functions', () => {
     const b = TableViewBuilder.schema(TodoSchema)
       .list({ method: 'GET', url: '/api/todos' })
       .columnOverride('priority', { format: (v) => String(v) });
-    expect(() => b.build()).toThrow(/format function/);
+    expect(() => b.build()).toThrow(/send `\{ value, formatted \}`/);
   });
 });
 

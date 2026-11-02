@@ -145,6 +145,13 @@ describe('the generated JSON Schema', () => {
     ).toBe(false);
   });
 
+  it('validates a fetched list row with a pre-formatted cell', () => {
+    expectValid(validateListRow, {
+      amt: { value: 1200, formatted: '$1,200.00' },
+      name: 'Ada',
+    });
+  });
+
   it('accepts a config', () => {
     expectValid(validateConfig, { title: 'Blog', routes: crudRoutes('posts') });
   });

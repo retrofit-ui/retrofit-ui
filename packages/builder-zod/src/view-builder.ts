@@ -204,7 +204,7 @@ export class TableViewBuilder<S extends ZodRawShape> {
     }
     if (this._formatters.size > 0 && this._rows === undefined) {
       throw new Error(
-        'TableViewBuilder: a format function fills inline rows() only; list() rows are raw values, so use a built-in format ("currency", "bytes", "percent", "decimal") or send the display value as the field itself',
+        'TableViewBuilder: a format function fills inline rows() only; list() rows come from your handler, so either use a built-in format ("currency", "bytes", "percent", "decimal") or send `{ value, formatted }` for the field from your list handler',
       );
     }
     const rows =

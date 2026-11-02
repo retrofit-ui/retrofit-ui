@@ -284,3 +284,30 @@ test.describe('custom kinds nest inside built-in containers', () => {
     await expect(page.locator('.retrofit-error-message')).toHaveCount(0);
   });
 });
+
+test.describe('Shoelace is the app copy', () => {
+  test("the app's setBasePath reaches icons the components render", async ({
+    page,
+  }) => {
+    const CDN =
+      'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/';
+    const iconUrls: string[] = [];
+    // Serve icon requests locally so the test needs no network.
+    await page.route('**/assets/icons/*.svg', (route) => {
+      iconUrls.push(route.request().url());
+      return route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"></svg>',
+      });
+    });
+    await page.goto('/');
+    await expect(page.locator('.retrofit-page-title')).toBeVisible();
+    await page.evaluate(async () => {
+      await customElements.whenDefined('sl-icon');
+      const icon = document.createElement('sl-icon');
+      icon.setAttribute('name', 'star');
+      document.body.append(icon);
+    });
+    await expect.poll(() => iconUrls).toContain(`${CDN}assets/icons/star.svg`);
+  });
+});

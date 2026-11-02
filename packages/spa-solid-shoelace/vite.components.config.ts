@@ -12,7 +12,12 @@ export default defineConfig({
     outDir: 'dist/components',
     emptyOutDir: true,
     rollupOptions: {
-      external: [/^solid-js/, /^@solidjs\//],
+      // Shoelace is a peer: the app's copy registers the elements and owns setBasePath.
+      external: [
+        /^solid-js/,
+        /^@solidjs\//,
+        /^@shoelace-style\/shoelace(\/|$)/,
+      ],
     },
   },
 });

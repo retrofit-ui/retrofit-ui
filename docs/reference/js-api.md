@@ -373,7 +373,7 @@ See [Hosted SPA](/guide/hosted-spa).
 
 ## `@retrofit-ui/spa-solid-shoelace/components` {#spa-components}
 
-For apps with their own Solid build. Solid is not bundled: `solid-js` and `@solidjs/router` come from your app (`@solidjs/router` is a required peer dependency; `solid-js` is an optional one, needed only by this entry). This build emits no CSS: also import [`renderer.css`](#spa-renderer-css).
+For apps with their own Solid build. Solid and Shoelace are not bundled: `solid-js`, `@solidjs/router` and `@shoelace-style/shoelace` come from your app (`@solidjs/router` is a required peer dependency; `solid-js` and `@shoelace-style/shoelace` `^2.20.0` are optional ones, needed only by this entry). Your `setBasePath()` applies to the icons these views render. `createShell` and `createIslands` keep it, unless you pass `shoelacePath`. This build emits no CSS: also import [`renderer.css`](#spa-renderer-css).
 
 ### Renderers
 
@@ -462,7 +462,7 @@ interface ShellOptions {
   kits?: Kit[];
   actions?: ActionHandlers;
   configUrl?: string;      // default '/retrofit.json'
-  shoelacePath?: string;   // default: the jsDelivr Shoelace CDN
+  shoelacePath?: string;   // replaces your setBasePath(); omitted: yours stays, else the jsDelivr CDN
 }
 interface Shell {
   mount(root: HTMLElement): Promise<() => void>;  // loads the config, applies its theme, renders
@@ -479,7 +479,7 @@ function createIslands(options: IslandsOptions): IslandController
 interface InitOptions {
   rootElement: HTMLElement;     // scope for scanning and observing
   theme?: { cssVariables?: Record<string, string>; extraCss?: string };
-  shoelacePath?: string;
+  shoelacePath?: string;        // same precedence as createShell's
   observe?: boolean;            // mount islands added later (MutationObserver)
   actions?: ActionHandlers;
 }

@@ -1,4 +1,7 @@
-import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
+import {
+  getBasePath,
+  setBasePath,
+} from '@shoelace-style/shoelace/dist/utilities/base-path.js';
 import '@shoelace-style/shoelace/dist/components/alert/alert.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import type { RetrofitConfig, RetrofitTheme } from '@retrofit-ui/core';
@@ -11,6 +14,12 @@ import { createRenderer, mergeActions } from './renderer';
 export const SHOELACE_CDN =
   'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/';
 
+/** `shoelacePath` wins; else keep a path the app already set; else the CDN. */
+export function applyShoelacePath(path?: string): void {
+  if (path) setBasePath(path);
+  else if (!getBasePath()) setBasePath(SHOELACE_CDN);
+}
+
 export interface ShellOptions {
   /** Kinds to render besides the built-in ones. */
   kits?: Kit[];
@@ -18,7 +27,10 @@ export interface ShellOptions {
   actions?: ActionHandlers;
   /** Where the config is served. Defaults to `/retrofit.json`. */
   configUrl?: string;
-  /** Override Shoelace's asset path. Defaults to the jsDelivr CDN. */
+  /**
+   * Shoelace's asset path (icons). Given, it replaces any earlier `setBasePath()`;
+   * omitted, an earlier app `setBasePath()` stays, else the jsDelivr CDN.
+   */
   shoelacePath?: string;
 }
 
@@ -72,7 +84,7 @@ export function createShell(options: ShellOptions = {}): Shell {
   );
   return {
     async mount(root) {
-      setBasePath(options.shoelacePath ?? SHOELACE_CDN);
+      applyShoelacePath(options.shoelacePath);
       const url = options.configUrl ?? '/retrofit.json';
       let config: RetrofitConfig;
       try {

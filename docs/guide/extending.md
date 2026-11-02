@@ -284,7 +284,7 @@ export function AppSpec(props: { spec: Spec }) {
 - `createIslands({ rootElement, kits })` takes the same options as `init()` from `./renderer`, plus `kits`. See [Script Islands](/guide/script-islands#islands-with-your-own-kinds).
 - `createRenderer({ kits })` returns `SpecRenderer` (one spec) and `Root` (a scope for several `<RenderSpec>`s). See [SolidJS Components](/guide/solidjs-components).
 
-All three need `solid-js` and `@solidjs/router` in your app, and the stylesheet `@retrofit-ui/spa-solid-shoelace/renderer.css`.
+All three need `solid-js`, `@solidjs/router` and `@shoelace-style/shoelace` in your app, and the stylesheet `@retrofit-ui/spa-solid-shoelace/renderer.css`.
 
 Kits apply in order. A node whose kind no kit and no built-in has draws the renderer's `fallback`: `Unsupported spec kind: "<kind>"` by default. To change it, pass `createRenderer({ fallback })`.
 

@@ -131,11 +131,11 @@ void createShell({
 | `kits` | Kits whose kinds render besides the built-in ones, and whose action handlers apply. |
 | `actions` | Action handlers that win over every kit's and the built-ins. They also apply to the `/retrofit.json` request. |
 | `configUrl` | Where the config is served. Defaults to `/retrofit.json`. |
-| `shoelacePath` | Base path for Shoelace's icons and assets. Defaults to the jsDelivr CDN. |
+| `shoelacePath` | Base path for Shoelace's icons and assets, set with `setBasePath()` on your app's `@shoelace-style/shoelace`. It replaces an earlier `setBasePath()` in your app. Omitted: an earlier `setBasePath()` stays; with none, the jsDelivr CDN. |
 
 `.mount(root)` fetches the config, applies its `theme` and `title`, and renders the app into `root`. It returns a promise of a function that removes the app. If the config does not load, or has no `routes`, `root` shows the error.
 
-Build this entry with your own bundler (for example, Vite with `vite-plugin-solid`). It needs `solid-js` and `@solidjs/router` installed. Serve its output instead of `distPath`. The server side stays the same: `/retrofit.json` with `routes`, and the spec endpoints.
+Build this entry with your own bundler (for example, Vite with `vite-plugin-solid`). It needs `solid-js`, `@solidjs/router` and `@shoelace-style/shoelace` installed. Serve its output instead of `distPath`. The server side stays the same: `/retrofit.json` with `routes`, and the spec endpoints.
 
 ## Theming
 

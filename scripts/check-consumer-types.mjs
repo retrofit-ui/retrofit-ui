@@ -102,6 +102,10 @@ function main() {
           dependencies: {
             ...tarballs,
             'solid-js': devVersion(spaDir, 'solid-js'),
+            '@shoelace-style/shoelace': devVersion(
+              spaDir,
+              '@shoelace-style/shoelace',
+            ),
           },
           devDependencies: { typescript: devVersion(spaDir, 'typescript') },
         },

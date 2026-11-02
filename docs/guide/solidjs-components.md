@@ -7,10 +7,10 @@ In this style you import a renderer from `@retrofit-ui/spa-solid-shoelace/compon
 ## Setup
 
 ```bash
-pnpm add @retrofit-ui/spa-solid-shoelace @retrofit-ui/core solid-js @solidjs/router
+pnpm add @retrofit-ui/spa-solid-shoelace @retrofit-ui/core solid-js @solidjs/router @shoelace-style/shoelace
 ```
 
-`solid-js` and `@solidjs/router` are peer dependencies (`solid-js` is marked optional, but a `./components` app needs it): the `./components` build uses your app's copies. You need `@solidjs/router` installed even if your app has no router. Shoelace is in the build, so you do not install it.
+`solid-js`, `@solidjs/router` and `@shoelace-style/shoelace` (`^2.20.0`) are peer dependencies (`solid-js` and `@shoelace-style/shoelace` are marked optional, because only `./components` uses them, but a `./components` app needs both): the `./components` build uses your app's copies. You need `@solidjs/router` installed even if your app has no router. The build imports the Shoelace elements it uses from your `@shoelace-style/shoelace`, so your app has one Shoelace copy.
 
 The `./components` build has no CSS. Import the stylesheet once in your entry:
 
@@ -21,12 +21,15 @@ import '@retrofit-ui/spa-solid-shoelace/renderer.css';
 It has the Shoelace light theme tokens and the retrofit-ui layout classes. Without it, the views have no styles.
 
 ::: warning Shoelace assets
-The Shoelace copy in the build is not the one in your `node_modules`, so `setBasePath()` from your own `@shoelace-style/shoelace` does not change it. `createShell` and `createIslands` set its path (`shoelacePath`, jsDelivr by default). With `createRenderer` or `SpecRenderer` only, set it with a `data-shoelace` attribute on a script tag in your page, or icons load from `/assets/icons/` on your own origin:
+Shoelace loads its icons from a base path. The views use your `@shoelace-style/shoelace`, so your `setBasePath()` applies to them. `createShell` and `createIslands` keep a base path your app set earlier with `setBasePath()`. Their `shoelacePath` option replaces it. With neither, they set the jsDelivr CDN. With `createRenderer` or `SpecRenderer` only, call it yourself, or icons load from `/assets/icons/` on your own origin:
 
-```html
-<script type="module" src="/src/main.tsx"
-  data-shoelace="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/"></script>
+```typescript
+import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
+
+setBasePath('https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.20.0/dist/');
 ```
+
+A `data-shoelace` attribute on a script tag in your page also sets it.
 :::
 
 ## Rendering a spec

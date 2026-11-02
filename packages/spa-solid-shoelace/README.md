@@ -17,7 +17,7 @@ It has four entries, for four ways to use it.
 npm install @retrofit-ui/spa-solid-shoelace
 ```
 
-Peer dependencies: `@solidjs/router` (required, `>=0.15.0`) and `solid-js` (optional, `>=1.9.0`; needed only for `./components`). The prebuilt bundles carry their own Solid, Shoelace and router.
+Peer dependencies: `@solidjs/router` (required, `>=0.15.0`), `solid-js` (optional, `>=1.9.0`) and `@shoelace-style/shoelace` (optional, `^2.20.0`). Install the two optional ones only for `./components`; `distPath` and `./renderer` carry their own Solid, Shoelace and router. `./components` imports Solid, the router and Shoelace from your app, so your `setBasePath()` applies to its icons. `createShell`/`createIslands` keep that path unless you pass `shoelacePath`; with neither, they use the jsDelivr CDN.
 
 ## Entries
 

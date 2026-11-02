@@ -1,4 +1,3 @@
-import { setBasePath } from '@shoelace-style/shoelace/dist/utilities/base-path.js';
 import '@shoelace-style/shoelace/dist/components/alert/alert.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import type { Spec } from '@retrofit-ui/core';
@@ -8,7 +7,7 @@ import { render } from 'solid-js/web';
 import { ActionHandlers, createDispatch } from './actions';
 import type { Kit } from './kinds';
 import { createRenderer, mergeActions } from './renderer';
-import { applyTheme, SHOELACE_CDN } from './shell';
+import { applyShoelacePath, applyTheme } from './shell';
 
 export interface InitOptions {
   /** Root element that scopes all island scanning and DOM observation. */
@@ -17,7 +16,10 @@ export interface InitOptions {
     cssVariables?: Record<string, string>;
     extraCss?: string;
   };
-  /** Override Shoelace component CDN path. Defaults to the jsDelivr CDN. */
+  /**
+   * Shoelace's asset path (icons). Given, it replaces any earlier `setBasePath()`;
+   * omitted, an earlier app `setBasePath()` stays, else the jsDelivr CDN.
+   */
   shoelacePath?: string;
   /** Watch rootElement for dynamically added islands via MutationObserver. */
   observe?: boolean;
@@ -75,7 +77,7 @@ export function createIslands(options: IslandsOptions): IslandController {
   );
   const mounted = new Map<HTMLElement, () => void>();
 
-  setBasePath(options.shoelacePath ?? SHOELACE_CDN);
+  applyShoelacePath(options.shoelacePath);
   applyTheme(options.theme);
 
   function mountView(

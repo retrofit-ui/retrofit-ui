@@ -47,7 +47,7 @@ Call `init()` once per page, after the elements are in the DOM. A second call lo
 |---------------|-------------|
 | `rootElement` | **Required.** The element to search for islands, and to watch with `observe`. |
 | `theme` | `{ cssVariables?, extraCss? }`, applied as the hosted app applies the `theme` from `/retrofit.json`. See [Theming](/guide/theming). |
-| `shoelacePath` | Base path for Shoelace's icons and assets. Defaults to the jsDelivr CDN. |
+| `shoelacePath` | Base path for Shoelace's icons and assets. Defaults to the jsDelivr CDN. With `createIslands`, an earlier `setBasePath()` in your app stays when you omit it. |
 | `observe` | `true` to also mount islands added to `rootElement` later. |
 | `actions` | Action handlers for every island, for example an `http` handler that adds auth headers. See [Actions](/guide/actions). |
 
@@ -159,7 +159,7 @@ An inline `data-retrofit` island has no source to fetch, so the built-in `refres
 
 ## Islands with your own kinds
 
-`createIslands` from `@retrofit-ui/spa-solid-shoelace/components` is the same island renderer, built against your app's Solid, so it also takes `kits`:
+`createIslands` from `@retrofit-ui/spa-solid-shoelace/components` is the same island renderer, built against your app's Solid and Shoelace, so it also takes `kits`:
 
 ```typescript
 import '@retrofit-ui/spa-solid-shoelace/renderer.css';
@@ -169,7 +169,7 @@ import { ratingKit } from './rating-kit';
 const controller = createIslands({ rootElement: document.body, kits: [ratingKit] });
 ```
 
-It takes the same options as `init()`, plus `kits`, and returns an `IslandController`. Each call is independent: it has its own islands and its own observer, and there is no once-per-page check. Your bundle needs `solid-js` and `@solidjs/router`. See [Negotiating a new kind](/guide/extending).
+It takes the same options as `init()`, plus `kits`, and returns an `IslandController`. Each call is independent: it has its own islands and its own observer, and there is no once-per-page check. Your bundle needs `solid-js`, `@solidjs/router` and `@shoelace-style/shoelace`. `createShell` and `createIslands` keep a base path your app set earlier with `setBasePath()`. Their `shoelacePath` option replaces it. With neither, they set the jsDelivr CDN. See [Negotiating a new kind](/guide/extending).
 
 ## When to choose this style
 

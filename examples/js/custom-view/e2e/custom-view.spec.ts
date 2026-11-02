@@ -130,13 +130,13 @@ test.describe('Renderer composition', () => {
     await expect(page.getByText('Product ratings')).toHaveCount(0);
   });
 
-  test('server returns kind: "rating" for the custom endpoint', async ({
+  test('server returns kind: "demo.rating" for the custom endpoint', async ({
     request,
   }) => {
     const res = await request.get('/api/product-ratings');
     expect(res.ok()).toBe(true);
     const body = await res.json();
-    expect(body.kind).toBe('rating');
+    expect(body.kind).toBe('demo.rating');
     expect(Array.isArray(body.items)).toBe(true);
     expect(body.items).toHaveLength(4);
   });

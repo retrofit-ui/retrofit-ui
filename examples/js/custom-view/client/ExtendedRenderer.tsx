@@ -11,13 +11,13 @@ import { RatingView } from './RatingView';
  * renderer's registry, so built-in containers render them as children too.
  */
 export const ratingKit = defineKit({
-  name: 'rating',
-  kinds: [defineKind({ kind: 'rating', component: RatingView })],
+  name: 'demo.rating',
+  kinds: [defineKind({ kind: 'demo.rating', component: RatingView })],
 });
 
 const renderer = createRenderer({ kits: [ratingKit] });
 
-/** Renders any built-in kind plus `rating`. */
+/** Renders any built-in kind plus `demo.rating`. */
 export function ExtendedRenderer(props: { spec: AppSpec }) {
   return <renderer.SpecRenderer spec={props.spec} />;
 }

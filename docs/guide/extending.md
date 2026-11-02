@@ -334,4 +334,4 @@ The requests that built-in views make are not in this list: they all go through 
 
 ## The example
 
-`examples/js/custom-view` has the full set: a `rating` kind registered in `src/spec.ts`, a kit in `client/ExtendedRenderer.tsx`, a rating inside a built-in `card` and `page`, and a theme in `/retrofit.json` that colors the built-in views and the custom view together. The example uses the bare kind name `rating`; for your own kinds, use a namespace. It has its own client shell instead of `createShell`, so it reads `/retrofit.json` only for the theme.
+`examples/js/custom-view` has the full set: a `demo.rating` kind registered in `src/spec.ts`, a kit in `client/ExtendedRenderer.tsx`, a rating inside a built-in `card` and `page`, and a theme in `/retrofit.json` that colors the built-in views and the custom view together. The example uses the namespace `demo`; use your own namespace for your kinds. It has its own client shell instead of `createShell`, so it reads `/retrofit.json` only for the theme.

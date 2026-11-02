@@ -55,11 +55,11 @@ app.get('/api/hello-stat', (_req, res) => {
   res.json(spec);
 });
 
-// A custom spec (kind: 'rating'). The stock SpecRenderer would emit
-// "Unsupported spec kind"; the client's renderer has the rating kit.
+// A custom spec (kind: 'demo.rating'). The stock SpecRenderer would emit
+// "Unsupported spec kind"; the client's renderer has the demo.rating kit.
 app.get('/api/product-ratings', (_req, res) => {
   const spec: RatingSpec = {
-    kind: 'rating',
+    kind: 'demo.rating',
     metadata: { title: 'Product ratings' },
     items: [
       { label: 'Aeropress', score: 4.5, note: 'Reliable, easy to clean.' },
@@ -100,7 +100,7 @@ app.get('/api/hello-tabs', (_req, res) => {
 });
 
 // The custom kind nested inside built-in containers: a card in a page. Its
-// children are `Spec[]`, which includes `rating` once it is registered.
+// children are `Spec[]`, which includes `demo.rating` once it is registered.
 app.get('/api/rated-card', (_req, res) => {
   const spec: AppSpec = {
     kind: 'page',
@@ -111,7 +111,7 @@ app.get('/api/rated-card', (_req, res) => {
         header: 'Brewers',
         children: [
           { kind: 'text', content: 'Scored by the team.' },
-          { kind: 'rating', items: [{ label: 'Aeropress', score: 4.5 }] },
+          { kind: 'demo.rating', items: [{ label: 'Aeropress', score: 4.5 }] },
         ],
       },
     ],

@@ -3,7 +3,7 @@ import type { RatingItem, RatingSpec } from '../src/spec';
 import './rating-view.css';
 
 /**
- * Custom view for `kind: 'rating'`. Two theming contracts hold here:
+ * Custom view for `kind: 'demo.rating'`. Two theming contracts hold here:
  *   1. Reuse retrofit-ui's shared layout classes (`retrofit-view`,
  *      `retrofit-page-title`) so the outer padding/typography matches the
  *      built-in views.

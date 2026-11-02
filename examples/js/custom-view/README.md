@@ -8,7 +8,7 @@ The example ships two endpoints:
 | Endpoint                | Kind         | Rendered by                      |
 | ----------------------- | ------------ | -------------------------------- |
 | `/api/hello-stat`       | `stat`       | built-in `SpecRenderer`          |
-| `/api/product-ratings`  | `rating` ⭐  | our `RatingView` (userland code) |
+| `/api/product-ratings`  | `demo.rating` ⭐  | our `RatingView` (userland code) |
 
 ## Files
 
@@ -19,7 +19,7 @@ The example ships two endpoints:
 - `client/RatingView.tsx` + `client/rating-view.css` — custom view. Styles
   read Shoelace tokens (`--sl-color-primary-*`, `--sl-spacing-*`), so the
   same theme drives both built-in and custom surfaces.
-- `client/ExtendedRenderer.tsx` — a `defineKit` kit that holds the `rating`
+- `client/ExtendedRenderer.tsx` — a `defineKit` kit that holds the `demo.rating`
   kind, passed to `createRenderer({ kits })`. The built-in kinds stay in the
   same registry.
 - `client/main.tsx` — imports `@retrofit-ui/spa-solid-shoelace/renderer.css`

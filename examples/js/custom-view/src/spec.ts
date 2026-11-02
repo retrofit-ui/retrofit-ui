@@ -11,7 +11,7 @@ export interface RatingItem {
   note?: string;
 }
 
-export interface RatingSpec extends SpecNode<'rating'> {
+export interface RatingSpec extends SpecNode<'demo.rating'> {
   items: RatingItem[];
   metadata?: { title?: string };
 }
@@ -21,9 +21,9 @@ export interface RatingSpec extends SpecNode<'rating'> {
 // Server and client both import this file, so both see the registration.
 declare module '@retrofit-ui/core' {
   interface SpecKinds {
-    rating: RatingSpec;
+    'demo.rating': RatingSpec;
   }
 }
 
-/** Any spec this app serves: the built-in kinds plus `rating`. */
+/** Any spec this app serves: the built-in kinds plus `demo.rating`. */
 export type AppSpec = Spec;

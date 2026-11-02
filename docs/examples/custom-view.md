@@ -2,7 +2,7 @@
 
 **Pattern: a custom spec kind, rendered by a kit next to the built-in kinds**
 
-The server sends a `rating` spec that core does not know. The client registers a SolidJS component for it and renders it, and every built-in kind, with `createRenderer({ kits })`.
+The server sends a `demo.rating` spec that core does not know. The client registers a SolidJS component for it and renders it, and every built-in kind, with `createRenderer({ kits })`.
 
 Run it locally (Vite on `:5173`, proxying `/api` and `/retrofit.json` to Express on `:3000`):
 
@@ -30,22 +30,22 @@ From `src/server.ts`:
 | `/api/hello-text` | `text` |
 | `/api/hello-tabs` | `tabs` |
 | `/api/hello-details` | `details` |
-| `/api/product-ratings` | `rating` (custom) |
-| `/api/rated-card` | `page` > `card` > `rating` |
+| `/api/product-ratings` | `demo.rating` (custom) |
+| `/api/rated-card` | `page` > `card` > `demo.rating` |
 
 ## Declare the kind
 
 From `src/spec.ts`. Server and client both import this file.
 
 ```typescript
-export interface RatingSpec extends SpecNode<'rating'> {
+export interface RatingSpec extends SpecNode<'demo.rating'> {
   items: RatingItem[];
   metadata?: { title?: string };
 }
 
 declare module '@retrofit-ui/core' {
   interface SpecKinds {
-    rating: RatingSpec;
+    'demo.rating': RatingSpec;
   }
 }
 ```
@@ -56,8 +56,8 @@ From `client/ExtendedRenderer.tsx`:
 
 ```tsx
 export const ratingKit = defineKit({
-  name: 'rating',
-  kinds: [defineKind({ kind: 'rating', component: RatingView })],
+  name: 'demo.rating',
+  kinds: [defineKind({ kind: 'demo.rating', component: RatingView })],
 });
 
 const renderer = createRenderer({ kits: [ratingKit] });

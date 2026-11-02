@@ -57,7 +57,7 @@ The classes below exist in the renderer (`ui/*.tsx` and `ui/layout.css`). Target
 | `.retrofit-view` | Wrapper of every view and of a page (padding, font, color) |
 | `.retrofit-page-title` | `<h1>` heading of a view |
 | `.retrofit-page-header` | Flex row with the title and the toolbar (table, tree, calendar) |
-| `.retrofit-toolbar` | Container of toolbar buttons (no rule in `layout.css`; a hook only) |
+| `.retrofit-toolbar` | Container of toolbar buttons (flex row, wraps, small gap) |
 | `.retrofit-back-btn` | The "Back" button of a form, markdown or timeline view |
 | `.retrofit-error-message` | Load and submit error text |
 | `.retrofit-empty` | "No data." and "No events." text |
@@ -82,7 +82,7 @@ The classes below exist in the renderer (`ui/*.tsx` and `ui/layout.css`). Target
 |-------|---------|
 | `.retrofit-form-actions` | Row with the submit and delete buttons |
 | `.retrofit-form-title` | Form heading inside a page |
-| `.retrofit-filter-form` | Container of a `filter-form` (no rule in `layout.css`; a hook only) |
+| `.retrofit-filter-form` | Container of a `filter-form` (flex row, wraps, medium gap) |
 | `.retrofit-tags-input`, `.retrofit-tags-label`, `.retrofit-tags-field`, `.retrofit-tags-help` | The `tags` field |
 
 **Other views**
@@ -104,7 +104,6 @@ The classes below exist in the renderer (`ui/*.tsx` and `ui/layout.css`). Target
 
 - `flex`, `grid` and `tabs` containers have no `retrofit-*` class. They are plain elements with inline styles. A `page` has only `.retrofit-view`. There are no `.retrofit-flex` or `.retrofit-grid` classes. To style inside a container, use another hook such as `.retrofit-card-body`, or a Shoelace selector.
 - `.retrofit-timeline-event--primary` does not exist. A `primary` event keeps the default dot color.
-- `.retrofit-muted` has a rule in `layout.css`, but no built-in view uses it.
 
 `extraCss` is injected as raw CSS. Send it only from trusted producers.
 

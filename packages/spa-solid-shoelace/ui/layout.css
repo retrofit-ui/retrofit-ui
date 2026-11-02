@@ -159,9 +159,18 @@
   margin: var(--sl-spacing-small) 0 0;
 }
 
-.retrofit-muted {
-  color: var(--sl-color-neutral-500);
-  font-size: var(--sl-font-size-small);
+.retrofit-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sl-spacing-small);
+}
+
+.retrofit-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sl-spacing-medium);
 }
 
 /* Table — Shoelace has no table component so we style it with its tokens */

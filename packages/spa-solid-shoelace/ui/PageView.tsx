@@ -52,15 +52,7 @@ export function FilterFormPane(props: { spec: FilterFormSpec }) {
     page?.setFilter(name, value);
 
   return (
-    <div
-      class="retrofit-filter-form"
-      style={{
-        display: 'flex',
-        gap: 'var(--sl-spacing-medium)',
-        'flex-wrap': 'wrap',
-        'align-items': 'flex-end',
-      }}
-    >
+    <div class="retrofit-filter-form">
       <For each={props.spec.fields}>
         {(field) => (
           <div>

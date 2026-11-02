@@ -3,8 +3,9 @@ import '@shoelace-style/shoelace/dist/components/alert/alert.js';
 import '@shoelace-style/shoelace/dist/components/icon/icon.js';
 import type { Spec } from '@retrofit-ui/core';
 import { HashRouter, Route } from '@solidjs/router';
+import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
-import { type ActionHandlers, createDispatch } from './actions';
+import { ActionHandlers, createDispatch } from './actions';
 import type { Kit } from './kinds';
 import { createRenderer, mergeActions } from './renderer';
 import { applyTheme, SHOELACE_CDN } from './shell';
@@ -45,6 +46,12 @@ export interface IslandController {
 const ISLAND_SELECTOR =
   '[data-retrofit-src], [data-retrofit]:not([data-retrofit-src])';
 
+class PatchError extends Error {
+  constructor() {
+    super('Invalid JSON in data-retrofit patch');
+  }
+}
+
 function renderError(element: HTMLElement, message: string): void {
   const p = document.createElement('p');
   p.className = 'retrofit-error-message';
@@ -71,14 +78,22 @@ export function createIslands(options: IslandsOptions): IslandController {
   setBasePath(options.shoelacePath ?? SHOELACE_CDN);
   applyTheme(options.theme);
 
-  function mountIsland(spec: Spec, element: HTMLElement): () => void {
+  function mountView(
+    getSpec: () => Spec,
+    element: HTMLElement,
+    handlers?: ActionHandlers,
+  ): () => void {
     mounted.get(element)?.();
     const dispose = render(
       () => (
         <HashRouter>
           <Route
             path="/*all"
-            component={() => <renderer.SpecRenderer spec={spec} />}
+            component={() => (
+              <ActionHandlers handlers={handlers ?? {}}>
+                <renderer.SpecRenderer spec={getSpec()} />
+              </ActionHandlers>
+            )}
           />
         </HashRouter>
       ),
@@ -88,28 +103,51 @@ export function createIslands(options: IslandsOptions): IslandController {
     return dispose;
   }
 
+  const mountIsland = (spec: Spec, element: HTMLElement) =>
+    mountView(() => spec, element);
+
+  /** Fetches the island's spec and shallow-patches it with `data-retrofit`. */
+  async function loadSpec(element: HTMLElement, src: string): Promise<Spec> {
+    const res = await dispatch({ type: 'http', method: 'GET', url: src });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const spec = (await res.json()) as Spec;
+    const inlineRaw = element.getAttribute('data-retrofit');
+    if (!inlineRaw) return spec;
+    let patch: Partial<Spec>;
+    try {
+      patch = JSON.parse(inlineRaw) as Partial<Spec>;
+    } catch {
+      throw new PatchError();
+    }
+    return { ...spec, ...patch } as Spec;
+  }
+
   async function processWithSrc(element: HTMLElement): Promise<void> {
     const src = element.getAttribute('data-retrofit-src');
     if (!src) return;
     try {
-      const res = await dispatch({ type: 'http', method: 'GET', url: src });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      let spec = (await res.json()) as Spec;
-
-      const inlineRaw = element.getAttribute('data-retrofit');
-      if (inlineRaw) {
-        try {
-          const patch = JSON.parse(inlineRaw) as Partial<Spec>;
-          spec = { ...spec, ...patch } as Spec;
-        } catch {
-          renderError(element, `Invalid JSON in data-retrofit patch`);
-          return;
-        }
-      }
-
-      mountIsland(spec, element);
+      let latest = 0;
+      const [spec, setSpec] = createSignal(await loadSpec(element, src));
+      mountView(spec, element, {
+        // The island owns its spec: refetch it, then let outer handlers run.
+        // A failed refetch keeps the old spec and logs the error.
+        refresh: (_a, _i, next) => {
+          const mine = ++latest;
+          loadSpec(element, src).then(
+            // Ignore a response that a newer refresh has superseded.
+            (s) => mine === latest && setSpec(s),
+            (err) => console.error(`Failed to refresh spec from ${src}:`, err),
+          );
+          return next();
+        },
+      });
     } catch (err) {
-      renderError(element, `Failed to load spec from ${src}: ${String(err)}`);
+      renderError(
+        element,
+        err instanceof PatchError
+          ? err.message
+          : `Failed to load spec from ${src}: ${String(err)}`,
+      );
     }
   }
 

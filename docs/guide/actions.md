@@ -91,7 +91,7 @@ Handlers form a chain. For one action type, the innermost handler runs first. A 
 2. each kit's `actions`, in the order of `kits` (a later kit is further in)
 3. the `actions` option of `createRenderer`, `createShell`, `createIslands` or `init`
 4. the `actions` prop of `Root`, `SpecRenderer` or `Scope`
-5. handlers that built-in views add for their own subtree (a `page`, and each screen of the hosted app, handle `refresh`)
+5. handlers that built-in views add for their own subtree (a `page`, each screen of the hosted app, and each `data-retrofit-src` island handle `refresh`)
 
 If no level handles a type, `dispatch` logs an error and the promise rejects with `No handler for action "<type>"`.
 
@@ -159,7 +159,8 @@ function ItemsScreen(props: { spec: Spec }) {
 |-------|---------------------|
 | A screen of the hosted app | Fetches the route's spec again, then calls `next()`. |
 | A `page` | Loads the page's tables again (their list endpoints get the current filters), then calls `next()`. |
-| Nothing (an island, or a spec that your app renders) | The built-in handler does nothing. |
+| An island with `data-retrofit-src` | Fetches the `src` URL again, applies the `data-retrofit` patch again, then calls `next()`. A failed fetch keeps the old spec and logs the error. |
+| Nothing (an inline island, or a spec that your app renders) | The built-in handler does nothing. |
 
 When your app fetches a spec itself, handle `refresh` where you render it:
 

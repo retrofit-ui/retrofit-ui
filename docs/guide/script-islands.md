@@ -155,7 +155,9 @@ init({
 });
 ```
 
-Nothing owns an island's spec, so the built-in `refresh` handler does nothing. A list-backed table or a tree loads its own rows again after a write. An inline-row table does not: a deleted inline row stays visible. To fetch an island's spec again, unmount it and mount it again. See [Actions](/guide/actions#refresh).
+An island mounted from `data-retrofit-src` owns its spec. When `refresh` runs inside it, the island fetches the `src` URL again (through the `http` action), applies the `data-retrofit` patch again, shows the new spec, and then calls `next()`. If the fetch fails, the island keeps the old spec and logs the error to the console.
+
+An inline `data-retrofit` island has no source to fetch, so the built-in `refresh` handler does nothing there. A list-backed table or a tree loads its own rows again after a write. An inline-row table does not: a deleted inline row stays visible. To change an inline island, unmount it and mount it again. See [Actions](/guide/actions#refresh).
 
 ## Islands with your own kinds
 

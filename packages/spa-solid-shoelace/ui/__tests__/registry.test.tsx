@@ -741,6 +741,50 @@ describe('row writes', () => {
       ),
     );
   });
+
+  it("sends a producer's own _id and _rev, but not _link, _action0 or _actions", async () => {
+    const spy = vi.fn(async () => new Response('{}'));
+    const { SpecRenderer: R } = createRenderer({ actions: { http: spy } });
+    const table: TableSpec = {
+      kind: 'table',
+      columns: [{ key: 'name', label: 'Name', type: 'string', editable: true }],
+      endpoints: {},
+      rowLinkField: '_link',
+      rowActions: [{ label: 'Open', linkField: '_action0' }],
+      rows: [
+        {
+          name: { value: 'Bo' },
+          _id: { value: 7 },
+          _rev: { value: 'r1' },
+          _link: { value: '#/c/7' },
+          _action0: { value: '#/c/7/open' },
+          _actions: { value: { update: { method: 'PUT', url: '/c/7' } } },
+        },
+      ],
+    };
+    const root = mount(() => <R spec={table} />);
+    const click = (label: string) =>
+      (
+        [...root.querySelectorAll('tbody tr sl-button')].find(
+          (b) => b.textContent?.trim() === label,
+        ) as HTMLElement
+      ).click();
+    await vi.waitFor(() => expect(buttons(root)).toContain('Edit'));
+    click('Edit');
+    await vi.waitFor(() => expect(buttons(root)).toContain('Save'));
+    click('Save');
+    await vi.waitFor(() =>
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({ method: 'PUT', url: '/c/7' }),
+        {
+          init: expect.objectContaining({
+            body: '{"name":"Bo","_id":7,"_rev":"r1"}',
+          }),
+        },
+        expect.any(Function),
+      ),
+    );
+  });
 });
 
 describe('table columns', () => {

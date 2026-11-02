@@ -160,7 +160,7 @@ What the client shows and sends:
 
 | Part | When it shows | Request |
 |------|---------------|---------|
-| **Edit** button, then **Save** and **Cancel** | The row has `_actions.update` and at least one column is `editable`. | `update` with a JSON body of the row's raw values. The body leaves out `_actions`, the `rowLinkField` field and each `rowActions` link field. Unless a column key starts with `_`, it also leaves out any other `_`-prefixed field. Column keys always stay. |
+| **Edit** button, then **Save** and **Cancel** | The row has `_actions.update` and at least one column is `editable`. | `update` with a JSON body of the row's raw values. The body leaves out exactly `_actions`, the `rowLinkField` field and each `rowActions` link field. Every other field is sent, including your own `_id` or `_rev`. |
 | **Delete** button | The row has `_actions.delete`. A dialog asks to confirm. | `delete` with no body. |
 | Inline "new row" | A column is `editable` and `endpoints.create` is set. | `create` with a JSON body of one value per column key. A new row starts with `false` for boolean columns, `0` for number columns and `''` for others. |
 

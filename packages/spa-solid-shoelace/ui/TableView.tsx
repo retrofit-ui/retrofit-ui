@@ -72,27 +72,21 @@ function writesOf(row: Record<string, unknown>): RowActions | undefined {
 }
 
 /**
- * The row's record for a save: its raw values minus spec data (`_actions`,
- * the row and row-action link fields, and, when no column key starts with
- * `_`, every `_` field the builder adds). Column keys are always kept.
+ * The row's record for a save: its raw values minus spec data, exactly
+ * `_actions`, the `rowLinkField` field and each `rowActions[].linkField`.
+ * Every other field, including a producer's own `_id` or `_rev`, is sent.
  */
 function recordOf(
   values: Record<string, unknown>,
   spec: TableSpec,
 ): Record<string, unknown> {
-  const columns = new Set(spec.columns.map((c) => c.key));
-  const underscoreColumns = spec.columns.some((c) => c.key.startsWith('_'));
   const specFields = new Set([
     '_actions',
     ...(spec.rowLinkField ? [spec.rowLinkField] : []),
     ...(spec.rowActions ?? []).map((a) => a.linkField),
   ]);
   return Object.fromEntries(
-    Object.entries(values).filter(
-      ([k]) =>
-        columns.has(k) ||
-        !(specFields.has(k) || (!underscoreColumns && k.startsWith('_'))),
-    ),
+    Object.entries(values).filter(([k]) => !specFields.has(k)),
   );
 }
 

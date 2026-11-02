@@ -15,7 +15,9 @@ export interface ReadEndpoint extends HttpAction {
  * The writes one row supports, each a finished http action, e.g.
  * `{ method: 'PUT', url: '/contacts/7' }`. What each built-in view sends:
  * - table: `update` when a column is editable, body the row's raw values
- *   minus `_actions` and link fields; `delete` with no body.
+ *   minus exactly `_actions`, the spec's `rowLinkField` and each
+ *   `rowActions[].linkField`; any other field (e.g. `_id`, `_rev`) is sent.
+ *   `delete` with no body.
  * - tree: `delete` only, with no body.
  * - calendar (`CalendarEvent.actions`): `update` only, body `{ start, end }`
  *   (`end` omitted when the event has none).

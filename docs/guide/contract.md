@@ -294,7 +294,7 @@ Bodies are JSON, with `Content-Type: application/json`.
 
 | View | Write | Trigger | Body |
 | --- | --- | --- | --- |
-| table | `_actions.update` | the user saves an inline edit (needs an `editable` column) | the row's raw values, keyed by field, without `_actions`, the link fields (`rowLinkField`, each `rowActions[].linkField`), and — unless a column key starts with `_` — any other `_`-prefixed field. Column keys are always sent. |
+| table | `_actions.update` | the user saves an inline edit (needs an `editable` column) | the row's raw values, keyed by field, without exactly `_actions`, `rowLinkField` and each `rowActions[].linkField`. Every other field (for example `_id`, `_rev`) is sent. |
 | table | `_actions.delete` | the user confirms delete | none |
 | table | `endpoints.create` | the user adds an inline "new row" (needs an `editable` column) | the new row's values, keyed by column `key` |
 | tree | `_actions.delete` | the user deletes the selected nodes (one request per node; a node without it is skipped) | none |

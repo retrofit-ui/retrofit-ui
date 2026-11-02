@@ -22,7 +22,7 @@ Filling `{name}` from the route is the only templating the client does. Everythi
 
 When the hash matches a route, the app fetches `apiBase + spec` and renders the result by its `kind` (a table, a form, a page, …). A hash that matches no route shows `No route for "<path>" in /retrofit.json.` A `/retrofit.json` without `routes` shows an error instead of the app: there is no default route table.
 
-Each screen owns its spec. A `refresh` action from anything on the screen fetches the spec again; tables and forms dispatch `refresh` after every save, create or delete.
+Each screen owns its spec. A `refresh` action from anything on the screen fetches the spec again, then passes `refresh` on to your `createShell({ actions })` handler, if any; tables and forms dispatch `refresh` after every save, create or delete.
 
 Links between screens are data in the specs that your server returns: a table row's link, a toolbar's "New" button, a form's `onDone`. The client never builds a link. See [Actions](/guide/actions).
 

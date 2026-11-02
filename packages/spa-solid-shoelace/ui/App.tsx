@@ -76,7 +76,7 @@ export function specUrl(
 /**
  * One route's screen: fetches the route's spec and renders it by kind. The
  * screen owns its spec, so `refresh` (dispatched by anything inside it)
- * refetches it.
+ * refetches it, then calls `next()` so outer `refresh` handlers run too.
  */
 function RouteScreen(props: { route: RouteSpec; apiBase: string }) {
   const params = useParams();
@@ -97,7 +97,15 @@ function RouteScreen(props: { route: RouteSpec; apiBase: string }) {
           },
         );
         return (
-          <ActionHandlers handlers={{ refresh: () => void refetch() }}>
+          <ActionHandlers
+            handlers={{
+              // Refetch, then let outer `refresh` handlers (createShell's) run.
+              refresh: (_a, _i, next) => {
+                void refetch();
+                return next();
+              },
+            }}
+          >
             <Show when={spec.error}>
               <p class="retrofit-error-message">{String(spec.error)}</p>
             </Show>

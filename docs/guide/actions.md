@@ -157,7 +157,7 @@ function ItemsScreen(props: { spec: Spec }) {
 
 | Owner | What `refresh` does |
 |-------|---------------------|
-| A screen of the hosted app | Fetches the route's spec again. It does not call `next()`. |
+| A screen of the hosted app | Fetches the route's spec again, then calls `next()`. |
 | A `page` | Loads the page's tables again (their list endpoints get the current filters), then calls `next()`. |
 | Nothing (an island, or a spec that your app renders) | The built-in handler does nothing. |
 
@@ -181,7 +181,7 @@ function ItemsView() {
 }
 ```
 
-In the hosted app, each screen handles `refresh` and does not call `next()`. Thus a `refresh` handler in `createShell({ actions })` does not run for actions from inside a screen.
+In the hosted app, each screen fetches its spec and then calls `next()`. Thus a `refresh` handler in `createShell({ actions })` also runs for actions from inside a screen.
 
 ## Dispatching from your own components
 

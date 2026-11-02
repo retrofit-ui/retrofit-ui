@@ -119,6 +119,47 @@ describe('the shell', () => {
     expect(requests.filter((r) => r === 'GET /api/ui/count')).toHaveLength(2);
   });
 
+  it('passes a screen refresh on to createShell actions via next()', async () => {
+    let count = 0;
+    serve({
+      '/retrofit.json': {
+        routes: [{ path: '/', spec: '/count' }],
+      } as unknown as Spec,
+      '/api/ui/count': () => text(`count ${++count}`),
+    });
+    const outer = vi.fn();
+    const kit = defineKit({
+      name: 'refresher',
+      kinds: [
+        defineKind({
+          kind: 'text',
+          component: (p) => {
+            const { dispatch } = useActions();
+            return (
+              <button
+                type="button"
+                onClick={() => void dispatch({ type: 'refresh' })}
+              >
+                {p.spec.content}
+              </button>
+            );
+          },
+        }),
+      ],
+    });
+    window.location.hash = '#/';
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    dispose = await createShell({
+      kits: [kit],
+      actions: { refresh: outer },
+    }).mount(root);
+    await vi.waitFor(() => expect(root.textContent).toContain('count 1'));
+    root.querySelector('button')?.click();
+    await vi.waitFor(() => expect(root.textContent).toContain('count 2'));
+    expect(outer).toHaveBeenCalledTimes(1);
+  });
+
   it('says so for a path with no route', async () => {
     serve({});
     window.location.hash = '#/nowhere';

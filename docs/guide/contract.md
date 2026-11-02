@@ -188,7 +188,7 @@ The table requests `list.url` with `GET` and adds query parameters:
 | Param | Sent when |
 | --- | --- |
 | `page`, `pageSize` | the table has `metadata.pagination`. `page` starts at 1; `pageSize` is the spec's, or the one the user picked from `pageSizeOptions`. |
-| `sort`, `order` | the user clicked a `sortable` column header. `sort` is the column `key`; `order` is `asc` or `desc`. |
+| `sort`, `order` | the user clicked a `sortable` column header of a list-backed table. (Inline `rows` sort in the client and send nothing.) `sort` is the column `key`; `order` is `asc` or `desc`. |
 | each filter field, by `name` | the table is inside a `page`, and the page has a `filter-form` or a form with `metadata.autoSubmit`. Only the names those forms declare are sent. |
 
 Empty values are left out. Parameters are form-encoded (`URLSearchParams`), so a space arrives as `+`. If `list.url` already has a query string, the parameters are appended to it.

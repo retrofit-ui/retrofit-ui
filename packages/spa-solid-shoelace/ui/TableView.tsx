@@ -495,6 +495,30 @@ function DataRow(props: {
   );
 }
 
+type Row = Record<string, unknown>;
+
+/** A stable sorted copy by raw cell value; null and undefined go last in either order. */
+function sortRows(
+  rows: Row[],
+  { key, order }: { key: string; order: 'asc' | 'desc' },
+): Row[] {
+  const dir = order === 'asc' ? 1 : -1;
+  const cmp = (a: unknown, b: unknown) =>
+    typeof a === 'number' && typeof b === 'number'
+      ? a - b
+      : typeof a === 'boolean' && typeof b === 'boolean'
+        ? Number(a) - Number(b)
+        : String(a).localeCompare(String(b));
+  return rows
+    .map((row, i) => [cellValue(row[key]), i, row] as const)
+    .sort(([a, i], [b, j]) => {
+      if (a == null || b == null)
+        return a == null ? (b == null ? i - j : 1) : -1;
+      return dir * cmp(a, b) || i - j;
+    })
+    .map(([, , row]) => row);
+}
+
 export function TableViewComponent(props: { spec: TableSpec }) {
   const send = useHttp();
   const [currentPage, setCurrentPage] = createSignal(1);
@@ -517,6 +541,8 @@ export function TableViewComponent(props: { spec: TableSpec }) {
     });
 
   const page = usePage();
+  // Inline rows sort on the client; list tables sort on the server.
+  const isSortable = (col: Column) => !!col.sortable;
 
   // Refetches when the page, page size, inline rows, the surrounding page's
   // filters or its version change.
@@ -528,7 +554,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
         props.spec.rows,
         page?.filters(),
         page?.filterNames(),
-        sort(),
+        props.spec.rows ? undefined : sort(),
         page?.version(),
       ] as const,
     async ([
@@ -566,6 +592,11 @@ export function TableViewComponent(props: { spec: TableSpec }) {
   );
 
   const hasInlineEdit = () => props.spec.columns.some((c) => c.editable);
+  const shown = () => {
+    const rows = data();
+    const s = sort();
+    return rows && s && props.spec.rows ? sortRows(rows, s) : rows;
+  };
   const hasActions = () => tableHasActions(props.spec, data());
 
   return (
@@ -600,7 +631,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
       <Show when={data.error}>
         <p class="retrofit-error-message">Error: {String(data.error)}</p>
       </Show>
-      <Show when={data()}>
+      <Show when={shown()}>
         {(rows) => (
           <>
             <table class="retrofit-table">
@@ -615,7 +646,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                           width: col.width,
                         }}
                         aria-sort={
-                          col.sortable && !props.spec.rows
+                          isSortable(col)
                             ? sort()?.key !== col.key
                               ? 'none'
                               : sort()?.order === 'asc'
@@ -624,10 +655,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
                             : undefined
                         }
                       >
-                        <Show
-                          when={col.sortable && !props.spec.rows}
-                          fallback={col.label}
-                        >
+                        <Show when={isSortable(col)} fallback={col.label}>
                           <button
                             type="button"
                             class="retrofit-sort-button"

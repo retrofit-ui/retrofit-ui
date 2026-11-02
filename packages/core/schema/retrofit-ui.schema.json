@@ -188,7 +188,7 @@
         },
         "sortable": {
           "type": "boolean",
-          "description": "Clicking the header sorts through the `sort` and `order` query params."
+          "description": "Clicking the header sorts. A list table sends the `sort` and `order` query params; a table with inline `rows` sorts them in the client."
         },
         "editable": {
           "type": "boolean"

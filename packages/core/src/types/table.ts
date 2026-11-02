@@ -22,7 +22,10 @@ export interface Column {
   key: string;
   label: string;
   type: ColumnType;
-  /** Clicking the header sorts through the `sort` and `order` query params. */
+  /**
+   * Clicking the header sorts. A list table sends the `sort` and `order`
+   * query params; a table with inline `rows` sorts them in the client.
+   */
   sortable?: boolean;
   editable?: boolean;
   /** A CSS width for the column, e.g. `12rem`. */

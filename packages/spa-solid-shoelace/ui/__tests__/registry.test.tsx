@@ -874,6 +874,38 @@ describe('table columns', () => {
     );
   });
 
+  it('sorts inline rows locally, nulls last, without a request', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    const inline: TableSpec = {
+      kind: 'table',
+      columns: table.columns,
+      endpoints: {},
+      rows: [
+        { name: { value: 'b' }, age: { value: 30 } },
+        { name: { value: 'c' }, age: { value: null } },
+        { name: { value: 'a' }, age: { value: 5 } },
+        { name: { value: 'd' }, age: { value: 100 } },
+      ],
+    };
+    const root = mount(() => <SpecRenderer spec={inline} />);
+    await vi.waitFor(() => expect(root.querySelector('th')).not.toBeNull());
+    const names = () =>
+      [...root.querySelectorAll('tbody tr')].map(
+        (r) => r.querySelector('td')?.textContent,
+      );
+    expect(names()).toEqual(['b', 'c', 'a', 'd']);
+    expect(th(root, 'Age').getAttribute('aria-sort')).toBe('none');
+    btn(root, 'Age').click();
+    await vi.waitFor(() => expect(names()).toEqual(['a', 'b', 'd', 'c']));
+    expect(th(root, 'Age').getAttribute('aria-sort')).toBe('ascending');
+    btn(root, 'Age').click();
+    await vi.waitFor(() => expect(names()).toEqual(['d', 'b', 'a', 'c']));
+    expect(th(root, 'Age').getAttribute('aria-sort')).toBe('descending');
+    btn(root, 'Name').click();
+    await vi.waitFor(() => expect(names()).toEqual(['a', 'b', 'c', 'd']));
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('applies a column width to its header', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       async () => new Response('[{"name":"a"}]'),

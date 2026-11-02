@@ -98,9 +98,11 @@ While rows load, the table shows skeleton rows. A failed request shows an error 
 
 ## Sorting
 
-A column with `sortable: true` shows a header button for a list-backed table. A click sorts ascending, and the next click on the same column sorts descending. The client sends `sort=<key>&order=asc|desc` and goes back to page 1. The server does the sort. The header carries `aria-sort`.
+A column with `sortable: true` shows a header button. A click sorts ascending, and the next click on the same column sorts descending. The header carries `aria-sort`.
 
-A table with inline `rows` does not show sort buttons: the client never reorders rows itself.
+A list-backed table sends `sort=<key>&order=asc|desc` and goes back to page 1. The server does the sort.
+
+A table with inline `rows` sorts in the client, with no request. Until the first click, the rows keep the order you sent. The sort is stable and uses the raw cell value, not `formatted`. Numbers sort numerically, strings with `localeCompare`, and booleans `false` before `true`. Empty values (`null`, `undefined`) are always last, in both orders.
 
 ## Pagination
 

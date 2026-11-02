@@ -482,6 +482,33 @@ describe('pages', () => {
     );
   });
 
+  it('forwards a filter name added by a swapped page spec', async () => {
+    const fetched: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      fetched.push(String(input));
+      return new Response('[]');
+    });
+    window.location.hash = '#/?status=open&owner=me';
+    const withFields = (...names: string[]): PageSpec => ({
+      kind: 'page',
+      children: [
+        {
+          kind: 'filter-form',
+          fields: names.map((name) => ({ name, label: name, type: 'text' })),
+        },
+        listTable,
+      ],
+    });
+    const [spec, setSpec] = createSignal(withFields('status'));
+    inRouter(() => <SpecRenderer spec={spec()} />);
+    const items = () => fetched.filter((url) => url.startsWith('/items'));
+    await vi.waitFor(() => expect(items()).toEqual(['/items?status=open']));
+    setSpec(withFields('status', 'owner'));
+    await vi.waitFor(() =>
+      expect(items().at(-1)).toBe('/items?status=open&owner=me'),
+    );
+  });
+
   it('warns once when a filter writer uses a reserved query name', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(
       async () => new Response('[]'),

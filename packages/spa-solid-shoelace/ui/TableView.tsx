@@ -528,10 +528,18 @@ export function TableViewComponent(props: { spec: TableSpec }) {
         currentPageSize(),
         props.spec.rows,
         page?.filters(),
+        page?.filterNames(),
         sort(),
         page?.version(),
       ] as const,
-    async ([pageNumber, pageSizeOverride, inlineRows, filters, activeSort]) => {
+    async ([
+      pageNumber,
+      pageSizeOverride,
+      inlineRows,
+      filters,
+      filterNames,
+      activeSort,
+    ]) => {
       if (inlineRows) return inlineRows;
       const ep = props.spec.endpoints?.list;
       if (!ep) return [];
@@ -539,7 +547,7 @@ export function TableViewComponent(props: { spec: TableSpec }) {
       const pageSize = pageSizeOverride ?? pagination?.pageSize;
       // Only the page's own filters: other search params stay in the url.
       const pageFilters = Object.fromEntries(
-        Object.entries(filters ?? {}).filter(([k]) => page?.filterNames.has(k)),
+        Object.entries(filters ?? {}).filter(([k]) => filterNames?.has(k)),
       );
       const url = listUrl(ep.url, {
         ...pageFilters,

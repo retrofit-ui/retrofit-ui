@@ -86,7 +86,7 @@ A page shares filter values with the specs inside it.
 - A `filter-form` has `fields` of type `select`, `text`, `date`, `datetime` or `time`. Each change writes the field's value to the page filters. A `select` filter shows an "All &lt;label&gt;" choice, or its `placeholder`, for empty.
 - A form with `metadata.autoSubmit` writes its changes to the page filters too.
 - Under the router the filters live in the URL search params, so a filtered view can be linked and survives a reload. Without a router they live in memory.
-- A table on the page adds each filter to its `list` request by field name. Only names from the page's `filter-form` and `autoSubmit` forms are sent. Nested pages have their own filters.
+- A table on the page adds each filter to its `list` request by field name. Only names from the page's `filter-form` and `autoSubmit` forms are sent. The names follow the page spec, so a refetched page with a new filter field sends it too. Nested pages have their own filters.
 - `page`, `pageSize`, `sort` and `order` are reserved for the table. The client warns in the console if a filter uses one.
 - When a form on the page writes, the page dispatches `refresh` to its tables, then passes it on to whatever owns the page spec.
 

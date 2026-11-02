@@ -23,7 +23,7 @@ import type {
   TextSpec,
 } from '@retrofit-ui/core';
 import { useSearchParams } from '@solidjs/router';
-import { createSignal, For, Match, Show, Switch } from 'solid-js';
+import { createMemo, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { ActionHandlers } from './actions';
 import { RenderSpec } from './kinds';
 import { PageContext, type PageContextValue, usePage } from './page-context';
@@ -371,21 +371,35 @@ export function filterNamesOf(children: Spec[]): Set<string> {
     Object.values(node).forEach(visit);
   };
   visit(children);
-  const reserved = RESERVED.filter((n) => names.has(n));
-  if (reserved.length > 0) {
-    console.warn(
-      `[retrofit-ui] filter names ${reserved.join(', ')} are reserved for a table's list query; rename them`,
-    );
-  }
   return names;
 }
 
 export function PageView(props: { spec: PageSpec; onRefresh?: () => void }) {
   const { filters, setFilter } = usePageFilters();
   const [version, setVersion] = createSignal(0);
+  const warned = new Set<string>();
+  // Follows the spec, so a swapped or refetched page keeps its filters in step.
+  const filterNames = createMemo(
+    () => {
+      const names = filterNamesOf(props.spec.children);
+      const reserved = RESERVED.filter((n) => names.has(n) && !warned.has(n));
+      if (reserved.length > 0) {
+        for (const n of reserved) warned.add(n);
+        console.warn(
+          `[retrofit-ui] filter names ${reserved.join(', ')} are reserved for a table's list query; rename them`,
+        );
+      }
+      return names;
+    },
+    undefined,
+    // Same names, same set: tables do not refetch for an unrelated spec change.
+    {
+      equals: (a, b) => a.size === b.size && [...a].every((n) => b.has(n)),
+    },
+  );
   const page: PageContextValue = {
     filters,
-    filterNames: filterNamesOf(props.spec.children),
+    filterNames,
     setFilter,
     version,
     refresh: () => {

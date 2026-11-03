@@ -113,7 +113,7 @@ A commit's presence on `main` means it's *ready to be published* at the next rel
 
 Releases are automated by `.github/workflows/release.yml`, driven by [`changesets/action`](https://github.com/changesets/action). No manual `npm publish`, no manual `git tag`.
 
-**Auth is an npm token, not Trusted Publishing.** The workflow passes the `NPM_TOKEN` repository secret (a granular token, read+write on the `@retrofit-ui` scope, 365-day expiry) to the `changesets/action` step only. Trusted Publishing (OIDC) hit unresolved 404 errors with this npm org. The job has no `id-token: write` permission and publishes without provenance, so npm shows no "Built and signed on GitHub Actions" badge yet. The build and `verify:publish` steps run without the token.
+**Auth is npm Trusted Publishing (OIDC), not a token.** Each package on npmjs.com trusts this repo's `release.yml` workflow. The job has `id-token: write`; npm exchanges the GitHub OIDC token for a short-lived publish credential and adds provenance (the "Built and signed on GitHub Actions" badge). No npm secret is stored in the repo. The job runs on Node 26 (Active LTS), because Trusted Publishing needs npm 11.5.1 or later, and a step fails the job early on an older npm.
 
 The workflow runs on every push to `main`. It installs, builds (`pnpm build`), runs `pnpm verify:publish`, then runs `changesets/action` in one of two modes:
 
@@ -173,12 +173,11 @@ To enforce the invariant, `pnpm verify:publish` (`scripts/verify-publish-manifes
 One-time bootstrap:
 
 1. Publish each package at its initial version from a maintainer's laptop (`npm login && pnpm release`) to create it on npm.
-2. Create a granular npm token with read+write on the `@retrofit-ui` scope and read-only on the `retrofit-ui` organization. Store it as the `NPM_TOKEN` repository secret. Rotate it before it expires.
+2. On npmjs.com, open each package → **Settings → Trusted Publisher → GitHub Actions** and enter: organization `retrofit-ui`, repository `retrofit-ui`, workflow filename `release.yml`, environment empty. The fields are case-sensitive and npm does not check them until the next publish.
 3. Enable the repo setting **Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"**.
 
-**Moving to Trusted Publishing later.** Configure a Trusted Publisher for `release.yml` on each package on npmjs.com, add `id-token: write` to the job, and drop `NPM_TOKEN`. Not done today (see Release workflow).
 
-**When a new package is added** to the monorepo, publish it once by hand (step 1). The token's scope then covers it.
+**When a new package is added** to the monorepo, publish it once by hand (step 1), then add its Trusted Publisher (step 2). A new Trusted Publisher must publish successfully within 2 days, or npm drops it.
 
 ---
 
@@ -198,7 +197,7 @@ One-time bootstrap:
 
 **CI doesn't run on the Version PR.** Expected if opened via `GITHUB_TOKEN` — GitHub deliberately doesn't trigger downstream workflows from bot-created PRs. Fix by configuring a `GH_PAT` secret (see `release.yml`) or by pushing a trivial commit to the Version PR branch to re-trigger CI.
 
-**Publish fails with "requires authentication" or 404.** The `NPM_TOKEN` secret is missing, expired, or lacks write access to the `@retrofit-ui` scope. Create a new token and update the secret. Do not add `id-token: write` or provenance to the workflow without also moving to Trusted Publishing: npm then prefers OIDC over the token and fails.
+**Publish fails with "requires authentication" or 404.** npm could not match the run to a Trusted Publisher: check that the package's Trusted Publisher names `retrofit-ui`/`retrofit-ui`/`release.yml` exactly, that the job still has `id-token: write`, that the npm version check passed (npm ≥ 11.5.1), and that `repository.url` in the package's `package.json` is `git+https://github.com/retrofit-ui/retrofit-ui.git`.
 
 **Version bump looks wrong.** Dependents of `@retrofit-ui/core` get at least a patch bump when core changes. Edit the changesets or the Version PR before you merge to override it.
 

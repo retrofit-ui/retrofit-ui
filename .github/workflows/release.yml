@@ -13,8 +13,7 @@ jobs:
     permissions:
       contents: write        # push version bump commit + tags
       pull-requests: write   # open/update the Version Packages PR
-      # id-token: write     # only needed for OIDC/Trusted Publishing/provenance;
-                            # off for now while we're on token auth (see below).
+      id-token: write        # npm Trusted Publishing (OIDC) + provenance
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,23 +22,27 @@ jobs:
       - uses: pnpm/action-setup@v4
         # No `version:` — reads packageManager from root package.json
 
+      # No `registry-url`: it writes an .npmrc with a placeholder token, and
+      # Trusted Publishing needs no token at all.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22   # ships with npm CLI new enough for OIDC / Trusted Publishing
+          node-version: 26   # Active LTS (Lithium) since 2026-10-28; ships npm 11.20
           cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted Publishing needs npm >= 11.5.1 (Node 22 ships npm 10, which
+      # publishes unauthenticated and gets a 404). pnpm publish hands the
+      # upload to this npm.
+      - name: Check npm supports Trusted Publishing
+        run: npx --yes semver@7 -r '>=11.5.1' "$(npm --version)"
 
       - run: pnpm install --frozen-lockfile
 
-      # Build happens in a step WITHOUT NPM_TOKEN in env, so devDeps executed
-      # during the build (tsup, vite, etc.) cannot observe the publish token.
-      # Only the changesets/action step below sees NPM_TOKEN.
       - name: Build packages
         run: pnpm build
 
       # Belt-and-braces: pack each public package and fail the release BEFORE
       # anything reaches npm if a workspace: range would leak (#130). Runs in
-      # the token-free part of the job — pack is local/offline, no NPM_TOKEN.
+      # pack is local/offline.
       - name: Verify published manifests resolve workspace deps
         run: pnpm verify:publish
 
@@ -48,7 +51,7 @@ jobs:
         with:
           # `pnpm exec changeset publish` runs the publish step only —
           # deliberately NOT `pnpm release`, which also runs `pnpm build`
-          # inside this env (where NPM_TOKEN is exposed).
+          # with publish credentials in reach.
           publish: pnpm exec changeset publish
           version: pnpm changeset version
           commit: 'chore: version packages'
@@ -58,18 +61,7 @@ jobs:
           # workflows (like ci.yml). If we want CI to run on the Version PR,
           # swap this for a fine-grained PAT stored as secrets.GH_PAT.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Token-based publish. Trusted Publishing (OIDC) had unresolved
-          # 404 issues with our brand-new npm org + auth-and-writes 2FA setup.
-          # Fallback: granular npm token with:
-          #   - Packages/scopes: read+write on @retrofit-ui
-          #   - Organizations: read-only on retrofit-ui (org-owned scope)
-          # 365-day expiry; rotate before then.
-          #
-          # Provenance attestations and id-token: write are BOTH disabled here
-          # because with recent npm CLI versions, enabling provenance appears
-          # to make npm silently prefer OIDC (Trusted Publishing) over the
-          # NPM_TOKEN auth. Since TP is broken for this account, that caused
-          # 404s. Turning provenance off restored token-auth. Consequence:
-          # published tarballs do not get the "Built and signed on GitHub
-          # Actions" badge on npmjs.com until we resolve TP.
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NPM_TOKEN: npm publishes via Trusted Publishing (OIDC), set up
+          # per package on npmjs.com for this repo + release.yml. Provenance
+          # is generated automatically. changesets/action only writes an
+          # .npmrc when NPM_TOKEN is set, so it stays out of the way.
